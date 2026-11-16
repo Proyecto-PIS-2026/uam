@@ -84,7 +84,7 @@ function crearFila() {
             envase: { nombreEnvase: "Caja" },
             kilos: null,
             categoria: { nombreCategoria: "Primera" },
-            calibre: { codigoCalibre: "M" },
+            calibre: { codigoCalibre: "M", nombreCalibre: "Mediano" },
         },
     };
 }
@@ -141,7 +141,8 @@ describe("obtenerPerfilProductorPorOperador", () => {
                         envase: "Caja",
                         kilos: "",
                         categoria: "Primera",
-                        calibre: "M",
+                        calibre: "Mediano",
+                        codigoCalibre: "M",
                         pais: "Uruguay",
                         ubicaciones: fila.ubicaciones,
                     },
@@ -196,7 +197,8 @@ describe("obtenerPerfilProductorPorOperador", () => {
                     envase: "Caja",
                     kilos: "",
                     categoria: "Primera",
-                    calibre: "M",
+                    calibre: "Mediano",
+                    codigoCalibre: "M",
                     pais: "Uruguay",
                     ubicaciones: fila.ubicaciones,
                 },

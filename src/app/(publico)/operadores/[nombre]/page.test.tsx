@@ -51,7 +51,8 @@ const perfil: PerfilPublicoOperador = {
         variedad: "Perita",
         envase: "Cajón", kilos: "",
         categoria: "Extra",
-        calibre: "A",
+        calibre: "Grande",
+        codigoCalibre: "G",
         pais: "URUGUAY",
     }],
 };

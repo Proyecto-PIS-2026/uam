@@ -30,7 +30,7 @@ function relacion(publicacionActiva = true, publicacionDisponible = true, tipoPu
             variedad: { nombreVariedad: "Valencia" },
             envase: { nombreEnvase: "KG" },
             kilos: null,
-            categoria: { nombreCategoria: "I" }, calibre: { codigoCalibre: "M" },
+            categoria: { nombreCategoria: "I" }, calibre: { codigoCalibre: "M", nombreCalibre: "Mediano" },
         },
     };
 }
@@ -88,7 +88,7 @@ describe("Consultas de productores para operadores", () => {
             resolves.toMatchObject({
                 id: productor.id,
                 nombreFantasia: productor.nombreFantasia,
-                publicaciones: [expect.objectContaining({id: 10, especie: "Naranja"})],
+                publicaciones: [expect.objectContaining({id: 10, especie: "Naranja", calibre: "Mediano", codigoCalibre: "M"})],
         });
     });
 

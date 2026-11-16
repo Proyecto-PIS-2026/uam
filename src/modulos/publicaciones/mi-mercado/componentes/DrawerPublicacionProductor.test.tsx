@@ -105,7 +105,7 @@ const opciones: OpcionesEdicionPublicacion = {
         { id: 6, nombre: "General", especieId: null },
         { id: 7, nombre: "Manzanas especiales", especieId: 2 },
     ],
-    calibres: [{ id: 4, nombre: "G - Grande" }, { id: 8, nombre: "M - Mediano" }],
+    calibres: [{ id: 4, nombre: "Grande" }, { id: 8, nombre: "Mediano" }],
     paises: [{ id: 1, nombre: "Uruguay" }, { id: 2, nombre: "Argentina" }],
 };
 
@@ -261,7 +261,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(precio).toHaveValue("100");
         expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajon");
         expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent("Primera");
-        expect(screen.getByRole("combobox", { name: /^Calibre/ })).toHaveTextContent("G - Grande");
+        expect(screen.getByRole("combobox", { name: /^Calibre/ })).toHaveTextContent(/^Grande$/);
         for (const [campo, valor] of [["Especie", "Pera"], ["Variedad", "Williams"], ["País de origen", "Uruguay"]]) {
             const selector = screen.getByRole("combobox", { name: new RegExp(`^${campo}`) });
             expect(selector).toHaveTextContent(valor);
@@ -312,7 +312,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         await seleccionar("Empaquetado", "Bing");
         await seleccionar("País de origen", "Argentina");
         await seleccionar("Categoría", "Segunda");
-        await seleccionar("Calibre", "M - Mediano");
+        await seleccionar("Calibre", "Mediano");
         fireEvent.change(screen.getByLabelText("Unidades (Bing)"), { target: { value: "25" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         editarUbicaciones();
@@ -366,7 +366,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         await seleccionar("Empaquetado", "Bins");
         await seleccionar("País de origen", "Argentina");
         await seleccionar("Categoría", "Manzanas especiales");
-        await seleccionar("Calibre", "M - Mediano");
+        await seleccionar("Calibre", "Mediano");
         fireEvent.change(screen.getByLabelText("Unidades (Bins)"), { target: { value: "35" } });
         fireEvent.click(screen.getByRole("switch", { name: "Publicación disponible" }));
         editarUbicaciones();
@@ -391,7 +391,7 @@ describe("DrawerPublicacionProductor: edición", () => {
         expect(screen.getByRole("combobox", { name: /^Empaquetado/ })).toHaveTextContent("Cajon");
         expect(screen.getByRole("combobox", { name: /^País de origen/ })).toHaveTextContent("Uruguay");
         expect(screen.getByRole("combobox", { name: /^Categoría/ })).toHaveTextContent("Primera");
-        expect(screen.getByRole("combobox", { name: /^Calibre/ })).toHaveTextContent("G - Grande");
+        expect(screen.getByRole("combobox", { name: /^Calibre/ })).toHaveTextContent(/^Grande$/);
         expect(screen.getByLabelText("Unidades (Cajon)")).toHaveValue("12");
         expect(screen.getByRole("switch", { name: "Publicación disponible" })).toBeChecked();
         expect(screen.getByText("Quinta", { exact: true })).toBeInTheDocument();

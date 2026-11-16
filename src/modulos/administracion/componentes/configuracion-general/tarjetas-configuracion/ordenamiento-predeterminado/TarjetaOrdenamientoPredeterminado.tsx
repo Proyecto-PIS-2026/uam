@@ -79,7 +79,6 @@ export default function TarjetaConfiguracionOrdenamiento({ configuracion, onGuar
     const contenido = (
         <div className={styles.tarjeta}>
             <div className={styles.titulo}>Orden de las publicaciones</div>
-            <span className={styles.descripcion}>Configurá el orden predeterminado de cada sección y si los usuarios pueden cambiarlo.</span>
             <label className={styles.filaSwitch} data-habilitado={valores.habilitado} data-guardando={guardando}>
                 <span className={styles.textoSwitch}>
                     <span className={styles.etiquetaSwitch}>Permitir cambiar el orden</span>

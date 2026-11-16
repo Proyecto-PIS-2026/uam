@@ -145,7 +145,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 envase: publicacion.envase?.nombreEnvase ?? "",
                 kilos: publicacion.kilos?.valor ?? "",
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
-                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
                 codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
                 

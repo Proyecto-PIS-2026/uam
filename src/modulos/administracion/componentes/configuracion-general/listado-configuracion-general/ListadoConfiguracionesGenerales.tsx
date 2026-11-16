@@ -11,7 +11,8 @@ import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracio
 import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
 import { CLAVES_VIGENCIA_PUBLICACIONES, MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES, type TipoPropietarioPublicacion } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
 import { CLAVES_AGING_FOTOS, type TipoPropietarioFoto } from "@/modulos/publicaciones/claves-aging-fotos";
-import { CLAVE_ANTICIPACION_AVISO_LOCALES, DIAS_ANTICIPACION_AVISO_LOCALES, validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
+import { CLAVE_ANTICIPACION_AVISO_LOCALES, CLAVE_HABILITACION_AVISO_LOCALES, DIAS_ANTICIPACION_AVISO_LOCALES } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
+import TarjetaAvisosLocales, { type ConfiguracionAvisosLocalesFormulario } from "../tarjetas-configuracion/avisos-locales/TarjetaAvisosLocales";
 import TarjetaOrdenamientoPredeterminado, { type ConfiguracionOrdenamiento, type OrdenPublicaciones } from "../tarjetas-configuracion/ordenamiento-predeterminado/TarjetaOrdenamientoPredeterminado";
 import TarjetaVigencia, { type ConfiguracionVigenciaFotos } from "../tarjetas-configuracion/vigencia/TarjetaVigencia";
 import TarjetaRestablecimientoContraseña from "../tarjetas-configuracion/restablecimiento-contraseña/TarjetaRestablecimientoContraseña";
@@ -37,15 +38,6 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
     const [importe, setImporte] = useState(importeServer);
     const [importePropAnterior, setImportePropAnterior] = useState(importeServer);
 
-    const anticipacionLocalesServer = configuracion[CLAVE_ANTICIPACION_AVISO_LOCALES] ?? String(DIAS_ANTICIPACION_AVISO_LOCALES);
-    const [anticipacionLocales, setAnticipacionLocales] = useState(anticipacionLocalesServer);
-    const [anticipacionLocalesAnterior, setAnticipacionLocalesAnterior] = useState(anticipacionLocalesServer);
-
-    if (anticipacionLocalesAnterior !== anticipacionLocalesServer) {
-        setAnticipacionLocalesAnterior(anticipacionLocalesServer);
-        setAnticipacionLocales(anticipacionLocalesServer);
-    }
-   
     if (importePropAnterior !== importeServer) {
         setImportePropAnterior(importeServer);
         setImporte(importeServer);
@@ -73,9 +65,11 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
         router.refresh();
     }
 
-    async function guardarAnticipacionLocales(valor: string): Promise<void> {
-        await guardarConfiguraciones({ [CLAVE_ANTICIPACION_AVISO_LOCALES]: valor });
-        setAnticipacionLocales(valor);
+    async function guardarAvisosLocales(valores: ConfiguracionAvisosLocalesFormulario): Promise<void> {
+        await guardarConfiguraciones({
+            [CLAVE_HABILITACION_AVISO_LOCALES]: String(valores.habilitado),
+            [CLAVE_ANTICIPACION_AVISO_LOCALES]: valores.diasAnticipacion,
+        });
         router.refresh();
     }
 
@@ -190,7 +184,6 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaVigencia
                 titulo="Vigencia de fotos de operadores"
-                descripcion="Configurá la vigencia de las fotos de publicaciones de operadores y sus avisos de próximo vencimiento."
                 etiquetaVencimiento="Vencimiento de fotos"
                 ayudaVencimiento="Aplicar un período de vigencia a las fotos de operadores."
                 ayudaAvisos="Notificar a los operadores."
@@ -234,20 +227,16 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                 onGuardar={(valores) => guardarVigenciaPublicaciones("PRODUCTOR", valores)}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaInput
-                titulo="Avisos de vencimiento de locales"
-                descripcion="Días de anticipación para avisar a los administradores del vencimiento de un contrato de local. Entre 0 y 365. Con 0 se avisa el día del vencimiento."
-                label="Días de anticipación del aviso de locales"
-                valor={anticipacionLocales}
-                validarNumero={validarAnticipacionAvisoLocales}
-                mensajeExito="La anticipación de los avisos de locales se guardó correctamente."
-                onChangeValor={setAnticipacionLocales}
-                onGuardarValor={guardarAnticipacionLocales}
+            <TarjetaAvisosLocales
+                configuracion={{
+                    habilitado: configuracion[CLAVE_HABILITACION_AVISO_LOCALES] !== "false",
+                    diasAnticipacion: configuracion[CLAVE_ANTICIPACION_AVISO_LOCALES] ?? String(DIAS_ANTICIPACION_AVISO_LOCALES),
+                }}
+                onGuardar={guardarAvisosLocales}
             />
             <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
             <TarjetaRestablecimientoContraseña
                 titulo="Restablecimiento de contraseñas"
-                descripcion="Configurá si los usuarios pueden restablecer su propia contraseña."
                 etiqueta="Permitir que los usuarios restablezcan su propia contraseña"
                 habilitado={restablecimientoHabilitado}
                 onGuardar={guardarRestablecimiento}

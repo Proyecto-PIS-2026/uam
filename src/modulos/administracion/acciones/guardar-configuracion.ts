@@ -7,7 +7,7 @@ import { bloquearCambioVigenciaPublicaciones } from "@/modulos/publicaciones/con
 import { calcularFechaMaximaVigencia, convertirFechaVigenciaAInstant } from "@/modulos/publicaciones/vigencia-publicacion";
 import { CLAVES_VIGENCIA_PUBLICACIONES, MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
 import { CLAVES_AGING_FOTOS } from "@/modulos/publicaciones/claves-aging-fotos";
-import { CLAVE_ANTICIPACION_AVISO_LOCALES, validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
+import { CLAVE_ANTICIPACION_AVISO_LOCALES, CLAVE_HABILITACION_AVISO_LOCALES, validarAnticipacionAvisoLocales } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
 
 
 const clavesOrdenamiento = [
@@ -42,6 +42,7 @@ const clavesPermitidas = new Set<string>([
     "incremento_precio",
     "restablecimiento_contrasena_habilitado",
     CLAVE_ANTICIPACION_AVISO_LOCALES,
+    CLAVE_HABILITACION_AVISO_LOCALES,
     ...clavesOrdenamiento,
     ...CLAVES_AGING_FOTOS.OPERADOR,
     ...CLAVES_AGING_FOTOS.PRODUCTOR,
@@ -51,6 +52,7 @@ const clavesPermitidas = new Set<string>([
 
 const clavesBooleanas = new Set<string>([
     "ordenamiento_habilitado",
+    CLAVE_HABILITACION_AVISO_LOCALES,
     ...gruposVigencia.flatMap(([habilitado, , avisos]) => [habilitado, avisos]),
     "restablecimiento_contrasena_habilitado",
 ]);

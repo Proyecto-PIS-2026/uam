@@ -91,7 +91,6 @@ describe("TarjetaUploadFotoEspecie", () => {
     it("muestra los textos, la especie y su foto actual", () => {
         preparar();
         expect(screen.getByText("Fotos de especies")).toBeInTheDocument();
-        expect(screen.getByText("Seleccioná una especie para actualizar o quitar su foto.")).toBeInTheDocument();
         expect(screen.getByRole("combobox", { name: "Especie" })).toHaveValue("Acelga");
         expect(screen.getByAltText("Foto de Acelga")).toHaveAttribute("src", "/acelga.webp");
         expect(screen.getByText("JPEG, PNG o WebP, hasta 10 MB.")).toBeInTheDocument();

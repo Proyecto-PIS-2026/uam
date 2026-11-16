@@ -26,7 +26,8 @@ const publicacion: PublicacionPerfil = {
     variedad: "Perita",
     envase: "Cajón", kilos: "",
     categoria: "Extra",
-    calibre: "A",
+    calibre: "Grande",
+    codigoCalibre: "G",
     pais: "URUGUAY",
 };
 
@@ -35,7 +36,8 @@ describe("TarjetaPublicacion", () => {
     it("muestra los datos y el precio del producto", () => {
         render(<TarjetaPublicacion publicacion={publicacion} />);
         expect(screen.getByText("Tomate - Perita")).toBeInTheDocument();
-        expect(screen.getByText("A")).toBeInTheDocument();
+        expect(screen.getByText("G")).toBeInTheDocument();
+        expect(screen.getByText("Grande · Categoría Extra")).toBeInTheDocument();
         expect(screen.getByText("Extra")).toBeInTheDocument();
         expect(screen.getByText((contenido) => contenido.replace(/\s/g, "") === "$120")).toBeInTheDocument();
         expect(screen.getByText("por Cajón")).toBeInTheDocument();

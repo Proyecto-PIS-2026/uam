@@ -52,7 +52,7 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
                     <div className={styles.informacionMobile}>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Calibre</span>
-                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
+                            <span className={styles.chip}>{publicacion.codigoCalibre?.trim() || "-"}</span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Cat.</span>

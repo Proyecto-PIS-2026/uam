@@ -33,7 +33,9 @@ export default function TarjetaPublicacionProductor({ publicacion, alConsultar }
                             </span>
                         </span>
                         <span className={styles.datos}>
-                            {publicacion.calibre?.nombreCalibre || "-"} · Cat. {publicacion.categoria?.nombreCategoria || "-"} · {formatearEmpaquetado(publicacion.envase?.nombreEnvase, publicacion.kilos?.valor) || "-"}
+                            <span className={styles.calibreCompleto}>{publicacion.calibre?.nombreCalibre?.trim() || "-"}</span>
+                            <span className={styles.codigoCalibre}>{publicacion.calibre?.codigoCalibre?.trim() || "-"}</span>
+                            {" · "}Cat. {publicacion.categoria?.nombreCategoria || "-"} · {formatearEmpaquetado(publicacion.envase?.nombreEnvase, publicacion.kilos?.valor) || "-"}
                         </span>
                     </span>
                 </span>

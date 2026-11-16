@@ -379,7 +379,56 @@ describe.each(gruposVigencia)("vigencia de $nombre", (grupo) => {
     });
 });
 
-describe("anticipación de avisos de vencimiento de locales", () => {
+describe("configuración de avisos de vencimiento de locales", () => {
+    it.each(["true", "false"])("cambia la habilitación a %s sin modificar la anticipación", async (valor) => {
+        await guardarConfiguraciones({ aviso_vencimiento_locales_habilitado: valor });
+
+        expect(mocks.exigirAdministrador).toHaveBeenCalledOnce();
+        expect(mocks.where).toHaveBeenCalledExactlyOnceWith({ nombreConfiguracion: "aviso_vencimiento_locales_habilitado" });
+        expect(mocks.update).toHaveBeenCalledExactlyOnceWith({ valorConfiguracion: valor });
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it("guarda la desactivación y la anticipación juntas sin modificar publicaciones", async () => {
+        await guardarConfiguraciones({
+            aviso_vencimiento_locales_habilitado: "false",
+            anticipacion_aviso_vencimiento_locales: "14",
+        });
+
+        expect(mocks.transaction).toHaveBeenCalledOnce();
+        expect(mocks.where).toHaveBeenNthCalledWith(1, { nombreConfiguracion: "aviso_vencimiento_locales_habilitado" });
+        expect(mocks.update).toHaveBeenNthCalledWith(1, { valorConfiguracion: "false" });
+        expect(mocks.where).toHaveBeenNthCalledWith(2, { nombreConfiguracion: "anticipacion_aviso_vencimiento_locales" });
+        expect(mocks.update).toHaveBeenNthCalledWith(2, { valorConfiguracion: "14" });
+        expect(mocks.update).toHaveBeenCalledTimes(2);
+        expect(mocks.execute).not.toHaveBeenCalled();
+    });
+
+    it.each(["", "TRUE", "1", "false ", "si"])("rechaza la habilitación inválida %j sin guardar ninguna opción", async (valor) => {
+        await expect(guardarConfiguraciones({
+            aviso_vencimiento_locales_habilitado: valor,
+            anticipacion_aviso_vencimiento_locales: "14",
+        })).rejects.toThrow("El estado de la configuración no es válido.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("impide desactivar avisos sin autorización administrativa", async () => {
+        mocks.exigirAdministrador.mockRejectedValue(new Error("No autorizado"));
+        await expect(guardarConfiguraciones({ aviso_vencimiento_locales_habilitado: "false" })).rejects.toThrow("No autorizado");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("no guarda un plazo inválido aunque se desactiven los avisos", async () => {
+        await expect(guardarConfiguraciones({
+            aviso_vencimiento_locales_habilitado: "false",
+            anticipacion_aviso_vencimiento_locales: "",
+        })).rejects.toThrow("La anticipación de los avisos de locales debe ser un entero entre 0 y 365 días.");
+        expect(mocks.transaction).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
     it.each(["0", "3", "15", "365"])("guarda %s días sin modificar publicaciones", async (valor) => {
         await guardarConfiguraciones({ anticipacion_aviso_vencimiento_locales: valor });
 

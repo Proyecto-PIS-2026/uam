@@ -66,7 +66,6 @@ describe("TarjetaOrdenamientoPredeterminado", () => {
     it("muestra los textos y los tres órdenes recibidos", () => {
         preparar();
         expect(screen.getByText("Orden de las publicaciones")).toBeInTheDocument();
-        expect(screen.getByText("Configurá el orden predeterminado de cada sección y si los usuarios pueden cambiarlo.")).toBeInTheDocument();
         expect(obtenerSwitch()).toBeChecked();
         expect(selector(etiquetaInicio)).toHaveTextContent("A-Z");
         expect(selector(etiquetaVirtual)).toHaveTextContent("Menor Precio");

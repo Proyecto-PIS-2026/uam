@@ -49,7 +49,8 @@ const perfil: PerfilProductorPorOperador = {
             variedad: "Valencia",
             envase: "KG", kilos: "",
             categoria: "I",
-            calibre: "M",
+            calibre: "Mediano",
+            codigoCalibre: "M",
             pais: "Uruguay",
             ubicaciones: [
                 {

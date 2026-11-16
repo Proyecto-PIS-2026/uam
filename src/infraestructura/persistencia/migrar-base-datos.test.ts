@@ -40,12 +40,14 @@ const referenciaAging = join(referencias, "aging-fotos-por-rol.json");
 const referenciaVigencia = join(referencias, "vigencia-publicaciones-operador.json");
 const referenciaCatalogos = join(referencias, "catalogos-publicacion-globales.json");
 const referenciaAvisosLocales = join(referencias, "anticipacion-aviso-vencimiento-locales.json");
+const referenciaHabilitacionAvisosLocales = join(referencias, "habilitacion-avisos-vencimiento-locales.json");
 const hashActual = "a".repeat(64);
 const hashAnterior = "b".repeat(64);
 const invariante = "uam:aging-fotos-productor-separado";
 const invarianteVigencia = "uam:vigencia-publicaciones-operador";
 const invarianteCatalogos = "uam:catalogos-publicacion-globales";
 const invarianteAvisosLocales = "uam:anticipacion-aviso-vencimiento-locales";
+const invarianteHabilitacionAvisosLocales = "uam:habilitacion-avisos-vencimiento-locales";
 const destino = "destino-00000000-0000-4000-8000-000000000001";
 const temporal = join(referencias, `${destino}.tmp`);
 const publicada = join(referencias, `${destino}.json`);
@@ -60,6 +62,7 @@ beforeEach(() => {
         [referenciaVigencia, { hash: hashAnterior, invariants: [invarianteVigencia] }],
         [referenciaCatalogos, { hash: hashAnterior, invariants: [invarianteCatalogos] }],
         [referenciaAvisosLocales, { hash: hashAnterior, invariants: [invarianteAvisosLocales] }],
+        [referenciaHabilitacionAvisosLocales, { hash: hashAnterior, invariants: [invarianteHabilitacionAvisosLocales] }],
     ]);
     mocks.readFileSync.mockImplementation((ruta: string) => {
         if (!archivos.has(ruta)) throw new Error(`Lectura inesperada: ${ruta}`);
@@ -70,7 +73,7 @@ beforeEach(() => {
 });
 
 describe("ejecutarMigraciones", () => {
-    it("usa el contrato actual y los invariantes de aging, vigencia, catálogos y avisos de locales, publicando la referencia antes de ejecutar Prisma", () => {
+    it("usa el contrato actual y los invariantes de aging, vigencia, catálogos, anticipación y habilitación de avisos de locales, publicando la referencia antes de ejecutar Prisma", () => {
         archivos.set(referenciaAging, {
             hash: hashAnterior,
             invariants: ["uam:otro-requisito", invariante, "uam:otro-requisito"],
@@ -86,7 +89,7 @@ describe("ejecutarMigraciones", () => {
         const contenido = mocks.writeFileSync.mock.calls[0][1] as string;
         expect(JSON.parse(contenido)).toEqual({
             hash: hashActual,
-            invariants: [invariante, invarianteAvisosLocales, invarianteCatalogos, "uam:otro-requisito", invarianteVigencia],
+            invariants: [invariante, invarianteAvisosLocales, invarianteCatalogos, invarianteHabilitacionAvisosLocales, "uam:otro-requisito", invarianteVigencia],
         });
         expect(contenido).not.toMatch(/(?<!\r)\n/);
         expect(mocks.renameSync).toHaveBeenCalledExactlyOnceWith(temporal, publicada);
@@ -199,6 +202,14 @@ describe("ejecutarMigraciones", () => {
         archivos.set(referenciaAvisosLocales, { hash: hashAnterior, invariants: [] });
 
         expect(() => ejecutarMigraciones([], raiz)).toThrow("La referencia anticipacion-aviso-vencimiento-locales.json no declara sus migraciones de datos requeridas");
+        expect(mocks.writeFileSync).not.toHaveBeenCalled();
+        expect(mocks.spawnSync).not.toHaveBeenCalled();
+    });
+
+    it("rechaza una referencia de habilitación de avisos de locales sin invariantes aunque las demás sean válidas", () => {
+        archivos.set(referenciaHabilitacionAvisosLocales, { hash: hashAnterior, invariants: [] });
+
+        expect(() => ejecutarMigraciones([], raiz)).toThrow("La referencia habilitacion-avisos-vencimiento-locales.json no declara sus migraciones de datos requeridas");
         expect(mocks.writeFileSync).not.toHaveBeenCalled();
         expect(mocks.spawnSync).not.toHaveBeenCalled();
     });

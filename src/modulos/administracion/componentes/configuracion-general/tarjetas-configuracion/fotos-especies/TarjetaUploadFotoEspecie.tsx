@@ -154,7 +154,6 @@ export default function TarjetaUploadFotoEspecie({titulo, especies, especieSelec
     const contenido = (
         <div className={styles.tarjeta}>
             <div className={styles.titulo}>{titulo}</div>
-            <span className={styles.descripcion}>Seleccioná una especie para actualizar o quitar su foto.</span>
             <div className={styles.filaEspecie}>
                 <Autocomplete
                     fullWidth

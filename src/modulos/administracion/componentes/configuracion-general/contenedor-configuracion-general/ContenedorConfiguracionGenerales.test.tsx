@@ -22,6 +22,7 @@ const clavesEsperadas = [
     "url_lista_inteligente",
     "incremento_precio",
     "anticipacion_aviso_vencimiento_locales",
+    "aviso_vencimiento_locales_habilitado",
     "ordenamiento_habilitado",
     "orden_landing_page_default",
     "orden_mercado_virtual_default",
@@ -71,6 +72,7 @@ describe("ContenedorConfiguracionGenerales", () => {
             { nombreConfiguracion: "url_lista_inteligente", valorConfiguracion: "https://uam.com.uy/lista.pdf" },
             { nombreConfiguracion: "incremento_precio", valorConfiguracion: "25" },
             { nombreConfiguracion: "anticipacion_aviso_vencimiento_locales", valorConfiguracion: "0" },
+            { nombreConfiguracion: "aviso_vencimiento_locales_habilitado", valorConfiguracion: "false" },
             { nombreConfiguracion: "restablecimiento_contrasena_habilitado", valorConfiguracion: "true" },
         ]);
 
@@ -80,6 +82,7 @@ describe("ContenedorConfiguracionGenerales", () => {
             url_lista_inteligente: "https://uam.com.uy/lista.pdf",
             incremento_precio: "25",
             anticipacion_aviso_vencimiento_locales: "0",
+            aviso_vencimiento_locales_habilitado: "false",
             restablecimiento_contrasena_habilitado: "true",
         });
     });

@@ -21,7 +21,7 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
             .orderBy((categoria) => categoria.nombreCategoria.asc())
             .all(),
         db.orm.public.Calibre
-            .select("id", "codigoCalibre", "nombreCalibre")
+            .select("id", "nombreCalibre")
             .orderBy((calibre) => calibre.nombreCalibre.asc())
             .all(),
         db.orm.public.Pais
@@ -49,8 +49,7 @@ export async function obtenerOpcionesEdicionPublicacion(): Promise<OpcionesEdici
         }))),
         calibres: ordenarOpcionesPorNombre(calibres.map((calibre) => ({
             id: calibre.id,
-            nombre: calibre.codigoCalibre === calibre.nombreCalibre
-                ? calibre.nombreCalibre : `${calibre.codigoCalibre} - ${calibre.nombreCalibre}`,
+            nombre: calibre.nombreCalibre,
         }))),
         paises: ordenarOpcionesPorNombre(paises.map((pais) => ({ id: pais.id, nombre: pais.nombrePais }))),
     };

@@ -45,6 +45,26 @@ describe("avisos de contratos de locales", () => {
         expect(mocks.query).not.toHaveBeenCalled();
         expect(mocks.execute).not.toHaveBeenCalled();
         expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+        expect(mocks.seleccionarMarca).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { vencido: false, verbo: "vence" },
+        { vencido: true, verbo: "venció" },
+    ])("al reactivarse envía el aviso '$verbo' que no se consumió mientras estaba deshabilitado", async ({ vencido, verbo }) => {
+        prepararLocal(vencido);
+
+        expect(await procesarVencimientosLocales(contexto, { ...configuracion, habilitado: false })).toBe(0);
+        expect(mocks.query).not.toHaveBeenCalled();
+        expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+        expect(mocks.seleccionarMarca).not.toHaveBeenCalled();
+
+        expect(await procesarVencimientosLocales(contexto, configuracion)).toBe(1);
+        expect(mocks.enviarNotificacion).toHaveBeenCalledExactlyOnceWith({
+            texto: `El contrato del local 12 de la nave Nave A, del operador Jorge Ferias ${verbo} el 09/11/2026.`,
+            url: "/gestion-operadores/7",
+            roles: ["ADMINISTRADOR"],
+        }, tx);
     });
 
     it.each([-1, 1.5, 366, NaN, Infinity])("rechaza la anticipación inválida %s sin acceder a la base", async (diasAnticipacionAviso) => {

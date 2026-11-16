@@ -94,7 +94,8 @@ export async function obtenerPerfilProductor(nombreFantasia: string): Promise<Pe
                 cantidadUnidades: publicacion.cantidadUnidades,
                 comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
-                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
+                codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: relacion.pais?.nombrePais ?? "",
             };
         }),

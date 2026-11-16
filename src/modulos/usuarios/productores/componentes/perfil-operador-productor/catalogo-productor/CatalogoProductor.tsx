@@ -34,7 +34,6 @@ export default function CatalogoProductor({publicaciones, whatsAppProductor = ""
         ...publicacion,
         tipoPublicacion: "PRODUCTOR",
         precio: publicacion.precio === null ? null : Number(publicacion.precio),
-        codigoCalibre: publicacion.calibre,
         productor: {id: idProductor, nombreFantasia: nombreProductor, whatsApp: whatsAppProductor, fotoPerfil: null},
     })), [publicaciones, idProductor, nombreProductor, whatsAppProductor]);
     const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => [...publicacionesParaFiltros].sort(compararPublicacionesPorPrioridad));

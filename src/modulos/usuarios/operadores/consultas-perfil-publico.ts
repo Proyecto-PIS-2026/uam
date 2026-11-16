@@ -17,6 +17,7 @@ export type PublicacionPerfil = {
     comentario?: string | null;
     categoria: string;
     calibre: string;
+    codigoCalibre: string;
     pais: string;
 };
 
@@ -140,7 +141,8 @@ export async function obtenerPerfilPublicoOperador(nombreFantasia: string): Prom
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
                 comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
-                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
+                codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
             });
         }

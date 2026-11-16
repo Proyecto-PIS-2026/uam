@@ -51,7 +51,8 @@ describe ('TarjetaPublicacionProductorAdmin', () => {
         render(<TarjetaPublicacionProductorAdmin publicacion={publicacionBase} alConsultar={() => {}} />);
  
         expect(screen.getByRole("heading", { name: "Manzana - Red Delicious" })).toBeInTheDocument();
-        expect(screen.getAllByText(/Grande/).length).toBeGreaterThan(0);
+        expect(screen.getByText("G")).toBeInTheDocument();
+        expect(screen.getByText("Grande · Categoría Extra")).toBeInTheDocument();
         expect(screen.getAllByText(/Extra/).length).toBeGreaterThan(0);
         expect(screen.getByText("por Cajón")).toBeInTheDocument();
         expect(screen.getByText("$ 90")).toBeInTheDocument();

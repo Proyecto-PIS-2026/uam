@@ -8,7 +8,7 @@ import styles from "./TarjetaRestablecimientoContraseña.module.css";
 
 interface Props {
     titulo: string;
-    descripcion: string;
+    descripcion?: string;
     etiqueta: string;
     habilitado: boolean;
     onGuardar: (habilitado: boolean) => Promise<void>;
@@ -49,7 +49,7 @@ export default function TarjetaConfiguracionSwitch({titulo, descripcion, etiquet
     const contenido = (
         <div className={styles.tarjeta}>
             <span className={styles.titulo}>{titulo}</span>
-            <span className={styles.descripcion}>{descripcion}</span>
+            {descripcion && <span className={styles.descripcion}>{descripcion}</span>}
             <div className={styles.filaEdicion}>
                 <label className={styles.filaSwitch} data-habilitado={valor} data-guardando={guardando}>
                     <span className={styles.etiqueta}>{etiqueta}</span>

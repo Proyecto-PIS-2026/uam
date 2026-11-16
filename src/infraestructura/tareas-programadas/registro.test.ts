@@ -7,9 +7,9 @@ vi.mock("../../modulos/publicaciones/configuracion-aging-fotos", () => ({ obtene
 
 const mocks = vi.hoisted(() => ({ procesar: vi.fn() }));
 vi.mock("../../modulos/publicaciones/procesar-vencimientos-fotos", () => ({ procesarVencimientosFotos: mocks.procesar }));
-const locales = vi.hoisted(() => ({ habilitados: true, configurar: vi.fn(), procesar: vi.fn() }));
+const locales = vi.hoisted(() => ({ db: { orm: {} }, configurar: vi.fn(), procesar: vi.fn() }));
+vi.mock("../persistencia/prisma/db", () => ({ db: locales.db }));
 vi.mock("../../modulos/usuarios/operadores/configuracion-avisos-locales", () => ({
-    get AVISOS_VENCIMIENTO_LOCALES_HABILITADOS() { return locales.habilitados; },
     obtenerConfiguracionAvisosLocales: locales.configurar,
 }));
 vi.mock("../../modulos/usuarios/operadores/procesar-vencimientos-locales", () => ({ procesarVencimientosLocales: locales.procesar }));
@@ -24,7 +24,6 @@ beforeEach(() => {
     vi.resetAllMocks();
     mocks.procesar.mockResolvedValue(0);
     mocksConfiguracion.obtener.mockResolvedValue({ habilitado: false });
-    locales.habilitados = true;
     locales.configurar.mockResolvedValue({ habilitado: true, diasAnticipacionAviso: 3 });
     locales.procesar.mockResolvedValue(2);
 });
@@ -41,19 +40,45 @@ describe("registro de tareas con aging opcional", () => {
 
         expect(await tarea.habilitada?.()).toBe(true);
         await expect(tarea.ejecutar(contexto)).resolves.toBe(2);
-        expect(locales.configurar).toHaveBeenCalledExactlyOnceWith(contexto.tx);
+        expect(locales.configurar).toHaveBeenNthCalledWith(1, locales.db);
+        expect(locales.configurar).toHaveBeenNthCalledWith(2, contexto.tx);
         expect(locales.procesar).toHaveBeenCalledExactlyOnceWith(contexto, { habilitado: true, diasAnticipacionAviso: 3 });
         expect(mocksConfiguracion.obtener).not.toHaveBeenCalled();
     });
 
     it("permite apagar los avisos de locales sin ejecutar su procesador", async () => {
-        locales.habilitados = false;
         locales.configurar.mockResolvedValue({ habilitado: false, diasAnticipacionAviso: 3 });
         const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
 
         expect(await tarea.habilitada?.()).toBe(false);
         await expect(tarea.ejecutar(contexto)).resolves.toBe("deshabilitada");
         expect(locales.procesar).not.toHaveBeenCalled();
+    });
+
+    it("relee la configuración en la transacción si se apagan los avisos después del chequeo", async () => {
+        locales.configurar.mockResolvedValueOnce({ habilitado: true, diasAnticipacionAviso: 7 })
+            .mockResolvedValueOnce({ habilitado: false, diasAnticipacionAviso: 7 });
+        const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+
+        await expect(tarea.habilitada?.()).resolves.toBe(true);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe("deshabilitada");
+
+        expect(locales.configurar).toHaveBeenNthCalledWith(2, contexto.tx);
+        expect(locales.procesar).not.toHaveBeenCalled();
+    });
+
+    it("permite reactivar los avisos sin conservar la configuración deshabilitada", async () => {
+        const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
+        locales.configurar.mockResolvedValue({ habilitado: false, diasAnticipacionAviso: 7 });
+
+        await expect(tarea.habilitada?.()).resolves.toBe(false);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe("deshabilitada");
+        expect(locales.procesar).not.toHaveBeenCalled();
+
+        locales.configurar.mockResolvedValue({ habilitado: true, diasAnticipacionAviso: 7 });
+        await expect(tarea.habilitada?.()).resolves.toBe(true);
+        await expect(tarea.ejecutar(contexto)).resolves.toBe(2);
+        expect(locales.procesar).toHaveBeenCalledExactlyOnceWith(contexto, { habilitado: true, diasAnticipacionAviso: 7 });
     });
 
     it("toma la anticipación configurada al ejecutar la revisión de locales", async () => {
@@ -70,6 +95,7 @@ describe("registro de tareas con aging opcional", () => {
         locales.configurar.mockRejectedValue(error);
         const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === "operadores.avisar-vencimientos-locales")!;
 
+        await expect(tarea.habilitada?.()).rejects.toBe(error);
         await expect(tarea.ejecutar(contexto)).rejects.toBe(error);
         expect(locales.procesar).not.toHaveBeenCalled();
     });

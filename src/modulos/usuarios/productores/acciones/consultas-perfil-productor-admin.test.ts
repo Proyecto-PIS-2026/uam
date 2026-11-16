@@ -54,7 +54,7 @@ const publicacionBase = {
             envase: { nombreEnvase: "Cajón" },
             kilos: null,
     categoria: { nombreCategoria: "I" },
-    calibre: { codigoCalibre: "G" },
+    calibre: { codigoCalibre: "G", nombreCalibre: "Grande" },
 };
 
 const relacionBase = {
@@ -167,7 +167,7 @@ describe("obtenerPerfilAdminProductor", () => {
                 envase: "Cajón",
                 kilos: "",
                 categoria: "I",
-                calibre: "G",
+                calibre: "Grande",
                 codigoCalibre: "G",
                 pais: "Uruguay",
                 ubicaciones: [

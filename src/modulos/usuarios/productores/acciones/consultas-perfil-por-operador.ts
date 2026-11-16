@@ -17,6 +17,7 @@ export type PublicacionPerfilProductor = {
     comentario?: string | null;
     categoria: string;
     calibre: string;
+    codigoCalibre: string;
     pais: string;
     ubicaciones: {
         id: number;
@@ -98,7 +99,8 @@ export async function obtenerPerfilProductorPorOperador(nombreFantasia: string):
                 cantidadUnidades: publicacion.cantidadUnidades != null ? Number(publicacion.cantidadUnidades) : null,
                 comentario: publicacion.comentario,
                 categoria: publicacion.categoria?.nombreCategoria ?? "",
-                calibre: publicacion.calibre?.codigoCalibre ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
+                codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
                 pais: completa.pais?.nombrePais ?? "",
                 ubicaciones: completa.ubicaciones.map((ubicacion) => ({
                     id: ubicacion.id,
