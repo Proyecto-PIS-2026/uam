@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import type { ImageProps } from "next/image";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -187,6 +187,29 @@ describe("TarjetaUploadFotoEspecie", () => {
         expect(screen.getByAltText("Vista previa de Acelga")).toHaveAttribute("src", "blob:foto-2");
         unmount();
         expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:foto-2");
+    });
+
+    it("mantiene una URL válida en StrictMode y libera todas las creadas al desmontar", () => {
+        const urlsCreadas: string[] = [];
+        vi.mocked(URL.createObjectURL).mockImplementation(() => {
+            const url = `blob:estricto-${urlsCreadas.length + 1}`;
+            urlsCreadas.push(url);
+            return url;
+        });
+        const archivo = new File(["imagen"], "foto.png", { type: "image/png" });
+        const { unmount } = render(
+            <StrictMode>
+                <TarjetaUploadFotoEspecie titulo="Fotos de especies" especies={especies} especieSeleccionada="1"
+                    cambios={{ 1: archivo }} onChangeEspecie={vi.fn()} onChangeFoto={vi.fn()} />
+            </StrictMode>,
+        );
+        const urlVisible = screen.getByAltText("Vista previa de Acelga").getAttribute("src");
+        expect(urlsCreadas).toContain(urlVisible);
+        expect(URL.revokeObjectURL).not.toHaveBeenCalledWith(urlVisible);
+
+        unmount();
+
+        expect(vi.mocked(URL.revokeObjectURL).mock.calls.map(([url]) => url).sort()).toEqual([...urlsCreadas].sort());
     });
 
     it("conserva la preview confirmada sin marca pendiente mientras llega la foto del servidor", () => {
