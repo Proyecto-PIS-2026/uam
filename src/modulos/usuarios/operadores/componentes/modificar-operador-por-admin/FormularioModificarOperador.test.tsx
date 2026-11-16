@@ -312,7 +312,9 @@ describe("FormularioModificarOperador", () => {
             expect(push).toHaveBeenCalledWith("/gestion-operadores/7");
         });
         expect(modificarOperadorMock).toHaveBeenCalledTimes(1);
-        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("status")).toHaveTextContent("Operador modificado correctamente.");
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Operador modificado correctamente.");
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
         const formulario = screen.getByRole("button", { name: "Guardar cambios" }).closest("form")!;
         expect(within(formulario).queryByRole("status")).not.toBeInTheDocument();
         expect(modificarOperadorMock).toHaveBeenCalledWith({
