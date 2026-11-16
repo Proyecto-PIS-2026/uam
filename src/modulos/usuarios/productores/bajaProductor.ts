@@ -11,6 +11,7 @@ import { exigirAdministrador } from "@/modulos/identidad-acceso/autorizacion/con
 import { controlarSesionEnAccion } from "@/modulos/identidad-acceso/autorizacion/control-acciones";
 import { eliminarImagenPublicacionGestionada } from "@/modulos/publicaciones/operadores/imagenes-publicacion";
 import { imagenes } from "@/infraestructura/imagenes/imagenes";
+import { notificarCambioCatalogoProductor } from "@/infraestructura/tiempo-real/publicaciones";
 
 export type ResultadoBajaProductor =
     | { esValido: false; errores: string[] }
@@ -117,6 +118,7 @@ export async function bajaProductor(valor: unknown): Promise<ResultadoBajaProduc
             .where({ id: productor.usuarioId })
             .delete();
 
+        await notificarCambioCatalogoProductor(tx, productorId);
         return {
             error: null,
             fotos,

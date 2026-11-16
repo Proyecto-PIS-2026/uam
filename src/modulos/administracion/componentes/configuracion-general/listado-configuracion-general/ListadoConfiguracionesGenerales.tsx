@@ -245,7 +245,7 @@ export default function ListadoConfiguracionesGenerales({ configuracion, especie
                     guardando={guardando}
                 />
                 {(hayCambios || guardando) && (
-                    <div className={styles.acciones} role="group" aria-label="Acciones de configuración">
+                    <div className={styles.acciones} data-acciones-flotantes role="group" aria-label="Acciones de configuración">
                         <button type="button" className={styles.cancelar} disabled={guardando} onClick={cancelar}>Cancelar</button>
                         <button type="submit" formNoValidate aria-label="Guardar" className={styles.guardar} disabled={guardando}>
                             {guardando && <CircularProgress size={18} color="inherit" aria-label="Guardando configuración" />}

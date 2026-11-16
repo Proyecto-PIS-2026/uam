@@ -12,6 +12,7 @@ import { validarFechaVigencia, convertirFechaVigenciaAInstant } from "../vigenci
 import { obtenerFechaMaximaVigenciaProductor } from "../configuracion-vigencia-publicaciones";
 import { validarComentario } from "../validarComentario";
 import { notificarEdicionAdministrativa } from "../notificar-edicion-administrativa";
+import { notificarCambioPublicacionProductor } from "@/infraestructura/tiempo-real/publicaciones";
 
 type Cliente = Pick<typeof db, "orm">;
 type PrecioDb = Parameters<typeof db.orm.public.Publicacion.create>[0]["precio"];
@@ -177,6 +178,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             if (sesion.rol === "ADMINISTRADOR") {
                 await notificarEdicionAdministrativa(tx, relacion.productor.usuarioId, publicacion.id, "PRODUCTOR");
             }
+            await notificarCambioPublicacionProductor(tx, { productorId: relacion.productor.id, publicacionId: publicacion.id });
             return { publicacion: mapearPublicacionMiMercadoProductor(actualizada), productorId: relacion.productor.id,
                 fotoAnterior: publicacion.foto, fotoActual: foto };
         });

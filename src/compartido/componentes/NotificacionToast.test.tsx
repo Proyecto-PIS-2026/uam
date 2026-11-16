@@ -10,6 +10,14 @@ import { ProveedorNotificacionesToast, useNotificacionToast } from "./Notificaci
 
 const render = (ui: ReactElement) => renderOriginal(ui, { wrapper: ProveedorNotificacionesToast });
 
+function simularMedidaNotificaciones(medir: () => DOMRect) {
+    const medirOriginal = HTMLDivElement.prototype.getBoundingClientRect;
+    return vi.spyOn(HTMLDivElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLDivElement) {
+        return this.getAttribute("role") === "region" && this.getAttribute("aria-label") === "Notificaciones"
+            ? medir() : medirOriginal.call(this);
+    });
+}
+
 function Ejemplo() {
     const { notificar } = useNotificacionToast();
     return (
@@ -363,7 +371,8 @@ describe("NotificacionToast", () => {
         }
     });
 
-    it.each(["right", "bottom"] as const)("reserva las acciones del drawer %s y recupera el espacio al cerrarlo", async (anchor) => {
+    it.each(["right", "bottom"] as const)("reserva las acciones del drawer %s en mobile y recupera el espacio al cerrarlo", async (anchor) => {
+        vi.stubGlobal("innerWidth", 390);
         function Pantalla() {
             const [abierto, setAbierto] = useState(true);
             return <Drawer anchor={anchor} open={abierto} transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Panel" } }}>
@@ -375,7 +384,10 @@ describe("NotificacionToast", () => {
         }
         render(<Pantalla />);
         const acciones = screen.getByRole("group", { name: "Acciones del panel" });
-        const medir = vi.spyOn(acciones, "getBoundingClientRect").mockReturnValue(new DOMRect(0, window.innerHeight - 88, 360, 88));
+        const izquierda = anchor === "right" ? window.innerWidth - 360 : 0;
+        const ancho = anchor === "right" ? 360 : window.innerWidth;
+        const medir = vi.spyOn(acciones, "getBoundingClientRect").mockReturnValue(new DOMRect(izquierda, window.innerHeight - 88, ancho, 88));
+        const medirPila = simularMedidaNotificaciones(() => new DOMRect(window.innerWidth - 344, window.innerHeight - 160, 328, 56));
         try {
             fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
             expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar.");
@@ -383,7 +395,7 @@ describe("NotificacionToast", () => {
             expect(pila.style.getPropertyValue("--toast-inferior")).toBe("88px");
             expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe(`${window.innerHeight - 88}px`);
 
-            medir.mockReturnValue(new DOMRect(0, window.innerHeight - 160, 360, 160));
+            medir.mockReturnValue(new DOMRect(izquierda, window.innerHeight - 160, ancho, 160));
             fireEvent.transitionEnd(screen.getByRole("dialog", { name: "Panel" }));
             expect(pila.style.getPropertyValue("--toast-inferior")).toBe("160px");
             expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe(`${window.innerHeight - 160}px`);
@@ -393,6 +405,257 @@ describe("NotificacionToast", () => {
             await waitFor(() => expect(screen.getByRole("region", { name: "Notificaciones" }).style.getPropertyValue("--toast-inferior")).toBe("0px"));
         } finally {
             medir.mockRestore();
+            medirPila.mockRestore();
+        }
+    });
+
+    it.each([["drawer", 768], ["dialog", 1024], ["página", 1440]] as const)("mantiene el aviso abajo a la derecha en %s de escritorio a %i px aunque coincida con las acciones", async (contexto, ancho) => {
+        vi.stubGlobal("innerWidth", ancho);
+        vi.stubGlobal("innerHeight", 844);
+        const medirPila = simularMedidaNotificaciones(() => new DOMRect(ancho - 464, 764, 448, 56));
+        const contenido = <>
+            <Ejemplo />
+            <div data-acciones-modal={contexto !== "página" || undefined} data-acciones-flotantes={contexto === "página" || undefined}
+                role="group" aria-label="Acciones inferiores" ref={(elemento) => {
+                    if (elemento) elemento.getBoundingClientRect = () => new DOMRect(ancho - 360, 684, 360, 160);
+                }}><button>Guardar configuración</button></div>
+        </>;
+        try {
+            render(contexto === "drawer"
+                ? <Drawer anchor="right" open transitionDuration={0}>{contenido}</Drawer>
+                : contexto === "dialog" ? <Dialog open transitionDuration={0}>{contenido}</Dialog> : contenido);
+            fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
+            const pila = await screen.findByRole("region", { name: "Notificaciones" });
+            expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar.");
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("0px");
+            expect(pila.style.getPropertyValue("--toast-derecha")).toBe("0px");
+            expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe("844px");
+        } finally {
+            medirPila.mockRestore();
+        }
+    });
+
+    it.each(["drawer", "página"] as const)("conserva las acciones inferiores de %s al abrir un select y mantiene el vencimiento del aviso", async (contexto) => {
+        vi.useFakeTimers();
+        vi.stubGlobal("innerWidth", 390);
+        vi.stubGlobal("innerHeight", 844);
+        const enDrawer = contexto === "drawer";
+        function Pantalla() {
+            const contenido = <>
+                <Ejemplo />
+                <TextField select label="Especie" defaultValue="1" slotProps={{ select: { MenuProps: { transitionDuration: 0 } } }}>
+                    <MenuItem value="1">Manzana</MenuItem>
+                    <MenuItem value="2">Pera</MenuItem>
+                </TextField>
+            </>;
+            return enDrawer ? (
+                <Drawer anchor="bottom" open transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Publicación" } }}>
+                    {contenido}
+                    <div data-acciones-modal role="group" aria-label="Acciones inferiores"><button>Confirmar</button></div>
+                </Drawer>
+            ) : <>
+                {contenido}
+                <button data-acciones-flotantes aria-label="Acciones inferiores">Guardar configuración</button>
+                <Drawer open={false} transitionDuration={0} ModalProps={{ keepMounted: true }} style={{ display: "none" }}>
+                    <div data-acciones-modal ref={(elemento) => {
+                        if (elemento) elemento.getBoundingClientRect = () => new DOMRect(0, 444, 390, 400);
+                    }}><button>Acciones del drawer oculto</button></div>
+                </Drawer>
+            </>;
+        }
+        const medirPila = simularMedidaNotificaciones(() => new DOMRect(16, 668, 358, 56));
+        const vista = render(<Pantalla />);
+        const contenedorOriginal = enDrawer ? screen.getByRole("dialog", { name: "Publicación" }) : document.body;
+        const acciones = screen.getByLabelText("Acciones inferiores");
+        const medirAcciones = vi.fn(() => new DOMRect(0, 756, 390, 88));
+        Object.defineProperty(acciones, "getBoundingClientRect", { configurable: true, value: medirAcciones });
+        const selector = screen.getByRole("combobox", { name: "Especie" });
+        const anclaSelector = selector.parentElement!;
+        Object.defineProperty(anclaSelector, "getBoundingClientRect", { configurable: true, value: () => new DOMRect(16, 200, 358, 40) });
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
+            await act(async () => {});
+            const pilaInicial = screen.getByRole("region", { name: "Notificaciones" });
+            expect(pilaInicial.parentElement).toBe(contenedorOriginal);
+            expect(pilaInicial.style.getPropertyValue("--toast-inferior")).toBe("88px");
+            await act(async () => vi.advanceTimersByTime(2000));
+
+            fireEvent.mouseDown(selector);
+            await act(async () => vi.advanceTimersByTime(0));
+            const menu = screen.getByRole("listbox").closest<HTMLElement>(".MuiPopover-paper")!;
+            const pilaEnMenu = within(menu).getByRole("region", { name: "Notificaciones" });
+            expect(within(menu).getByRole("alert")).toHaveTextContent("No se pudo guardar.");
+            expect(screen.getAllByRole("alert")).toHaveLength(1);
+            expect(pilaEnMenu.style.getPropertyValue("--toast-inferior")).toBe("88px");
+            expect(pilaEnMenu.style.getPropertyValue("--toast-alto-visible")).toBe("756px");
+
+            medirAcciones.mockReturnValue(new DOMRect(0, 684, 390, 160));
+            fireEvent(window, new Event("resize"));
+            expect(pilaEnMenu.style.getPropertyValue("--toast-inferior")).toBe("160px");
+            expect(pilaEnMenu.style.getPropertyValue("--toast-alto-visible")).toBe("684px");
+            await act(async () => vi.advanceTimersByTime(1000));
+
+            fireEvent.click(screen.getByRole("option", { name: "Pera" }));
+            await act(async () => vi.advanceTimersByTime(0));
+            expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+            const pilaRestaurada = screen.getByRole("region", { name: "Notificaciones" });
+            expect(pilaRestaurada.parentElement).toBe(contenedorOriginal);
+            expect(pilaRestaurada.style.getPropertyValue("--toast-inferior")).toBe("160px");
+            expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar.");
+            expect(selector).toHaveTextContent("Pera");
+
+            await act(async () => vi.advanceTimersByTime(1999));
+            expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar.");
+            await act(async () => vi.advanceTimersByTime(1));
+            await act(async () => vi.advanceTimersByTime(160));
+            expect(screen.queryByRole("region", { name: "Notificaciones", hidden: true })).not.toBeInTheDocument();
+        } finally {
+            vista.unmount();
+            Reflect.deleteProperty(acciones, "getBoundingClientRect");
+            Reflect.deleteProperty(anclaSelector, "getBoundingClientRect");
+            medirPila.mockRestore();
+        }
+    });
+
+    it("no levanta el aviso si las acciones del mapa quedan a su izquierda", async () => {
+        render(<Dialog open transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Mapa" } }}>
+            <Ejemplo />
+            <footer role="group" aria-label="Acciones del mapa"><button>Agregar punto</button></footer>
+        </Dialog>);
+        const medirPila = simularMedidaNotificaciones(() => new DOMRect(window.innerWidth - 464, window.innerHeight - 80, 448, 56));
+        const medirAcciones = vi.spyOn(screen.getByRole("group", { name: "Acciones del mapa" }), "getBoundingClientRect")
+            .mockReturnValue(new DOMRect(64, window.innerHeight - 190, 320, 80));
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
+            expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar.");
+            const pila = screen.getByRole("region", { name: "Notificaciones" });
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("0px");
+            expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe(`${window.innerHeight}px`);
+            expect(within(screen.getByRole("dialog", { name: "Mapa" })).getByRole("alert")).toBeInTheDocument();
+        } finally {
+            medirAcciones.mockRestore();
+            medirPila.mockRestore();
+        }
+    });
+
+    it("reserva la barra flotante de la página mientras está visible y recupera el espacio al ocultarse", async () => {
+        vi.stubGlobal("innerWidth", 390);
+        vi.stubGlobal("innerHeight", 844);
+        let limitesAcciones = new DOMRect(16, 764, 358, 64);
+        function Pantalla() {
+            const [modificado, setModificado] = useState(false);
+            return <>
+                <Ejemplo />
+                <button onClick={() => setModificado(true)}>Modificar</button>
+                {modificado && <div data-acciones-flotantes ref={(elemento) => {
+                    if (elemento) elemento.getBoundingClientRect = () => limitesAcciones;
+                }}><button onClick={() => setModificado(false)}>Cancelar cambios</button></div>}
+                <footer ref={(elemento) => {
+                    if (elemento) elemento.getBoundingClientRect = () => new DOMRect(0, 600, 390, 244);
+                }}>Pie de la página</footer>
+                <div className="MuiModal-root" aria-hidden="true"><div data-acciones-flotantes ref={(elemento) => {
+                    if (elemento) elemento.getBoundingClientRect = () => new DOMRect(0, 500, 390, 344);
+                }}>Acciones de un modal inactivo</div></div>
+            </>;
+        }
+        const medirPila = simularMedidaNotificaciones(() => new DOMRect(16, 680, 358, 56));
+        try {
+            render(<Pantalla />);
+            fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
+            const pila = await screen.findByRole("region", { name: "Notificaciones" });
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("0px");
+
+            fireEvent.click(screen.getByRole("button", { name: "Modificar" }));
+            await waitFor(() => expect(pila.style.getPropertyValue("--toast-inferior")).toBe("80px"));
+            expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe("764px");
+
+            limitesAcciones = new DOMRect(16, -80, 358, 64);
+            fireEvent.scroll(document);
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("0px");
+
+            limitesAcciones = new DOMRect(16, 740, 358, 88);
+            fireEvent(window, new Event("resize"));
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("104px");
+
+            fireEvent.click(screen.getByRole("button", { name: "Cancelar cambios" }));
+            await waitFor(() => expect(pila.style.getPropertyValue("--toast-inferior")).toBe("0px"));
+            expect(screen.getByRole("alert")).toHaveTextContent("No se pudo guardar.");
+        } finally {
+            medirPila.mockRestore();
+        }
+    });
+
+    it("reserva las acciones del mapa al pasar a mobile y recupera el espacio al volver a escritorio", async () => {
+        render(<Dialog open transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Mapa" } }}>
+            <Ejemplo />
+            <footer role="group" aria-label="Acciones del mapa"><button>Agregar punto</button></footer>
+        </Dialog>);
+        const anchoEscritorio = window.innerWidth;
+        let rectanguloPila = new DOMRect(anchoEscritorio - 464, window.innerHeight - 80, 448, 56);
+        const medirPila = simularMedidaNotificaciones(() => rectanguloPila);
+        const medirAcciones = vi.spyOn(screen.getByRole("group", { name: "Acciones del mapa" }), "getBoundingClientRect")
+            .mockReturnValue(new DOMRect(64, window.innerHeight - 190, 320, 80));
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
+            const pila = await screen.findByRole("region", { name: "Notificaciones" });
+            expect(pila.style.getPropertyValue("--toast-inferior")).toBe("0px");
+
+            vi.stubGlobal("innerWidth", 390);
+            rectanguloPila = new DOMRect(16, window.innerHeight - 160, 358, 56);
+            medirAcciones.mockReturnValue(new DOMRect(0, window.innerHeight - 88, 390, 88));
+            fireEvent(window, new Event("resize"));
+            await waitFor(() => expect(pila.style.getPropertyValue("--toast-inferior")).toBe("88px"));
+            expect(pila.style.getPropertyValue("--toast-ancho-visible")).toBe("390px");
+
+            vi.stubGlobal("innerWidth", anchoEscritorio);
+            rectanguloPila = new DOMRect(anchoEscritorio - 464, window.innerHeight - 80, 448, 56);
+            medirAcciones.mockReturnValue(new DOMRect(64, window.innerHeight - 190, 320, 80));
+            fireEvent(window, new Event("resize"));
+            await waitFor(() => expect(pila.style.getPropertyValue("--toast-inferior")).toBe("0px"));
+            expect(pila.style.getPropertyValue("--toast-alto-visible")).toBe(`${window.innerHeight}px`);
+        } finally {
+            medirAcciones.mockRestore();
+            medirPila.mockRestore();
+        }
+    });
+
+    it("ignora las acciones del drawer oculto mientras el mapa está abierto y las recupera al cerrarlo", async () => {
+        vi.stubGlobal("innerWidth", 390);
+        function Pantalla() {
+            const [mapaAbierto, setMapaAbierto] = useState(false);
+            return <Drawer anchor="right" open transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Publicación" } }}>
+                <Ejemplo />
+                <button onClick={() => setMapaAbierto(true)}>Abrir mapa</button>
+                <footer role="group" aria-label="Acciones de publicación"><button>Guardar publicación</button></footer>
+                <Dialog open={mapaAbierto} transitionDuration={0} slotProps={{ paper: { role: "dialog", "aria-label": "Mapa" } }}>
+                    <footer role="group" aria-label="Acciones del mapa"><button onClick={() => setMapaAbierto(false)}>Cerrar mapa</button></footer>
+                </Dialog>
+            </Drawer>;
+        }
+        render(<Pantalla />);
+        const medirPila = simularMedidaNotificaciones(() => new DOMRect(window.innerWidth - 344, window.innerHeight - 160, 328, 56));
+        const medirDrawer = vi.spyOn(screen.getByRole("group", { name: "Acciones de publicación" }), "getBoundingClientRect")
+            .mockReturnValue(new DOMRect(window.innerWidth - 360, window.innerHeight - 96, 360, 96));
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Fallar" }));
+            const pilaInicial = await screen.findByRole("region", { name: "Notificaciones" });
+            expect(pilaInicial.style.getPropertyValue("--toast-inferior")).toBe("96px");
+            fireEvent.click(screen.getByRole("button", { name: "Abrir mapa" }));
+            const mapa = await screen.findByRole("dialog", { name: "Mapa" });
+            const medirMapa = vi.spyOn(within(mapa).getByRole("group", { name: "Acciones del mapa" }), "getBoundingClientRect")
+                .mockReturnValue(new DOMRect(0, window.innerHeight - 64, 390, 64));
+            try {
+                fireEvent.transitionEnd(mapa);
+                await waitFor(() => expect(within(mapa).getByRole("region", { name: "Notificaciones" }).style.getPropertyValue("--toast-inferior")).toBe("64px"));
+                fireEvent.click(within(mapa).getByRole("button", { name: "Cerrar mapa" }));
+                await waitFor(() => expect(screen.queryByRole("dialog", { name: "Mapa" })).not.toBeInTheDocument());
+                await waitFor(() => expect(within(screen.getByRole("dialog", { name: "Publicación" })).getByRole("region", { name: "Notificaciones" }).style.getPropertyValue("--toast-inferior")).toBe("96px"));
+            } finally {
+                medirMapa.mockRestore();
+            }
+        } finally {
+            medirDrawer.mockRestore();
+            medirPila.mockRestore();
         }
     });
 

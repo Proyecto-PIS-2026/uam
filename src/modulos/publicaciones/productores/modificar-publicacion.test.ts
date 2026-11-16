@@ -6,7 +6,7 @@ import { modificarPublicacionProductor, obtenerPublicacionProductorEditable } fr
 const mocks = vi.hoisted(() => {
     const consulta = () => ({ where: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(), include: vi.fn().mockReturnThis(), first: vi.fn(), all: vi.fn(), update: vi.fn(), deleteAll: vi.fn(), create: vi.fn() });
     return { especie: consulta(), variedad: consulta(), vinculo: consulta(), publicacion: consulta(), envase: consulta(), kilos: consulta(), categoria: consulta(), calibre: consulta(), pais: consulta(), ubicacion: consulta(),
-        transaction: vi.fn(), execute: vi.fn(), rawSql: vi.fn(), guardarImagen: vi.fn(), eliminarImagen: vi.fn(), consultarConfig: vi.fn(), enviarNotificacion: vi.fn() };
+        transaction: vi.fn(), execute: vi.fn(), rawSql: vi.fn(), guardarImagen: vi.fn(), eliminarImagen: vi.fn(), consultarConfig: vi.fn(), enviarNotificacion: vi.fn(), notificarCambio: vi.fn() };
 });
 const orm = { public: { Especie: mocks.especie, Variedad: mocks.variedad, PublicacionProductor: mocks.vinculo, Publicacion: mocks.publicacion, Envase: mocks.envase, KilosEmpaquetado: mocks.kilos,
     Categoria: mocks.categoria, Calibre: mocks.calibre, Pais: mocks.pais, Ubicacion: mocks.ubicacion,
@@ -21,6 +21,7 @@ vi.mock("../operadores/imagenes-publicacion", () => ({
     ErrorImagenPublicacion: class extends Error {}, guardarImagenPublicacion: mocks.guardarImagen, eliminarImagenPublicacionGestionada: mocks.eliminarImagen,
 }));
 vi.mock("@/modulos/notificaciones/notificaciones", () => ({ enviarNotificacion: mocks.enviarNotificacion }));
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioPublicacionProductor: mocks.notificarCambio }));
 
 const sesion: DatosSesion = { usuarioId: 10, rol: "PRODUCTOR", expiraEn: 2000000000 };
 const cambios = { especieId: 6, variedadId: 7, precio: "125", foto: "foto-anterior.jpg", envaseId: 8, kilosId: null, categoriaId: 4, calibreId: 2,
@@ -67,6 +68,23 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("edición de publicaciones de productores", () => {
+    it.each(["PRODUCTOR", "ADMINISTRADOR"] as const)("notifica la edición de %s con el ID base dentro de la transacción", async (rol) => {
+        await modificarPublicacionProductor({ ...sesion, rol }, 12, cambios);
+
+        expect(mocks.notificarCambio).toHaveBeenCalledExactlyOnceWith({ orm, execute: mocks.execute }, { productorId: 3, publicacionId: 20 });
+        expect(mocks.publicacion.update.mock.invocationCallOrder[0]).toBeLessThan(mocks.notificarCambio.mock.invocationCallOrder[0]);
+        expect(mocks.ubicacion.create.mock.invocationCallOrder[0]).toBeLessThan(mocks.notificarCambio.mock.invocationCallOrder[0]);
+    });
+
+    it("rechaza la transacción y conserva la foto anterior si no se puede notificar la edición", async () => {
+        const error = new Error("No se pudo notificar el cambio.");
+        mocks.notificarCambio.mockRejectedValueOnce(error);
+
+        await expect(modificarPublicacionProductor(sesion, 12, { ...cambios, foto: null })).rejects.toBe(error);
+        await expect(mocks.transaction.mock.results[0].value).rejects.toBe(error);
+        expect(mocks.eliminarImagen).not.toHaveBeenCalled();
+    });
+
     describe("aviso de edición administrativa", () => {
         const administrador: DatosSesion = { usuarioId: 999, rol: "ADMINISTRADOR", expiraEn: 2000000000 };
 
@@ -93,6 +111,7 @@ describe("edición de publicaciones de productores", () => {
 
             await expect(modificarPublicacionProductor(administrador, 12, cambios)).rejects.toBe(error);
             expect(mocks.enviarNotificacion).not.toHaveBeenCalled();
+            expect(mocks.notificarCambio).not.toHaveBeenCalled();
         });
 
         it("rechaza la transacción si no se puede guardar el aviso", async () => {

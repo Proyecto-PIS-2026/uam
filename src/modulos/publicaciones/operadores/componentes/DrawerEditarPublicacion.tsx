@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type Rea
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -14,10 +15,14 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
+import FotoPublicacionAmpliada from "../../componentes/FotoPublicacionAmpliada";
+import estilosFoto from "../../componentes/FotoPublicacionAmpliada.module.css";
 import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
@@ -62,6 +67,7 @@ function precioParaEdicion(precio: string | null) {
 function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, mostrarAvisoFoto = false, esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
     const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
+    const [fotoAmpliada, setFotoAmpliada] = useState(false);
     const [baseEdicion, setBaseEdicion] = useState(recibida);
     const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
     const vigente = guardada?.origen === recibida ? guardada.datos : recibida;
@@ -99,7 +105,10 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     const ocupado = guardando || eliminando || actualizando;
     const bloqueado = ocupado || !editando;
     const fotoVisible = editando || guardada?.origen === recibida ? vistaPrevia ?? foto : publicacion.foto;
+    if (fotoAmpliada && !fotoVisible?.trim()) setFotoAmpliada(false);
     const especieSeleccionada = especies.find((opcion) => opcion.id === especieId);
+    const nombreFoto = especieSeleccionada?.nombre ?? publicacion.especie;
+    const reemplazoFoto = <div className={styles.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>;
     const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
     const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
     const envasesDisponibles = envases;
@@ -185,6 +194,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     }
 
     function prepararEdicion() {
+        setFotoAmpliada(false);
         if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
         urlVistaPreviaRef.current = null;
         if (inputFotoRef.current) inputFotoRef.current.value = "";
@@ -217,7 +227,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
     function solicitarGuardado(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (bloqueado) return;
-        cerrarNotificacion();
         if (!precioPublicacionValido(precio)) {
             notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
@@ -326,7 +335,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
             <div className={styles.controlesPrecio} data-editando={editando}>
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={bloqueado} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>}
-                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-precio`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder={editando ? "Ingresar precio aquí" : "Sin precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-precio`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder={editando ? "Ingresar precio aquí" : "Sin precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={bloqueado} />
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={bloqueado} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>}
             </div>
             {editando && <small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
@@ -336,14 +345,15 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         <div key="foto" className={styles.seccionFoto}>
             {mostrarAvisoFoto && <AvisoVigenciaFoto estado={publicacion.estadoFoto} />}
             <div className={styles.marcoFoto}>
-                <ImagenPublicacion className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${especieSeleccionada?.nombre ?? publicacion.especie} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized reemplazo={<div className={styles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>} />
+                <ImagenPublicacion className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${nombreFoto} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized reemplazo={reemplazoFoto} />
+                {!editando && fotoVisible?.trim() && <button type="button" className={estilosFoto.ampliarFoto} aria-label={`Ampliar foto de ${nombreFoto}`} onClick={() => setFotoAmpliada(true)} />}
                 {editando && (
                     <>
                         {fotoVisible && <button className={`${styles.botonFoto} ${styles.borrarFoto}`} type="button" onClick={borrarFoto} disabled={bloqueado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
                         <button className={styles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={bloqueado}>
                             <PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}
                         </button>
-                        {!esWeb && <button className={`${styles.botonFoto} ${styles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={bloqueado}>Galería</button>}
+                        {!esWeb && <button className={`${styles.botonFoto} ${styles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={bloqueado}><PhotoLibraryOutlinedIcon fontSize="small" aria-hidden="true" /> Galería</button>}
                         <input ref={inputFotoRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={bloqueado} aria-label="Seleccionar foto del producto" />
                         {!esWeb && <input ref={inputGaleriaRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" onChange={seleccionarFoto} disabled={bloqueado} aria-label="Seleccionar foto desde galería" />}
                     </>
@@ -426,7 +436,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 Unidades{envaseActual ? ` (${envaseActual})` : ""}
             </label>
             <div className={styles.controlesPrecio} data-editando={false}>
-                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-cantidadUnidades`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-cantidadUnidades`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={bloqueado} />
             </div>
         </div>
     );
@@ -435,15 +445,14 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             <label className={styles.etiqueta} htmlFor={`${idBase}-fechaVigencia`}>
                 Fecha de vigencia
             </label>
-            <OutlinedInput
+            <SelectorFecha
                 className={styles.entrada}
-                size="small"
                 id={`${idBase}-fechaVigencia`}
-                type="date"
+                labelAccesible="Fecha de vigencia"
                 value={editando ? fechaVigenciaEditada : (publicacion.fechaVigencia ?? "")}
-                onChange={(evento) => setFechaVigencia(evento.target.value)}
+                onChange={setFechaVigencia}
                 readOnly={!editando}
-                disabled={ocupado}
+                disabled={bloqueado}
             />
         </div>
     );
@@ -490,6 +499,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                     )}
                 </div>
             </form>
+            <FotoPublicacionAmpliada abierta={!editando && fotoAmpliada && Boolean(fotoVisible?.trim())} alCerrar={() => setFotoAmpliada(false)} src={fotoVisible} nombre={nombreFoto} reemplazo={reemplazoFoto} />
         </>
     );
 }

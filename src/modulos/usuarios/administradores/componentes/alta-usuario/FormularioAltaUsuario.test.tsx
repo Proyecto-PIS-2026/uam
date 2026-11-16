@@ -292,7 +292,7 @@ describe("FormularioAltaUsuario", () => {
             screen.getByRole("button", { name: "+ Agregar fin de contrato" })
         );
 
-        const fecha = container.querySelector('input[type="date"]');
+        const fecha = container.querySelector('input[data-selector-fecha]');
 
         expect(fecha).toBeInTheDocument();
         expect(
@@ -304,7 +304,7 @@ describe("FormularioAltaUsuario", () => {
         );
 
         expect(
-            container.querySelector('input[type="date"]')
+            container.querySelector('input[data-selector-fecha]')
         ).not.toBeInTheDocument();
 
         expect(

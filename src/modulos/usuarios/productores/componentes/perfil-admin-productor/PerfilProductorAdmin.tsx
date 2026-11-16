@@ -105,7 +105,7 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
             <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({productor.publicaciones.length})</h2>
                 <Button variant="contained" onClick={abrirAlta} startIcon={<AddIcon />} className={styles.botonAlta}>
-                    Agregar Producto
+                    Nueva publicación
                 </Button>
             </div>
 

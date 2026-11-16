@@ -81,3 +81,10 @@
 .opcionSelect:global(.Mui-selected) {
     background-color: var(--color-secondary-soft) !important;
 }
+
+@media (max-width: 700px) {
+    .controles {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

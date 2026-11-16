@@ -87,7 +87,7 @@ describe("FormularioModificarOperador", () => {
         expect(valorDe(screen.getByLabelText(/Teléfono/))).toBe("99123456");
         expect(screen.getByRole("combobox", { name: "Nave" })).toHaveTextContent("Nave B");
         expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
-        expect(valorDe(screen.getByLabelText("Fin de contrato"))).toBe("2026-12-31");
+        expect(valorDe(screen.getByLabelText("Fin de contrato", { selector: "input" }))).toBe("2026-12-31");
         expect(valorDe(screen.getByLabelText(/^Nueva contraseña\s*\*?$/))).toBe("");
         expect(valorDe(screen.getByLabelText(/^Confirmar contraseña\s*\*?$/))).toBe("");
     });
@@ -108,24 +108,30 @@ describe("FormularioModificarOperador", () => {
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(licencia).toBeChecked();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
+        const comentario = screen.getByLabelText("Mensaje de recomendación");
+        expect(comentario).toHaveAttribute("maxLength", "500");
+        expect(screen.getByText("0/500 caracteres")).toBeInTheDocument();
+        fireEvent.change(comentario, { target: { value: "a".repeat(500) } });
+        expect(screen.getByText("500/500 caracteres")).toBeInTheDocument();
         apretarGuardar();
         expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
-        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).toHaveAttribute("aria-invalid", "true");
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("aria-invalid", "true");
         expect(modificarOperadorMock).not.toHaveBeenCalled();
-        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).not.toHaveAttribute("min");
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2026-11-14");
-        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/), { target: { value: "2999-11-05" } });
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2999-11-05");
-        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/), { target: { value: "2000-11-05" } });
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2026-11-14");
-        fireEvent.change(screen.getByLabelText(/^Fin de licencia\s*\*?$/), { target: { value: "2026-11-14" } });
-        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).not.toHaveAttribute("aria-invalid", "true");
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).not.toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).not.toHaveAttribute("min");
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" }), { target: { value: "2999-11-05" } });
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("min", "2999-11-05");
+        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" }), { target: { value: "2000-11-05" } });
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" }), { target: { value: "2026-11-14" } });
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).not.toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).not.toHaveAttribute("aria-invalid", "true");
         apretarGuardar();
 
         await waitFor(() => expect(modificarOperadorMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
             enLicencia: true, inicioLicencia: "2000-11-05", finLicencia: "2026-11-14",
+            comentario: "a".repeat(500),
         })));
     });
 
@@ -140,7 +146,7 @@ describe("FormularioModificarOperador", () => {
 
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(licencia).not.toBeChecked();
-        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).not.toBeInTheDocument();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
         expect(push).not.toHaveBeenCalled();
     });
@@ -155,7 +161,7 @@ describe("FormularioModificarOperador", () => {
 
         expect(licencia).not.toBeChecked();
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).not.toBeInTheDocument();
         expect(modificarOperadorMock).not.toHaveBeenCalled();
     });
 
@@ -208,7 +214,7 @@ describe("FormularioModificarOperador", () => {
         expect(numeros).toHaveLength(2);
         expect(valorDe(elementoEn(numeros, 1))).toBe("");
         expect(elementoEn(screen.getAllByRole("combobox", { name: "Nave" }), 1)).toHaveTextContent("Nave A");
-        expect(valorDe(elementoEn(screen.getAllByLabelText("Fin de contrato"), 1))).toBe("");
+        expect(valorDe(elementoEn(screen.getAllByLabelText("Fin de contrato", { selector: "input" }), 1))).toBe("");
     });
 
     it("elimina un local cuando hay más de uno", () => {
@@ -249,6 +255,39 @@ describe("FormularioModificarOperador", () => {
         expect(screen.getAllByRole("alert")).toHaveLength(1);
         expect(screen.getAllByLabelText(/^Número de local/)).toHaveLength(1);
         expect(valorDe(screen.getByLabelText(/^Número de local/))).toBe("022");
+    });
+
+    it("bloquea una fecha de contrato imposible y permite guardar después de corregirla", async () => {
+        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7, mensaje: "Operador modificado correctamente." });
+        renderizar();
+        const contrato = screen.getByLabelText("Fin de contrato", { selector: "input" });
+
+        fireEvent.change(contrato, { target: { value: "2026-02-31" } });
+        apretarGuardar();
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Ingresá una fecha válida.");
+        expect(contrato).toHaveAttribute("data-error-validacion", "true");
+        expect(modificarOperadorMock).not.toHaveBeenCalled();
+        expect(push).not.toHaveBeenCalled();
+
+        fireEvent.change(contrato, { target: { value: "2028-02-29" } });
+        apretarGuardar();
+
+        await waitFor(() => expect(modificarOperadorMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            locales: [{ nombre: "022", naveId: 2, contrato: "2028-02-29" }],
+        })));
+    });
+
+    it("permite quitar voluntariamente la fecha de contrato porque es opcional", async () => {
+        modificarOperadorMock.mockResolvedValue({ esValido: true, id: 7, mensaje: "Operador modificado correctamente." });
+        renderizar();
+
+        fireEvent.change(screen.getByLabelText("Fin de contrato", { selector: "input" }), { target: { value: "" } });
+        apretarGuardar();
+
+        await waitFor(() => expect(modificarOperadorMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            locales: [{ nombre: "022", naveId: 2, contrato: "" }],
+        })));
     });
 
     it("envía los datos modificados y vuelve al perfil cuando la modificación es válida", async () => {

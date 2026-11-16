@@ -1,3 +1,4 @@
+import { completarFecha, esperarFecha } from "../soporte/fechas";
 import { expect, test, type Page } from "@playwright/test";
 
 async function seleccionarProducto(page: Page) {
@@ -105,16 +106,16 @@ test.describe("BP-17.1 histórico de precios", () => {
     const fecha = (await filas.first().getByRole("cell").nth(0).innerText()).trim();
     const [dia, mes, anio] = fecha.split("/");
     const iso = `${anio}-${mes}-${dia}`;
-    await page.getByRole("textbox", { name: "Desde", exact: true }).fill(iso);
-    await page.getByRole("textbox", { name: "Hasta", exact: true }).fill(iso);
+    await completarFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }), iso);
+    await completarFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }), iso);
     await page.getByRole("button", { name: "Consultar", exact: true }).click();
     await expect(page).toHaveURL((url) => url.searchParams.get("from") === iso && url.searchParams.get("to") === iso);
     await expect(filas).toHaveCount(6);
     for (const fila of await filas.all()) await expect(fila.getByRole("cell").nth(0)).toHaveText(fecha);
     await page.reload();
     await esperarHistorico(page);
-    await expect(page.getByRole("textbox", { name: "Desde", exact: true })).toHaveValue(iso);
-    await expect(page.getByRole("textbox", { name: "Hasta", exact: true })).toHaveValue(iso);
+    await esperarFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }), iso);
+    await esperarFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }), iso);
     await expect(filas).toHaveCount(6);
     for (const fila of await filas.all()) await expect(fila.getByRole("cell").nth(0)).toHaveText(fecha);
   });
@@ -122,8 +123,8 @@ test.describe("BP-17.1 histórico de precios", () => {
   test("@new impide consultar un período invertido", async ({ page }) => {
     await cargarHistorico(page);
     const anterior = page.url();
-    await page.getByRole("textbox", { name: "Desde", exact: true }).fill("2025-02-02");
-    await page.getByRole("textbox", { name: "Hasta", exact: true }).fill("2025-02-01");
+    await completarFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }), "2025-02-02");
+    await completarFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }), "2025-02-01");
     await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveText("La fecha de inicio debe ser anterior o igual a la fecha de fin.");
     await expect(page.getByRole("button", { name: "Consultar", exact: true })).toBeDisabled();
     expect(page.url()).toBe(anterior);
@@ -133,8 +134,8 @@ test.describe("BP-17.1 histórico de precios", () => {
     await cargarHistorico(page);
     await elegirFiltro(page, "Variedad", "Variedad E2E");
     await expect(page).toHaveURL((url) => url.searchParams.get("variedad") === "Variedad E2E");
-    await page.getByRole("textbox", { name: "Desde", exact: true }).fill("2019-01-01");
-    await page.getByRole("textbox", { name: "Hasta", exact: true }).fill("2019-01-02");
+    await completarFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }), "2019-01-01");
+    await completarFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }), "2019-01-02");
     await page.getByRole("button", { name: "Consultar", exact: true }).click();
     await esperarHistorico(page);
     await expect(page.getByRole("main").getByRole("status")).toHaveText("No hay registros históricos para los filtros y el período seleccionados.");

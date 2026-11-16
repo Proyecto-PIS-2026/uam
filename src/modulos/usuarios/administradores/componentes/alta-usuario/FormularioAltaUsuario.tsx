@@ -4,6 +4,7 @@ import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast
 import Link from "next/link";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import Dialog from "@mui/material/Dialog";
 import styles from "./FormularioAltaUsuario.module.css";
 import { useRef, useState, type FormEvent } from "react";
@@ -54,14 +55,12 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
             { numeroLocal: "", nave: "", contrato: "", mostrarContrato: false }
         ]);
         setEmail("");
-        cerrarNotificacion();
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (envioEnCurso.current) return;
         envioEnCurso.current = true;
-        cerrarNotificacion();
         setEnviando(true);
 
         try {
@@ -366,16 +365,13 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                                         </TextField>
                                         {local.mostrarContrato ? (
                                             <div className={styles.contrato}>
-                                                <TextField
+                                                <SelectorFecha
                                                     disabled={enviando}
                                                     id={`contrato-${index}`}
                                                     label="Fin de contrato"
-                                                    type="date"
                                                     value={local.contrato}
-                                                    onChange={(e) => actualizarLocal(index, "contrato", e.target.value)}
+                                                    onChange={(valor) => actualizarLocal(index, "contrato", valor)}
                                                     fullWidth
-                                                    size="small"
-                                                    slotProps={{ inputLabel: { shrink: true } }}
                                                     className={styles.control}
                                                 />
                                                 <button
@@ -411,7 +407,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                 <div className={styles.acciones}>
                     <button
                         type="button"
-                        onClick={limpiarFormulario}
+                        onClick={() => { limpiarFormulario(); cerrarNotificacion(); }}
                         disabled={enviando}
                         className={styles.botonSecundario}
                     >
@@ -444,7 +440,7 @@ export default function FormularioAltaUsuario({ naves }: { naves: NaveOpcion[] }
                     ¿Desea precargar productos para este usuario?
                 </p>
 
-                <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`}>
+                <div className={`${styles.acciones} mt-[var(--espacio-secciones)]`} data-acciones-modal>
                     <button
                         ref={ahoraNoRef}
                         type="button"

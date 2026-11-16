@@ -41,6 +41,7 @@ type FiltrosPublicacionesProps<T extends PublicacionFiltrable> = {
     ordenInicial?: OrdenPublicaciones;
     alCambiarOrden?: (orden: OrdenPublicaciones) => void;
     ordenamientoHabilitado?: boolean;
+    conservarSeleccionAlActualizar?: boolean;
 };
 
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
@@ -50,6 +51,12 @@ function normalizarTexto(texto: string) {
 }
 
 const compararOpciones = (a: string, b: string) => a.localeCompare(b, "es", { sensitivity: "base" })
+
+function opcionesConSeleccion(valores: string[], seleccion: string, conservar: boolean) {
+    const opciones = new Set(valores.filter(Boolean));
+    if (conservar && seleccion !== "Todas") opciones.add(seleccion);
+    return [...opciones];
+}
 
 const compararPrecios = (a: PublicacionFiltrable, b: PublicacionFiltrable, ascendente: boolean) => {
     if (a.precio == null && b.precio == null) return 0;
@@ -96,7 +103,7 @@ export function compararPublicacionesOperador(a: PublicacionListado, b: Publicac
     return comparacion || compararPorPonderacionYFecha(a, b);
 }
 
-export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar, ordenamientoHabilitado = true}: FiltrosPublicacionesProps<T>) {
+export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({publicaciones, especieFiltro, obtenerNombreFantasia, alFiltrar, alLimpiar, alCambiarEspecie, ordenInicial = "ninguno", alCambiarOrden, opcionesRemotas, navesDisponibles, totalRemoto, alConsultar, ordenamientoHabilitado = true, conservarSeleccionAlActualizar = false}: FiltrosPublicacionesProps<T>) {
     const opciones: OpcionProducto[] = opcionesRemotas ?? publicaciones;
     const mostrarNave = navesDisponibles !== undefined;
     const [busqueda, setBusqueda] = useState("");
@@ -125,7 +132,7 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     const especieNotificada = useRef(especie);
 
     // Reconciliar antes de filtrar evita publicar resultados con selecciones que ya no existen.
-    if (publicacionesAnteriores !== opciones) {
+    if (publicacionesAnteriores !== opciones && !conservarSeleccionAlActualizar) {
         setPublicacionesAnteriores(opciones);
         const nuevaEspecie = especie === "Todas" || opciones.some((publicacion) => publicacion.especie === especie) ? especie : "Todas";
         let publicacionesBase = nuevaEspecie === "Todas" ? opciones : opciones.filter((publicacion) => publicacion.especie === nuevaEspecie);
@@ -163,9 +170,9 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     }, [especie, alCambiarEspecie]);
 
     const especies = useMemo(() => {
-        const nombres = [...new Set(opciones.map((publicacion) => publicacion.especie))];
+        const nombres = opcionesConSeleccion(opciones.map((publicacion) => publicacion.especie), especie, conservarSeleccionAlActualizar);
         return nombres.sort(compararEspeciesPorPrioridad);
-    }, [opciones]);
+    }, [opciones, especie, conservarSeleccionAlActualizar]);
 
     const naves = useMemo(() => {
         const disponibles = new Set(navesDisponibles ?? []);
@@ -178,8 +185,8 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (especie !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.especie === especie);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.variedad).filter(Boolean))].sort(compararOpciones);
-    }, [opciones, especie]);
+        return opcionesConSeleccion(publicacionesBase.map((publicacion) => publicacion.variedad), variedad, conservarSeleccionAlActualizar).sort(compararOpciones);
+    }, [opciones, especie, variedad, conservarSeleccionAlActualizar]);
 
     const publicacionesSegunJerarquia = useMemo(() => {
         let publicacionesBase = opciones;
@@ -195,9 +202,9 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
     }, [opciones, especie, variedad, envase, kilos]);
 
     // Envase y kilos se pueden consultar sin seleccionar especie ni variedad.
-    const envases = useMemo(() => [...new Set(opciones.map((publicacion) => publicacion.envase).filter(Boolean))].sort(compararOpciones), [opciones]);
-    const opcionesKilos = useMemo(() => [...new Set(opciones.map((publicacion) => publicacion.kilos).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b, "es", { numeric: true })), [opciones]);
+    const envases = useMemo(() => opcionesConSeleccion(opciones.map((publicacion) => publicacion.envase), envase, conservarSeleccionAlActualizar).sort(compararOpciones), [opciones, envase, conservarSeleccionAlActualizar]);
+    const opcionesKilos = useMemo(() => opcionesConSeleccion(opciones.map((publicacion) => publicacion.kilos), kilos, conservarSeleccionAlActualizar)
+        .sort((a, b) => a.localeCompare(b, "es", { numeric: true })), [opciones, kilos, conservarSeleccionAlActualizar]);
 
     const categorias = useMemo(() => {
         let publicacionesBase = publicacionesSegunJerarquia;
@@ -205,16 +212,16 @@ export default function FiltrosPublicaciones<T extends PublicacionFiltrable>({pu
         if (calibre !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.calibre === calibre);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.categoria).filter(Boolean))].sort(compararOpciones);
-    }, [publicacionesSegunJerarquia, calibre]);
+        return opcionesConSeleccion(publicacionesBase.map((publicacion) => publicacion.categoria), categoria, conservarSeleccionAlActualizar).sort(compararOpciones);
+    }, [publicacionesSegunJerarquia, calibre, categoria, conservarSeleccionAlActualizar]);
 
     const calibres = useMemo(() => {
         let publicacionesBase = publicacionesSegunJerarquia;
         if (categoria !== "Todas") publicacionesBase = publicacionesBase.filter((publicacion) =>
             publicacion.categoria === categoria);
 
-        return [...new Set(publicacionesBase.map((publicacion) => publicacion.calibre).filter(Boolean))].sort(compararOpciones);
-    }, [publicacionesSegunJerarquia, categoria]);
+        return opcionesConSeleccion(publicacionesBase.map((publicacion) => publicacion.calibre), calibre, conservarSeleccionAlActualizar).sort(compararOpciones);
+    }, [publicacionesSegunJerarquia, categoria, calibre, conservarSeleccionAlActualizar]);
 
     const obtenerPublicacionesJerarquia = (nuevaEspecie: string, nuevaVariedad: string, nuevoEnvase: string, nuevosKilos: string) => {
         let publicacionesBase = opciones;

@@ -9,6 +9,7 @@ import { useId, useRef, useState, type FormEvent } from "react";
 import { Temporal } from "temporal-polyfill";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import Switch from "@mui/material/Switch";
 import { useRouter } from "next/navigation";
 import BotonVolver from "@/compartido/BotonVolver";
@@ -16,6 +17,7 @@ import BotonVolver from "@/compartido/BotonVolver";
 import { modificarOperador } from "../../acciones/modificarOperador";
 import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
 import type { OperadorParaModificar } from "../../tipos";
+import { LARGO_MAXIMO_COMENTARIO_LICENCIA } from "../../comentario-licencia";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 import ConfirmacionLicencia from "@/modulos/usuarios/operadores/componentes/ConfirmacionLicencia";
 
@@ -141,7 +143,6 @@ export default function FormularioModificarOperador({
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        cerrarNotificacion();
         setGuardando(true);
 
         try {
@@ -208,7 +209,6 @@ export default function FormularioModificarOperador({
                 <form
                     className={styles.formulario}
                     onSubmit={guardar}
-                    noValidate
                 >
                     <section className={styles.seccion}>
                         <SelectorFotoPerfil nombre={nombre} fotoActual={operador.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
@@ -367,15 +367,12 @@ export default function FormularioModificarOperador({
                                                 disabled={guardando}
                                             />
 
-                                            <TextField
+                                            <SelectorFecha
                                                 fullWidth
-                                                size="small"
                                                 className={styles.control}
                                                 label="Fin de contrato"
-                                                type="date"
                                                 value={local.contrato}
-                                                slotProps={{ inputLabel: { shrink: true } }}
-                                                onChange={(evento) => actualizarLocal(indice, "contrato", evento.target.value)}
+                                                onChange={(valor) => actualizarLocal(indice, "contrato", valor)}
                                                 disabled={guardando}
                                             />
                                         </div>
@@ -404,10 +401,13 @@ export default function FormularioModificarOperador({
                         {enLicencia && (
                             <>
                                 <div className={styles.fechasLicencia}>
-                                    <TextField label="Inicio de licencia" required type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ inputLabel: { shrink: true } }} size="small" />
-                                    <TextField label="Fin de licencia" required type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: finLicenciaMinimo }, inputLabel: { shrink: true } }} size="small" />
+                                    <SelectorFecha label="Inicio de licencia" required value={inicioLicencia} onChange={setInicioLicencia} disabled={guardando} />
+                                    <SelectorFecha label="Fin de licencia" required value={finLicencia} onChange={setFinLicencia} disabled={guardando} min={finLicenciaMinimo} />
                                 </div>
-                                <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth />
+                                <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth
+                                    slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_COMENTARIO_LICENCIA } }}
+                                    helperText={`${comentario.length}/${LARGO_MAXIMO_COMENTARIO_LICENCIA} caracteres`}
+                                    error={comentario.length > LARGO_MAXIMO_COMENTARIO_LICENCIA} />
                             </>
                         )}
                     </section>

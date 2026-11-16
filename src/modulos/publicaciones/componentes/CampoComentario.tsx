@@ -39,7 +39,7 @@ export default function CampoComentario({ id, valor, alCambiar, editando = true,
                 value={valor}
                 onChange={(evento) => alCambiar?.(evento.target.value)}
                 readOnly={!editando}
-                disabled={deshabilitado}
+                disabled={!editando || deshabilitado}
             />
             {editando && (
                 <small className={clases.ayuda}>

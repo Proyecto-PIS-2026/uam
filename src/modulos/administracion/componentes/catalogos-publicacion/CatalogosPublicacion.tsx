@@ -66,7 +66,6 @@ export default function CatalogosPublicacion() {
     }
 
     function abrirEditor(elemento: ElementoCatalogo | null) {
-        cerrarNotificacion();
         setEditor({ elemento });
     }
 
@@ -74,7 +73,6 @@ export default function CatalogosPublicacion() {
         if (operacionEnCurso.current || !editor) return;
         operacionEnCurso.current = true;
         setProcesando(true);
-        cerrarNotificacion();
         try {
             const resultado = await guardarElementoCatalogo(tipo, datos, editor.elemento?.id);
             if (!resultado.ok) {
@@ -96,7 +94,6 @@ export default function CatalogosPublicacion() {
         if (operacionEnCurso.current || !porEliminar) return;
         operacionEnCurso.current = true;
         setProcesando(true);
-        cerrarNotificacion();
         try {
             const resultado = await eliminarElementoCatalogo(tipo, porEliminar.id);
             setPorEliminar(null);
@@ -134,7 +131,7 @@ export default function CatalogosPublicacion() {
             <div aria-busy={cargando}>
                 {cargando ? <p role="status">Cargando catálogo...</p> : datos?.fallida ? (
                     <div className={styles.estado}>
-                        <button type="button" className="boton-secundario" onClick={() => { cerrarNotificacion(); setRevision((actual) => actual + 1); }}>Reintentar</button>
+                        <button type="button" className="boton-secundario" onClick={() => setRevision((actual) => actual + 1)}>Reintentar</button>
                     </div>
                 ) : datos?.elementos.length === 0 ? <p className={styles.estado}>No hay valores en este catálogo.</p> : (
                     <div className={styles.contenedorTabla}>

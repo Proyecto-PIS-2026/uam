@@ -22,7 +22,10 @@ const mockDb = vi.hoisted(() => ({
     },
     transaction: vi.fn(),
     execute: vi.fn(),
+    notificarCambio: vi.fn(),
 }));
+
+vi.mock("@/infraestructura/tiempo-real/publicaciones", () => ({ notificarCambioCatalogoProductor: mockDb.notificarCambio }));
 
 const mockArgon2 = vi.hoisted(() => ({
     hash: vi.fn(),
@@ -178,6 +181,20 @@ describe("modificarProductor", () => {
             { texto: expect.stringContaining("pg_advisory_xact_lock(1720, 0)"), valores: [] },
             { texto: expect.stringContaining("pg_advisory_xact_lock(1720, ?)"), valores: [2] },
         ]);
+        expect(mockDb.notificarCambio).toHaveBeenCalledExactlyOnceWith({
+            execute: mockDb.execute,
+            orm: { public: { Productor: mockDb.productor, Usuario: mockDb.usuario } },
+        }, 2);
+        expect(mockDb.productor.update.mock.invocationCallOrder[0]).toBeLessThan(mockDb.notificarCambio.mock.invocationCallOrder[0]);
+    });
+
+    it("rechaza la transacción si falla el aviso del catálogo", async () => {
+        const error = new Error("No se pudo notificar el catálogo.");
+        mockDb.notificarCambio.mockRejectedValueOnce(error);
+
+        await expect(modificarProductor(datosValidos)).rejects.toBe(error);
+        await expect(mockDb.transaction.mock.results[0].value).rejects.toBe(error);
+        expect(cache.revalidatePath).not.toHaveBeenCalled();
     });
 
     it("devuelve un rechazo controlado si la base detecta un nombre ocupado", async () => {
@@ -187,6 +204,7 @@ describe("modificarProductor", () => {
             errores: ["Ya existe un productor con ese nombre."],
         });
         expect(cache.revalidatePath).not.toHaveBeenCalled();
+        expect(mockDb.notificarCambio).not.toHaveBeenCalled();
     });
 
     it("conserva la contraseña y la solicitud de restablecimiento si los campos quedan vacíos", async () => {

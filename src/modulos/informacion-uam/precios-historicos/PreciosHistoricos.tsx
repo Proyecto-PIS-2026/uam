@@ -5,6 +5,7 @@ import BotonVolver from "@/compartido/BotonVolver";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import Paginacion from "@/compartido/componentes/Paginacion";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -369,19 +370,19 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             </div>
                         </div>
                         <div className={styles.fechas}>
-                            <TextField
+                            <SelectorFecha
                                 className={`${styles.campo} ${styles.filtroDesde}`}
-                                label="Desde" name="from" type="date" size="small" required
+                                label="Desde" name="from" required
                                 value={fechaDesde} disabled={cargandoTabla}
-                                onChange={(evento) => setFechaDesde(evento.target.value)}
-                                slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: fechaHasta || hoy } }}
+                                onChange={setFechaDesde}
+                                max={fechaHasta || hoy}
                             />
-                            <TextField
+                            <SelectorFecha
                                 className={`${styles.campo} ${styles.filtroHasta}`}
-                                label="Hasta" name="to" type="date" size="small" required
+                                label="Hasta" name="to" required
                                 value={fechaHasta} disabled={cargandoTabla} error={rangoInvalido}
-                                onChange={(evento) => setFechaHasta(evento.target.value)}
-                                slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: fechaDesde || undefined, max: hoy } }}
+                                onChange={setFechaHasta}
+                                min={fechaDesde || undefined} max={hoy}
                             />
                         </div>
                     </div>
@@ -396,7 +397,7 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                 <AvisoErrorToast mensaje={rangoInvalido ? "La fecha de inicio debe ser anterior o igual a la fecha de fin." : null} />
             </section>
 
-            <AvisoErrorToast mensaje={cargandoTabla ? null : error} />
+            <AvisoErrorToast mensaje={cargandoTabla ? null : error} cerrarAlCorregir={false} />
             <GraficaPreciosHistoricos
                 registros={filas}
                 desde={periodoVisible.desde}

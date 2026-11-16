@@ -82,7 +82,7 @@ async function abrirPerfilAdmin(page: Page, operador: OperadorPrecarga) {
 }
 
 async function abrirAlta(page: Page) {
-  await page.getByRole("button", { name: "Agregar Producto", exact: true }).click();
+  await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
   const formulario = page.getByRole("dialog", { name: "Nueva publicación", exact: true });
   await expect(formulario).toBeVisible();
   return formulario;

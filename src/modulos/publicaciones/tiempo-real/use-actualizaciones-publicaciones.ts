@@ -3,9 +3,10 @@
 import { useEffect, useEffectEvent } from "react";
 import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
 
-export function useActualizacionesPublicaciones(alActualizar: () => void | Promise<unknown>, filtro?: number | { operadorPublicoId: number }) {
+export function useActualizacionesPublicaciones(alActualizar: () => void | Promise<unknown>, filtro?: number | { operadorPublicoId: number } | { tipo: "PRODUCTOR" }) {
     const operadorId = typeof filtro === "number" ? filtro : undefined;
-    const operadorPublicoId = typeof filtro === "object" ? filtro.operadorPublicoId : undefined;
+    const operadorPublicoId = typeof filtro === "object" && "operadorPublicoId" in filtro ? filtro.operadorPublicoId : undefined;
+    const productores = typeof filtro === "object" && "tipo" in filtro && filtro.tipo === "PRODUCTOR";
     const actualizar = useEffectEvent(alActualizar);
     useEffect(() => {
         if (typeof EventSource === "undefined") return;
@@ -50,7 +51,8 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
             pendiente = null;
             if (document.visibilityState === "hidden") return;
             const parametros = operadorId !== undefined ? `?operadorId=${operadorId}`
-                : operadorPublicoId !== undefined ? `?operadorPublicoId=${operadorPublicoId}` : "";
+                : operadorPublicoId !== undefined ? `?operadorPublicoId=${operadorPublicoId}`
+                    : productores ? "?tipo=PRODUCTOR" : "";
             const nuevaFuente = new EventSource(`/api/publicaciones/eventos${parametros}`);
             fuente = nuevaFuente;
             const recibir = (evento: Event) => {
@@ -63,7 +65,7 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
             };
             nuevaFuente.addEventListener("cambio", recibir);
             nuevaFuente.addEventListener("conectado", recibir);
-            if (operadorId !== undefined) {
+            if (operadorId !== undefined || productores) {
                 const verificarSesion = async () => {
                     if (cerrado || fuente !== nuevaFuente || verificacionSesion || document.visibilityState === "hidden") return;
                     const controlador = new AbortController();
@@ -87,5 +89,5 @@ export function useActualizacionesPublicaciones(alActualizar: () => void | Promi
             clearTimeout(temporizador);
             document.removeEventListener("visibilitychange", conectar);
         };
-    }, [operadorId, operadorPublicoId]);
+    }, [operadorId, operadorPublicoId, productores]);
 }

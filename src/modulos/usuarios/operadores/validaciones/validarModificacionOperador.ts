@@ -1,5 +1,6 @@
 import { validarDatosOperador } from "./validarDatosOperador";
 import { Temporal } from "@js-temporal/polyfill";
+import { validarLargoComentarioLicencia } from "../comentario-licencia";
 
 export type DatosModificacionOperador = {
     operadorId: number;
@@ -49,6 +50,10 @@ export function validarModificacionOperador(valor: unknown): ResultadoValidacion
         }
     }
     const comentarioIngresado = typeof datos.comentario === "string" ? datos.comentario.trim() : "";
+    if (enLicencia) {
+        const errorComentario = validarLargoComentarioLicencia(comentarioIngresado);
+        if (errorComentario) errores.push(errorComentario);
+    }
     if (errores.length) return { esValido: false, errores };
     return {
         esValido: true,

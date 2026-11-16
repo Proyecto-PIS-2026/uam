@@ -36,7 +36,7 @@ export function validarDatosCatalogo(tipo: TipoCatalogo, datos: unknown): DatosC
     if (typeof nombre !== "string") throw new ErrorCatalogo("El valor es obligatorio.");
     let valor = normalizarTexto(nombre);
     if (!valor) throw new ErrorCatalogo("El valor es obligatorio.");
-    if (valor.length > 120) throw new ErrorCatalogo("El valor no puede superar los 120 caracteres.");
+    if (valor.length > 100) throw new ErrorCatalogo("El valor no puede superar los 100 caracteres.");
     if (tipo === "kilos") {
         const normalizado = normalizarKilos(valor);
         if (!normalizado) throw new ErrorCatalogo("Ingresá un peso positivo o un rango creciente, por ejemplo 10 o 10-12.");

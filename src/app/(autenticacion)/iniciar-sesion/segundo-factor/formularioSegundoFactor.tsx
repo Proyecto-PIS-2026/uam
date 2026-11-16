@@ -9,7 +9,7 @@ type Props = { vinculacion: boolean; correo: string; secreto: string | null; qr:
 const estadoInicial: EstadoSegundoFactor = {};
 
 export default function FormularioSegundoFactor({ vinculacion, correo, secreto, qr, expiraEn, intentosRestantes }: Props) {
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const estadoNotificado = useRef<EstadoSegundoFactor | null>(null);
     const [estado, accion, pendiente] = useActionState(verificarSegundoFactor, estadoInicial);
     const [segundosRestantes, cambiarSegundosRestantes] = useState<number | null>(null);
@@ -17,10 +17,9 @@ export default function FormularioSegundoFactor({ vinculacion, correo, secreto, 
         if (estadoNotificado.current === estado) return;
         estadoNotificado.current = estado;
         if (estado.error) {
-            cerrarNotificacion();
             notificar(estado.error, "error");
         }
-    }, [estado, notificar, cerrarNotificacion]);
+    }, [estado, notificar]);
     useEffect(() => {
         function actualizarTiempo() {
             const segundos = Math.max(0, expiraEn - Math.floor(Date.now() / 1000));
@@ -33,7 +32,6 @@ export default function FormularioSegundoFactor({ vinculacion, correo, secreto, 
     }, [expiraEn]);
 
     async function copiarClave() {
-        cerrarNotificacion();
         try {
             await navigator.clipboard.writeText(secreto!);
             notificar("Clave copiada.", "success");

@@ -53,7 +53,7 @@ describe("ProductoCard", () => {
         );
     });
 
-    it("muestra la inicial del nombre cuando no se proporciona una imagen", () => {
+    it("muestra el reemplazo cuando no se proporciona una imagen", () => {
         render(
         <ProductoCard
             nombre="Manzana"
@@ -62,11 +62,11 @@ describe("ProductoCard", () => {
         />
         );
 
-        expect(screen.queryByRole("img")).not.toBeInTheDocument();
-        expect(screen.getByText("M")).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
     });
 
-    it("muestra la inicial cuando la imagen proporcionada falla", () => {
+    it("muestra el reemplazo cuando la imagen proporcionada falla", () => {
         render(
         <ProductoCard
             nombre="Manzana"
@@ -79,8 +79,9 @@ describe("ProductoCard", () => {
 
         fireEvent.error(imagen);
 
-        expect(screen.queryByRole("img")).not.toBeInTheDocument();
-        expect(screen.getByText("M")).toBeInTheDocument();
+        expect(screen.queryByRole("img", { name: "Manzana" })).not.toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
     });
 
     it("enlaza la tarjeta con la página de productos", () => {

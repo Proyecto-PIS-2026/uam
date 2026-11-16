@@ -52,8 +52,13 @@ describe("FormularioPerfilPropio", () => {
         expect(screen.getByLabelText(/Teléfono/)).toHaveValue("99123456");
         expect(screen.getByRole("switch", { name: "En licencia" })).toBeChecked();
         expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).toHaveValue("2999-11-05");
-        expect(screen.getByLabelText("Mensaje de recomendación")).toHaveValue("Consultar disponibilidad.");
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).toHaveValue("2999-11-05");
+        const comentario = screen.getByLabelText("Mensaje de recomendación");
+        expect(comentario).toHaveValue("Consultar disponibilidad.");
+        expect(comentario).toHaveAttribute("maxLength", "500");
+        expect(screen.getByText(`${"Consultar disponibilidad.".length}/500 caracteres`)).toBeInTheDocument();
+        fireEvent.change(comentario, { target: { value: "a".repeat(500) } });
+        expect(screen.getByText("500/500 caracteres")).toBeInTheDocument();
 
         fireEvent.change(screen.getByLabelText(/^Nombre\s*\*?$/), { target: { value: "Nuevo nombre" } });
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
@@ -64,6 +69,7 @@ describe("FormularioPerfilPropio", () => {
             nombre: "Nuevo nombre",
             enLicencia: true,
             inicioLicencia: "2999-11-05",
+            comentario: "a".repeat(500),
         }));
     });
 
@@ -82,13 +88,13 @@ describe("FormularioPerfilPropio", () => {
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(interruptor).toBeChecked();
         expect(mocks.modificar).not.toHaveBeenCalled();
-        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/)).not.toHaveAttribute("min");
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2026-11-14");
-        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/), { target: { value: "2999-11-05" } });
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2999-11-05");
-        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/), { target: { value: "2000-11-05" } });
-        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/)).toHaveAttribute("min", "2026-11-14");
-        fireEvent.change(screen.getByLabelText(/^Fin de licencia\s*\*?$/), { target: { value: "2026-11-14" } });
+        expect(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).not.toHaveAttribute("min");
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" }), { target: { value: "2999-11-05" } });
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("min", "2999-11-05");
+        fireEvent.change(screen.getByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" }), { target: { value: "2000-11-05" } });
+        expect(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" })).toHaveAttribute("min", "2026-11-14");
+        fireEvent.change(screen.getByLabelText(/^Fin de licencia\s*\*?$/, { selector: "input" }), { target: { value: "2026-11-14" } });
         fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
         await waitFor(() => expect(mocks.modificar).toHaveBeenCalledWith(expect.objectContaining({
             enLicencia: true, inicioLicencia: "2000-11-05", finLicencia: "2026-11-14",
@@ -106,7 +112,7 @@ describe("FormularioPerfilPropio", () => {
 
         await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
         expect(interruptor).not.toBeChecked();
-        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Inicio de licencia\s*\*?$/, { selector: "input" })).not.toBeInTheDocument();
         expect(cancelar).not.toHaveBeenCalled();
         expect(mocks.modificar).not.toHaveBeenCalled();
     });

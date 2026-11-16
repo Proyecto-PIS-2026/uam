@@ -122,7 +122,7 @@ async function prepararMapa(page: Page) {
 }
 
 async function completarPrecarga(page: Page, calibre: string, precio: string) {
-  await page.getByRole("button", { name: "Agregar Producto", exact: true }).click();
+  await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
   const alta = page.getByRole("dialog", { name: "Nueva publicación de Productor" });
   await expect(alta).toBeVisible();
   await seleccionar(page, alta, "Especie", "Uchuva");
@@ -242,7 +242,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await expect(perfil.getByText("Teléfono:", { exact: true })).toBeVisible();
       await expect(perfil.getByText("+59899123456", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Agregar Producto", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Nueva publicación", exact: true })).toBeVisible();
     });
     await test.step("Recargar y comprobar que el perfil quedó registrado", async () => {
       await page.reload();
@@ -380,7 +380,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
     await page.goto(rutaPerfil);
     await expect(page.getByRole("heading", { level: 1, name: productorAlta.nombre, exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Agregar Producto", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Nueva publicación", exact: true })).toBeVisible();
   });
 
   test("CP-14.2-08: cancelar una precarga completa no guarda el borrador", async ({ page, usuariosAdministrativos, productorAlta }) => {
@@ -398,7 +398,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
     await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
     expect(await leerPrecargas(Number(rutaPerfil.split("/").at(-1)))).toHaveLength(0);
     expect(envios).toBe(0);
-    await page.getByRole("button", { name: "Agregar Producto", exact: true }).click();
+    await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Nueva publicación de Productor" }).getByLabel("Precio en pesos")).toHaveValue("");
   });
 

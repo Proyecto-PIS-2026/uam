@@ -4,6 +4,7 @@
 import { useState, useMemo } from "react";
 import { Temporal } from "temporal-polyfill";
 import { obtenerFechaEstadistica } from "@/modulos/administracion/estadisticas/fechas-estadisticas";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import { TextField, MenuItem, Autocomplete } from "@mui/material";
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line} from "recharts";
 import type { RangoTiempo, TipoSeccionEstadistica } from "./Tipos";
@@ -305,8 +306,8 @@ export default function BloqueEstadistica({titulo, tipo, datos}: BloqueEstadisti
                 </TextField>
                 {rango === "personalizado" && (
                     <div className={styles.fechasPersonalizadas}>
-                        <TextField className={styles.filtroFecha} type="date" label="Desde" size="small" value={fechaDesde} onChange={(e) => cambiarFechaDesde(e.target.value)} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: fechaMaximaDesde } }}/>
-                        <TextField className={styles.filtroFecha} type="date" label="Hasta" size="small" value={fechaHasta} onChange={(e) => cambiarFechaHasta(e.target.value)} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: fechaMinimaHasta } }}/>
+                        <SelectorFecha className={styles.filtroFecha} label="Desde" required value={fechaDesde} onChange={cambiarFechaDesde} max={fechaMaximaDesde}/>
+                        <SelectorFecha className={styles.filtroFecha} label="Hasta" required value={fechaHasta} onChange={cambiarFechaHasta} min={fechaMinimaHasta}/>
                     </div>
                 )}
             </div>

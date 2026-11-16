@@ -6,6 +6,13 @@ describe("validación de valores administrativos", () => {
         expect(validarDatosCatalogo("empaquetados", { nombre: "  Cajón   grande \n " })).toEqual({ nombre: "Cajón grande" });
     });
 
+    it.each(["empaquetados", "kilos", "calibres", "categorias"] as const)("admite hasta 100 caracteres y rechaza 101 en %s", (tipo) => {
+        const nombre = "1".repeat(100);
+        expect(validarDatosCatalogo(tipo, { nombre, codigo: "G" }).nombre).toBe(nombre);
+        expect(() => validarDatosCatalogo(tipo, { nombre: `${nombre}1`, codigo: "G" }))
+            .toThrow("El valor no puede superar los 100 caracteres.");
+    });
+
     it.each([
         ["02,500", "2.5"], [" 010 - 012,00 ", "10-12"], ["18-24", "18-24"], ["0.5", "0.5"],
     ])("admite y normaliza el peso %s", (nombre, esperado) => {
@@ -17,7 +24,7 @@ describe("validación de valores administrativos", () => {
     });
 
     it.each([
-        { datos: null }, { datos: [] }, { datos: { nombre: 12 } }, { datos: { nombre: "" } }, { datos: { nombre: "x".repeat(121) } },
+        { datos: null }, { datos: [] }, { datos: { nombre: 12 } }, { datos: { nombre: "" } }, { datos: { nombre: "x".repeat(101) } },
     ])("rechaza datos incompletos o excesivos", ({ datos }) => {
         expect(() => validarDatosCatalogo("categorias", datos)).toThrow();
     });

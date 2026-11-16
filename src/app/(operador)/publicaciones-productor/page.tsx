@@ -1,6 +1,5 @@
 import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
-import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
+import MercadoProduccion from "@/modulos/publicaciones/componentes/contenedor-publicacion/MercadoProduccion";
 import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
 import { obtenerConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
 import { convertirOrdenMercados } from "@/modulos/consulta-mercado/acciones/ordenamiento-publicaciones";
@@ -25,21 +24,14 @@ export default async function Page({ searchParams }: Props = {}) {
     const contenido = (
         <div className="relative isolate flex-1 bg-background text-foreground">
             <main className="contenedor-pagina relative z-10 flex-1">
-                <div className="secciones-pagina relative z-10">
-                    <EncabezadoPagina
-                        titulo="Mercado Producción"
-                        cantidad={publicaciones.length}
-                        subtitulo={publicaciones.length === 1 ? "publicación en la plataforma" : "publicaciones en la plataforma"}
-                    />
-                    <ContenedorPublicaciones
-                        key={`${especie}-${ordenInicial}-${configuracion.habilitado}`}
-                        publicaciones={publicaciones}
-                        especie={especie}
-                        esAdmin={sesion.rol === "ADMINISTRADOR"}
-                        ordenInicial={ordenInicial}
-                        ordenamientoHabilitado={configuracion.habilitado}
-                    />
-                </div>
+                <MercadoProduccion
+                    key={`${especie}-${ordenInicial}-${configuracion.habilitado}`}
+                    publicaciones={publicaciones}
+                    especie={especie}
+                    esAdmin={sesion.rol === "ADMINISTRADOR"}
+                    ordenInicial={ordenInicial}
+                    ordenamientoHabilitado={configuracion.habilitado}
+                />
             </main>
         </div>
     );

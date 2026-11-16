@@ -8,6 +8,7 @@ import { guardarUsuarioAtomico } from "@/modulos/usuarios/guardar-usuario-atomic
 import { controlarErrorFotoPerfil, guardarCambioFotoPerfil, validarCambioFotoPerfil } from "@/modulos/usuarios/fotos-perfil";
 import { validarModificacionProductor } from "../componentes/modificar-productor-por-admin/validarModificacionProductor";
 import type { ResultadoModificacionProductor } from "../componentes/modificar-productor-por-admin/modificarProductor";
+import { notificarCambioCatalogoProductor } from "@/infraestructura/tiempo-real/publicaciones";
 
 export async function modificarMiPerfilProductor(valor: unknown, foto?: FormData): Promise<ResultadoModificacionProductor> {
     const sesion = await controlarSesionEnAccion(exigirProductor);
@@ -50,6 +51,7 @@ export async function modificarMiPerfilProductor(valor: unknown, foto?: FormData
             whatsApp: datos.telefono,
             ...(fotoPerfil !== undefined ? { fotoPerfil } : {}),
         });
+        await notificarCambioCatalogoProductor(tx, productor.id);
         return productor.id;
     }, "productor"));
 

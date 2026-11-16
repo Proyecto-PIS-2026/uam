@@ -2,7 +2,9 @@ import { db } from "../persistencia/prisma/db";
 
 type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export type CambioPublicacion = { operadorId: number; publicacionId?: number };
+export type CambioPublicacion =
+    | { operadorId: number; productorId?: never; publicacionId?: number }
+    | { productorId: number; operadorId?: never; publicacionId?: number };
 
 export async function notificarCambioPublicacion(tx: Transaccion, cambio: CambioPublicacion) {
     const contenido = JSON.stringify(cambio);
@@ -12,4 +14,12 @@ export async function notificarCambioPublicacion(tx: Transaccion, cambio: Cambio
 
 export async function notificarCambioCatalogoOperador(tx: Transaccion, operadorId: number) {
     await notificarCambioPublicacion(tx, { operadorId });
+}
+
+export async function notificarCambioPublicacionProductor(tx: Transaccion, cambio: { productorId: number; publicacionId?: number }) {
+    await notificarCambioPublicacion(tx, cambio);
+}
+
+export async function notificarCambioCatalogoProductor(tx: Transaccion, productorId: number) {
+    await notificarCambioPublicacionProductor(tx, { productorId });
 }

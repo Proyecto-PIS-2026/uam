@@ -7,6 +7,7 @@ import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../precio-publicacion";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -15,6 +16,8 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import Image from "next/image";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
@@ -161,12 +164,12 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
     const cambiar = (cambio: Partial<Formulario>) => { setDatos((actual) => ({ ...actual, ...cambio })); cerrarNotificacion(); };
     function limpiarFormulario() {
         setDatos(formularioInicial(productorId, disponibilidadInicial));
-        cerrarNotificacion();
         setReinicioUbicaciones((actual) => actual + 1);
         if (fotoInput.current) fotoInput.current.value = "";
         if (galeriaInput.current) galeriaInput.current.value = "";
     }
     function cancelar() {
+        cerrarNotificacion();
         limpiarFormulario();
         alCerrar();
     }
@@ -183,7 +186,6 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
     }
     async function enviar(evento: FormEvent) {
         evento.preventDefault(); if (deshabilitado || leyendoFoto) return;
-        cerrarNotificacion();
         if (!precioPublicacionValido(datos.precio)) {
             notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
@@ -220,7 +222,7 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
             alCrear(resultado.mensaje ?? "Publicación creada correctamente.");
         } catch { notificar("No se pudo conectar con el servidor.", "error"); } finally { setGuardando(false); }
     }
-    return <><AvisoErrorToast mensaje={abierto && !cargando ? errorCarga : null} /><DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando}
+    return <><AvisoErrorToast mensaje={abierto && !cargando ? errorCarga : null} cerrarAlCorregir={!abierto} /><DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando}
         slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
         <header className={styles.encabezado}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
         <form className={styles.formulario} onSubmit={enviar} aria-busy={cargando}><div className={styles.cuerpo}>
@@ -242,14 +244,12 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
                     <label className={styles.etiqueta} htmlFor="productor-fechaVigencia">
                         Fecha de vigencia
                     </label>
-                    <OutlinedInput
-                        color="secondary"
+                    <SelectorFecha
                         className={styles.entrada}
-                        size="small"
                         id="productor-fechaVigencia"
-                        type="date"
+                        labelAccesible="Fecha de vigencia"
                         value={datos.fechaVigencia}
-                        onChange={(evento) => cambiar({ fechaVigencia: evento.target.value })}
+                        onChange={(fechaVigencia) => cambiar({ fechaVigencia })}
                         disabled={deshabilitado}
                     />
                 </div>
@@ -262,9 +262,9 @@ function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCar
                 />
             </div>
             <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={deshabilitado} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
-            <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><PhotoCameraOutlinedIcon /><span>Sin foto</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
-                <button type="button" className={styles.botonFoto} onClick={() => fotoInput.current?.click()} disabled={deshabilitado}>{esWeb ? "Editar foto" : "Cámara"}</button>
-                {!esWeb && <button type="button" className={`${styles.botonFoto} ${styles.botonGaleria}`} onClick={() => galeriaInput.current?.click()} disabled={deshabilitado}>Galería</button>}
+            <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
+                <button type="button" className={styles.botonFoto} onClick={() => fotoInput.current?.click()} disabled={deshabilitado}><PhotoCameraOutlinedIcon fontSize="small" aria-hidden="true" /> {esWeb ? "Editar foto" : "Cámara"}</button>
+                {!esWeb && <button type="button" className={`${styles.botonFoto} ${styles.botonGaleria}`} onClick={() => galeriaInput.current?.click()} disabled={deshabilitado}><PhotoLibraryOutlinedIcon fontSize="small" aria-hidden="true" /> Galería</button>}
                 <input ref={fotoInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={deshabilitado} aria-label="Fotografía" />
                 {!esWeb && <input ref={galeriaInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={deshabilitado} aria-label="Fotografía desde galería" />}
             </div></div>

@@ -27,6 +27,43 @@
     pointer-events: none;
 }
 
+.encabezado.encabezado .cerrar {
+    position: relative;
+    display: inline-flex;
+    width: var(--alto-control);
+    height: auto;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radio-control);
+    background: transparent;
+    color: var(--color-secondary);
+    font-size: var(--tamano-texto);
+    line-height: 1;
+}
+
+.encabezado.encabezado .cerrar::before {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+}
+
+.encabezado.encabezado .cerrar :global(.MuiSvgIcon-root) {
+    font-size: 1.75em;
+}
+
+.encabezado.encabezado .cerrar:hover:not(:disabled) {
+    background: transparent;
+    color: var(--color-secondary-hover);
+}
+
+.encabezado.encabezado .cerrar:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: 2px;
+}
+
 @media (max-width: 767px) {
     .encabezado.encabezado {
         display: flex;
@@ -43,41 +80,5 @@
         font-size: var(--tamano-titulo-seccion);
         font-weight: 700;
         line-height: 1.3;
-    }
-
-    .encabezado.encabezado .cerrar {
-        position: relative;
-        display: inline-flex;
-        width: var(--alto-control);
-        height: auto;
-        flex: 0 0 auto;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        border: 0;
-        border-radius: var(--radio-control);
-        background: var(--color-surface);
-        color: var(--color-secondary);
-        font-size: var(--tamano-texto);
-        line-height: 1;
-    }
-
-    .encabezado.encabezado .cerrar::before {
-        content: "";
-        position: absolute;
-        inset: -8px 0;
-    }
-
-    .encabezado.encabezado .cerrar :global(.MuiSvgIcon-root) {
-        font-size: 1.75em;
-    }
-
-    .encabezado.encabezado .cerrar:hover:not(:disabled) {
-        background: var(--color-secondary-soft);
-    }
-
-    .encabezado.encabezado .cerrar:focus-visible {
-        outline: 3px solid var(--color-secondary);
-        outline-offset: 2px;
     }
 }

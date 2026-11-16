@@ -4,17 +4,17 @@ import { useEffect, useRef } from "react";
 import { useNotificacionToast } from "./NotificacionToast";
 
 // Para errores recibidos como props o derivados de filtros, sin repetirlos al renderizar.
-export default function AvisoErrorToast({ mensaje, tipo = "error" }: { mensaje?: string | null; tipo?: "error" | "warning" }) {
+export default function AvisoErrorToast({ mensaje, tipo = "error", cerrarAlCorregir = true }: { mensaje?: string | null; tipo?: "error" | "warning"; cerrarAlCorregir?: boolean }) {
     const { notificar, cerrarNotificacion } = useNotificacionToast();
     const anterior = useRef<{ mensaje: string | null; tipo: "error" | "warning" }>({ mensaje: null, tipo });
 
     useEffect(() => {
         const actual = mensaje?.trim() || null;
-        if (actual === anterior.current.mensaje && tipo === anterior.current.tipo) return;
+        const cambio = actual !== anterior.current.mensaje || tipo !== anterior.current.tipo;
         anterior.current = { mensaje: actual, tipo };
-        cerrarNotificacion();
-        if (actual) notificar(actual, tipo);
-    }, [mensaje, tipo, notificar, cerrarNotificacion]);
+        if (actual && cambio) notificar(actual, tipo);
+        else if (!actual && cerrarAlCorregir) cerrarNotificacion();
+    }, [mensaje, tipo, cerrarAlCorregir, notificar, cerrarNotificacion]);
 
     return null;
 }

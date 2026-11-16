@@ -108,6 +108,69 @@ describe("EscuchaPublicaciones", () => {
         expect(escucha.obtenerVersion(8)).toBe(epoca);
     });
 
+    it("mantiene versiones separadas para los mercados de operadores y productores con una sola conexión", async () => {
+        const escucha = new EscuchaPublicaciones();
+        const { oyente } = suscribir(escucha);
+        await completarConexion();
+        oyente.mockClear();
+        const cliente = simulacion.clientes[0];
+        const epocaOperadores = escucha.obtenerVersion();
+        const epocaProductores = escucha.obtenerVersionProductores();
+        const productor = { productorId: 7, publicacionId: 43 };
+        cliente.emitir("notification", { channel: "uam_publicaciones", payload: JSON.stringify(productor) });
+
+        expect(oyente).toHaveBeenCalledExactlyOnceWith(productor);
+        const versionProductores = escucha.obtenerVersionProductores();
+        expect(versionProductores).not.toBe(epocaProductores);
+        expect(escucha.obtenerVersion()).toBe(epocaOperadores);
+        expect(escucha.obtenerVersion(7)).toBe(epocaOperadores);
+
+        cliente.emitir("notification", { channel: "uam_publicaciones", payload: JSON.stringify({ operadorId: 7, publicacionId: 44 }) });
+        expect(escucha.obtenerVersion()).not.toBe(epocaOperadores);
+        expect(escucha.obtenerVersionProductores()).toBe(versionProductores);
+        cliente.emitir("notification", { channel: "uam_publicaciones", payload: JSON.stringify({ productorId: 8 }) });
+        expect(escucha.obtenerVersionProductores()).not.toBe(versionProductores);
+        expect(oyente).toHaveBeenLastCalledWith({ productorId: 8 });
+        expect(simulacion.clientes).toHaveLength(1);
+    });
+
+    it("descarta productores inválidos y mensajes que mezclan ambos tipos de propietario", async () => {
+        const escucha = new EscuchaPublicaciones();
+        const { oyente } = suscribir(escucha);
+        await completarConexion();
+        oyente.mockClear();
+        const version = escucha.obtenerVersionProductores();
+        for (const cambio of [
+            { productorId: 0 }, { productorId: -1 }, { productorId: "7" }, { productorId: 1.5 },
+            { productorId: 7, publicacionId: null }, { productorId: 7, publicacionId: 0 },
+            { productorId: 7, operadorId: 8 }, { productorId: 7, operadorId: null },
+            { operadorId: 7, productorId: null },
+        ]) {
+            simulacion.clientes[0].emitir("notification", { channel: "uam_publicaciones", payload: JSON.stringify(cambio) });
+        }
+        expect(oyente).not.toHaveBeenCalled();
+        expect(escucha.obtenerVersionProductores()).toBe(version);
+    });
+
+    it("conserva la versión de productores durante la gracia y la invalida al reconectar PostgreSQL", async () => {
+        const escucha = new EscuchaPublicaciones();
+        const primero = suscribir(escucha);
+        await completarConexion();
+        const cliente = simulacion.clientes[0];
+        cliente.emitir("notification", { channel: "uam_publicaciones", payload: JSON.stringify({ productorId: 7 }) });
+        const version = escucha.obtenerVersionProductores();
+        primero.desuscribir();
+        await vi.advanceTimersByTimeAsync(55000);
+        const segundo = suscribir(escucha);
+        expect(escucha.obtenerVersionProductores()).toBe(version);
+        expect(segundo.oyente).toHaveBeenCalledExactlyOnceWith(null);
+        cliente.emitir("error", new Error("Sin conexión"));
+        await vi.advanceTimersByTimeAsync(3000);
+        expect(escucha.obtenerVersionProductores()).not.toBe(version);
+        expect(segundo.oyente).toHaveBeenCalledTimes(2);
+        expect(segundo.oyente).toHaveBeenLastCalledWith(null);
+    });
+
     it("conserva la versión al reconectar SSE sin cambios y cancela la gracia", async () => {
         const escucha = new EscuchaPublicaciones();
         const primero = suscribir(escucha);

@@ -5,11 +5,13 @@ import { Temporal } from "temporal-polyfill";
 import { useRouter } from "next/navigation";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import TextField from "@mui/material/TextField";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 import { modificarPerfilPropio } from "../../acciones/modificarPerfilPropio";
 import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
+import { LARGO_MAXIMO_COMENTARIO_LICENCIA } from "../../comentario-licencia";
 import HojasDecorativas from "@/compartido/HojasDecorativas";
 import BotonVolver from "@/compartido/BotonVolver";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
@@ -41,7 +43,7 @@ function extraerLicencia(comentario: string | null) {
 
 export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil: PerfilPropioOperador; alCancelar: () => void }) {
     const router = useRouter();
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const actual = separar(perfil.contacto);
     const [codigoPais, setCodigoPais] = useState(actual.codigo);
     const [telefono, setTelefono] = useState(actual.telefono);
@@ -62,7 +64,6 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
         if (enCurso.current) return;
         enCurso.current = true;
         setGuardando(true);
-        cerrarNotificacion();
         try {
             const resultado = await modificarPerfilPropio({
                 nombre,
@@ -132,28 +133,26 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                         {enLicencia && (
                             <>
                                 <div className={styles.fechasLicencia}>
-                                    <TextField
+                                    <SelectorFecha
                                         label="Inicio de licencia"
                                         required
-                                        type="date"
                                         value={inicioLicencia}
-                                        onChange={(event) => setInicioLicencia(event.target.value)}
+                                        onChange={setInicioLicencia}
                                         disabled={guardando}
-                                        slotProps={{ inputLabel: { shrink: true } }}
-                                        size="small"
                                     />
-                                    <TextField
+                                    <SelectorFecha
                                         label="Fin de licencia"
                                         required
-                                        type="date"
                                         value={finLicencia}
-                                        onChange={(event) => setFinLicencia(event.target.value)}
+                                        onChange={setFinLicencia}
                                         disabled={guardando}
-                                        slotProps={{ htmlInput: { min: finLicenciaMinimo }, inputLabel: { shrink: true } }}
-                                        size="small"
+                                        min={finLicenciaMinimo}
                                     />
                                 </div>
-                            <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(event) => setComentario(event.target.value)} disabled={guardando} fullWidth />
+                                <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(event) => setComentario(event.target.value)} disabled={guardando} fullWidth
+                                    slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_COMENTARIO_LICENCIA } }}
+                                    helperText={`${comentario.length}/${LARGO_MAXIMO_COMENTARIO_LICENCIA} caracteres`}
+                                    error={comentario.length > LARGO_MAXIMO_COMENTARIO_LICENCIA} />
                             </>
                         )}
                     </section>

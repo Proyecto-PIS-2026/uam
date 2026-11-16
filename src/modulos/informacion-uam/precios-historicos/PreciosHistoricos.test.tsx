@@ -226,8 +226,8 @@ describe("PreciosHistoricos", () => {
         for (const nombre of ["Especie", "Variedad", "País", "Calibre", "Categoría"]) {
             expect(formulario).toContainElement(within(filtros).getByRole("combobox", { name: nombre }));
         }
-        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Desde/));
-        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Hasta/));
+        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Desde/, { selector: "input" }));
+        expect(formulario).toContainElement(within(filtros).getByLabelText(/^Hasta/, { selector: "input" }));
         expect(formulario).not.toContainElement(grafica);
         expect(filtros.compareDocumentPosition(grafica) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(grafica.compareDocumentPosition(tabla) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -246,7 +246,7 @@ describe("PreciosHistoricos", () => {
         const urlAplicada = window.location.href;
         const registrosAplicados = propsGrafica().registros;
 
-        fireEvent.change(screen.getByLabelText(new RegExp("^" + campo)), { target: { value: valor } });
+        fireEvent.change(screen.getByLabelText(new RegExp("^" + campo), { selector: "input" }), { target: { value: valor } });
 
         expect(window.location.href).toBe(urlAplicada);
         expect(window.history.state).toEqual(estado);
@@ -281,7 +281,7 @@ describe("PreciosHistoricos", () => {
         expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I"]);
         expect(navegar).not.toHaveBeenCalled();
 
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2024-11-01" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
         expect(navegar).toHaveBeenCalledOnce();
         const destino = new URL(navegar.mock.calls[0][0], "https://app.example.test");
@@ -339,8 +339,8 @@ describe("PreciosHistoricos", () => {
         expect(screen.getByRole("combobox", { name: "País" })).toHaveTextContent("ECUADOR");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("G");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("II");
-        expect(screen.getByLabelText(/^Desde/)).toHaveValue(fechas.desde);
-        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue(fechas.desde);
+        expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue(fechas.hasta);
         expect(firmasFilasVisibles()).toEqual(["Orgánica|ECUADOR|G|II"]);
         expect(document.querySelectorAll("article")).toHaveLength(1);
         expect(navegar).not.toHaveBeenCalled();
@@ -450,7 +450,7 @@ describe("PreciosHistoricos", () => {
 
         expect(within(screen.getByRole("table")).getByRole("cell", { name: texto })).toBeInTheDocument();
         expect(document.querySelector("article time")).toHaveTextContent(texto);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-04" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-11-04" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
         expect(within(screen.getByRole("table")).getByRole("cell", { name: texto })).toBeInTheDocument();
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -559,7 +559,7 @@ describe("PreciosHistoricos", () => {
     it("vuelve a la primera página al consultar otro período", () => {
         render(<PreciosHistoricos producto={{ ...producto, variedad: "" }} historico={historicoConRegistros(83)} {...fechas} />);
         fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2024-11-01" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
         expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
@@ -570,8 +570,8 @@ describe("PreciosHistoricos", () => {
         render(<PreciosHistoricos producto={producto} historico={null} {...fechas} cargando />);
 
         expect(screen.getByRole("heading", { name: "Histórico de Banana" })).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Desde/)).toHaveValue(fechas.desde);
-        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue(fechas.desde);
+        expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue(fechas.hasta);
         const tabla = screen.getByRole("table");
         expect(tabla).toHaveAttribute("aria-busy", "true");
         expect(within(tabla).getAllByRole("columnheader")).toHaveLength(8);
@@ -624,8 +624,8 @@ describe("PreciosHistoricos", () => {
         fireEvent.click(masFiltros);
         expect(masFiltros).toHaveAttribute("aria-expanded", "true");
         const panel = document.getElementById(masFiltros.getAttribute("aria-controls") ?? "");
-        const desde = screen.getByLabelText(/^Desde/);
-        const hasta = screen.getByLabelText(/^Hasta/);
+        const desde = screen.getByLabelText(/^Desde/, { selector: "input" });
+        const hasta = screen.getByLabelText(/^Hasta/, { selector: "input" });
         expect(panel).not.toBeNull();
         expect(panel).not.toContainElement(desde);
         expect(panel).not.toContainElement(hasta);
@@ -636,8 +636,8 @@ describe("PreciosHistoricos", () => {
         fireEvent.click(masFiltros);
 
         expect(masFiltros).toHaveAttribute("aria-expanded", "false");
-        expect(desde).toBeVisible();
-        expect(hasta).toBeVisible();
+        expect(screen.getByRole("group", { name: /^Desde/ })).toBeVisible();
+        expect(screen.getByRole("group", { name: /^Hasta/ })).toBeVisible();
         expect(desde).toBeEnabled();
         expect(hasta).toBeEnabled();
         seleccionarFiltro("Variedad", "Orgánica");
@@ -702,7 +702,7 @@ describe("PreciosHistoricos", () => {
         expect(firmasFilasVisibles()).toHaveLength(2);
         expect(leerOpcionesFiltro("Calibre")).toEqual(["G", "M", "P"]);
 
-        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: "2025-11-03" } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), { target: { value: "2025-11-03" } });
         expect(leerOpcionesFiltro("Calibre")).toEqual(["G", "M", "P"]);
         expect(firmasFilasVisibles()).toHaveLength(2);
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
@@ -717,7 +717,7 @@ describe("PreciosHistoricos", () => {
         expect(new URL(window.location.href).searchParams.has("calibre")).toBe(false);
         expect(propsGrafica()).toMatchObject({ desde: fechas.desde, hasta: "2025-11-03" });
 
-        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: fechas.hasta } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), { target: { value: fechas.hasta } });
         expect(leerOpcionesFiltro("Calibre")).toEqual(["M"]);
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
@@ -751,7 +751,7 @@ describe("PreciosHistoricos", () => {
         expect(leerOpcionesFiltro("Calibre")).toEqual(["M"]);
         expect(leerOpcionesFiltro("Categoría")).toEqual(["I"]);
         expect(firmasFilasVisibles()).toEqual(["Rosada|URUGUAY|M|I"]);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2020-01-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2020-01-01" } });
         expect(leerOpcionesFiltro("Variedad")).toEqual(["Rosada"]);
         expect(propsGrafica()).toMatchObject(periodo);
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
@@ -833,7 +833,7 @@ describe("PreciosHistoricos", () => {
         expect(leerOpcionesFiltro("Calibre")).toEqual(["G", "M"]);
         expect(leerOpcionesFiltro("Categoría")).toEqual(["I", "II"]);
         expect(firmasFilasVisibles()).toEqual(["Fin|BRASIL|G|II", "Inicio|URUGUAY|M|I"]);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: fechas.hasta } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: fechas.hasta } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
         expect(leerOpcionesFiltro("Variedad")).toEqual(["Fin"]);
@@ -900,8 +900,8 @@ describe("PreciosHistoricos", () => {
         window.history.replaceState(estadoInicial, "", "/precios-historicos?species_id=60&producto=Banana&from=2025-11-01&to=2025-11-08&variedad=Cavendish&pais=ECUADOR&calibre=M&categoria=I&extra=anterior#tabla");
         render(<PreciosHistoricos producto={producto} historico={historicoConFiltros} {...fechas} />);
         expect(firmasFilasVisibles()).toHaveLength(1);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-04" } });
-        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: "2025-11-07" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-11-04" } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), { target: { value: "2025-11-07" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
         expect(firmasFilasVisibles()).toHaveLength(0);
         expect(propsGrafica()).toMatchObject({ desde: "2025-11-04", hasta: "2025-11-07", registros: [] });
@@ -909,7 +909,7 @@ describe("PreciosHistoricos", () => {
         for (const nombre of ["Variedad", "País", "Calibre", "Categoría"]) expect(leerOpcionesFiltro(nombre)).toEqual([]);
         expect(Object.fromEntries(new FormData(screen.getByRole("form") as HTMLFormElement))).toMatchObject({ variedad: "", pais: "", calibre: "", categoria: "" });
         for (const nombre of ["variedad", "pais", "calibre", "categoria"]) expect(new URL(window.location.href).searchParams.has(nombre)).toBe(false);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2024-11-01" } });
 
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
 
@@ -918,8 +918,8 @@ describe("PreciosHistoricos", () => {
         expect(propsGrafica().registros).toHaveLength(5);
         expect(leerOpcionesFiltro("Variedad")).toEqual(["Cavendish", "Orgánica"]);
         expect(leerOpcionesFiltro("Calibre")).toEqual(["G", "M", "P"]);
-        expect(screen.getByLabelText(/^Desde/)).toHaveValue(fechas.desde);
-        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue(fechas.desde);
+        expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue(fechas.hasta);
         expect(Object.fromEntries(new FormData(screen.getByRole("form") as HTMLFormElement))).toMatchObject({ variedad: "", pais: "", calibre: "", categoria: "" });
         expect(Object.fromEntries(new URL(window.location.href).searchParams)).toEqual({ species_id: "60", producto: "Banana", from: fechas.desde, to: fechas.hasta, extra: "anterior" });
         expect(window.location.hash).toBe("#tabla");
@@ -1095,7 +1095,7 @@ describe("PreciosHistoricos", () => {
         seleccionarFiltro("Calibre", "P");
         seleccionarFiltro("Categoría", "III");
         expect(propsGrafica().registros).toHaveLength(1);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2024-11-01" } });
         expect(propsGrafica()).toMatchObject(fechas);
         expect(propsGrafica().registros).toHaveLength(1);
         expect(navegar).not.toHaveBeenCalled();
@@ -1122,7 +1122,7 @@ describe("PreciosHistoricos", () => {
         abrirFiltrosAdicionales();
         seleccionarFiltro("Calibre", "G");
         expect(firmasFilasVisibles()).toHaveLength(2);
-        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: "2025-11-05" } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), { target: { value: "2025-11-05" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
         expect(firmasFilasVisibles()).toHaveLength(2);
@@ -1150,11 +1150,11 @@ describe("PreciosHistoricos", () => {
         const especies = [{ id: "60", especie: "Banana" }, { id: "61", especie: "Manzana" }];
         const { rerender } = render(<PreciosHistoricos key="banana" producto={producto} historico={historicoConFiltros} especies={especies} {...fechas} />);
         const periodoAplicado = { desde: "2025-11-02", hasta: "2025-11-07" };
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: periodoAplicado.desde } });
-        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: periodoAplicado.hasta } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: periodoAplicado.desde } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), { target: { value: periodoAplicado.hasta } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
         expect(firmasFilasVisibles()).toEqual(["Cavendish|ECUADOR|M|I"]);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2024-11-01" } });
 
         seleccionarFiltro("Especie", "Manzana");
 
@@ -1189,8 +1189,8 @@ describe("PreciosHistoricos", () => {
         expect(propsGrafica()).toMatchObject({ ...periodoAplicado, producto: "Manzana", cargando: false });
         expect(propsGrafica().registros).toHaveLength(2);
         expect(Object.fromEntries(new FormData(screen.getByRole("form") as HTMLFormElement))).toMatchObject({ variedad: "", pais: "", calibre: "", categoria: "" });
-        expect(screen.getByLabelText(/^Desde/)).toHaveValue(periodoAplicado.desde);
-        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(periodoAplicado.hasta);
+        expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue(periodoAplicado.desde);
+        expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue(periodoAplicado.hasta);
         expect(navegar).toHaveBeenCalledOnce();
     });
 
@@ -1207,7 +1207,7 @@ describe("PreciosHistoricos", () => {
         };
         const { unmount } = render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
         const urlAplicada = window.location.href;
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-05" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-11-05" } });
         expect(window.location.href).toBe(urlAplicada);
         expect(within(screen.getByRole("table")).getByRole("cell", { name: "02/11/2025" })).toBeInTheDocument();
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
@@ -1232,8 +1232,8 @@ describe("PreciosHistoricos", () => {
                 hasta={parametros.get("to")!}
             />,
         );
-        expect(screen.getByLabelText(/^Desde/)).toHaveValue("2025-11-05");
-        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue("2025-11-05");
+        expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue(fechas.hasta);
         expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
         expect(within(screen.getByRole("table")).getByRole("cell", { name: "07/11/2025" })).toBeInTheDocument();
         expect(navegar).not.toHaveBeenCalled();
@@ -1252,7 +1252,7 @@ describe("PreciosHistoricos", () => {
         seleccionarFiltro("País", "URUGUAY");
         seleccionarFiltro("Calibre", "P");
         seleccionarFiltro("Categoría", "III");
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-05" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-11-05" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
         expect(firmasFilasVisibles()).toEqual(["Orgánica|URUGUAY|P|III"]);
         unmount();
@@ -1264,8 +1264,8 @@ describe("PreciosHistoricos", () => {
         expect(screen.getByRole("combobox", { name: "País" })).toHaveTextContent("URUGUAY");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("P");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("III");
-        expect(screen.getByLabelText(/^Desde/)).toHaveValue("2025-11-05");
-        expect(screen.getByLabelText(/^Hasta/)).toHaveValue(fechas.hasta);
+        expect(screen.getByLabelText(/^Desde/, { selector: "input" })).toHaveValue("2025-11-05");
+        expect(screen.getByLabelText(/^Hasta/, { selector: "input" })).toHaveValue(fechas.hasta);
         expect(firmasFilasVisibles()).toEqual(["Orgánica|URUGUAY|P|III"]);
         expect(propsGrafica()).toMatchObject({ desde: "2025-11-05", hasta: fechas.hasta });
         expect(propsGrafica().registros).toHaveLength(1);
@@ -1314,8 +1314,8 @@ describe("PreciosHistoricos", () => {
         { from: "2025-11-01", to: "2025-11-05", desde: "2025-11-01", hasta: "2025-11-07" },
     ])("reintenta en el backend un período solicitado dentro de las fechas originales pero fuera de la cobertura $from a $to", ({ from, to, desde, hasta }) => {
         render(<PreciosHistoricos producto={producto} historico={{ ...historico, from, to }} {...fechas} />);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: desde } });
-        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: hasta } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: desde } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), { target: { value: hasta } });
 
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
@@ -1327,8 +1327,8 @@ describe("PreciosHistoricos", () => {
     it("reutiliza localmente un período cubierto aunque la respuesta no abarque todas las fechas originales", () => {
         const datos: HistoricoProducto = { ...historico, from: "2025-11-03", to: "2025-11-06" };
         render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: datos.from } });
-        fireEvent.change(screen.getByLabelText(/^Hasta/), { target: { value: datos.to } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: datos.from } });
+        fireEvent.change(screen.getByLabelText(/^Hasta/, { selector: "input" }), { target: { value: datos.to } });
 
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
@@ -1354,7 +1354,7 @@ describe("PreciosHistoricos", () => {
         render(<PreciosHistoricos producto={producto} historico={datos} {...fechas} />);
         const tabla = within(screen.getByRole("table"));
         expect(propsGrafica().registros).toHaveLength(2);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-05" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-11-05" } });
 
         expect(tabla.getAllByRole("row")).toHaveLength(3);
         expect(propsGrafica()).toMatchObject(fechas);
@@ -1370,7 +1370,7 @@ describe("PreciosHistoricos", () => {
         expect(tabla.getByRole("cell", { name: "07/11/2025" })).toBeInTheDocument();
         expect(navegar).not.toHaveBeenCalled();
 
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-10-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-10-01" } });
         expect(tabla.getAllByRole("row")).toHaveLength(2);
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
@@ -1409,7 +1409,7 @@ describe("PreciosHistoricos", () => {
 
         expect(formulario).toHaveAttribute("method", "get");
         expect(formulario).toHaveAttribute("action", "/precios-historicos");
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2024-11-01" } });
         const consulta = new FormData(formulario as HTMLFormElement);
 
         expect(Object.fromEntries(consulta)).toMatchObject({
@@ -1423,7 +1423,7 @@ describe("PreciosHistoricos", () => {
 
     it("requiere consultar para aplicar otro período y no vacía los resultados mientras se edita", () => {
         render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} />);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-05" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-11-05" } });
 
         expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(2);
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -1431,7 +1431,7 @@ describe("PreciosHistoricos", () => {
 
     it("consulta el período mediante navegación cliente y conserva los filtros", () => {
         render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} />);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2024-11-01" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2024-11-01" } });
         fireEvent.submit(screen.getByRole("form", { name: "Consultar período histórico" }));
 
         expect(navegar).toHaveBeenCalledOnce();
@@ -1447,7 +1447,7 @@ describe("PreciosHistoricos", () => {
 
     it("explica un intervalo invertido y evita enviarlo", () => {
         render(<PreciosHistoricos producto={producto} historico={historico} {...fechas} />);
-        fireEvent.change(screen.getByLabelText(/^Desde/), { target: { value: "2025-11-09" } });
+        fireEvent.change(screen.getByLabelText(/^Desde/, { selector: "input" }), { target: { value: "2025-11-09" } });
 
         expect(screen.getByRole("alert")).toHaveTextContent("La fecha de inicio debe ser anterior o igual a la fecha de fin.");
         expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
@@ -1502,7 +1502,7 @@ describe("PreciosHistoricos", () => {
         expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
     });
 
-    it("mantiene el indicador durante un reintento y muestra el aviso sólo cuando termina la carga", () => {
+    it("mantiene el indicador al reintentar, conserva avisos previos y agrega el nuevo fallo al terminar", () => {
         const error = "No pudimos cargar los precios históricos.";
         const { rerender } = render(
             <PreciosHistoricos producto={producto} historico={null} opcionesFiltros={opcionesEspecie} {...fechas} error={error} cargando />,
@@ -1525,6 +1525,16 @@ describe("PreciosHistoricos", () => {
         expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("alert")).toHaveTextContent(error);
         expect(screen.getByRole("button", { name: "Consultar" })).toBeEnabled();
         expect(Object.fromEntries(new FormData(screen.getByRole("form") as HTMLFormElement))).toMatchObject({ variedad: producto.variedad, pais: producto.pais, calibre: producto.calibre, categoria: producto.categoria });
+
+        const avisoInicial = screen.getByRole("alert");
+        rerender(<PreciosHistoricos producto={producto} historico={null} opcionesFiltros={opcionesEspecie} {...fechas} error={error} cargando />);
+        expect(screen.getByRole("alert")).toBe(avisoInicial);
+        expect(screen.getByRole("button", { name: "Consultar" })).toBeDisabled();
+
+        rerender(<PreciosHistoricos producto={producto} historico={null} opcionesFiltros={opcionesEspecie} {...fechas} error={error} />);
+        expect(screen.getAllByRole("alert")).toHaveLength(2);
+        expect(screen.getAllByRole("alert")[0]).toBe(avisoInicial);
+        expect(screen.getAllByRole("alert")[1]).toHaveTextContent(error);
     });
 
     it("muestra un estado vacío para una respuesta exitosa sin registros", () => {

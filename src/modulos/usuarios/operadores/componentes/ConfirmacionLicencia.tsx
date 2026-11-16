@@ -31,7 +31,10 @@ export default function ConfirmacionLicencia({ abierto, alAceptar, alCancelar }:
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button type="button" variant="outlined" onClick={alCancelar} autoFocus>Cancelar</Button>
+                <Button type="button" variant="outlined" onClick={alCancelar} autoFocus
+                    sx={{ "&:hover:not(:disabled)": { backgroundColor: "var(--color-secondary-soft)", borderColor: "var(--color-secondary)" } }}>
+                    Cancelar
+                </Button>
                 <Button type="button" variant="contained" onClick={alAceptar}>Aceptar</Button>
             </DialogActions>
         </Dialog>

@@ -6,7 +6,7 @@ import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
-import Dialog from "@mui/material/Dialog";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -17,6 +17,8 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
@@ -33,6 +35,8 @@ import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INV
 import estilosAcciones from "../../operadores/componentes/DrawerEditarPublicacion.module.css";
 import styles from "./DrawerPublicacionProductor.module.css";
 import CampoComentario from "../../componentes/CampoComentario";
+import FotoPublicacionAmpliada from "../../componentes/FotoPublicacionAmpliada";
+import estilosFoto from "../../componentes/FotoPublicacionAmpliada.module.css";
 
 type Props = {
     publicacion: PublicacionMiMercadoProductor | null;
@@ -201,6 +205,9 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     const confirmando = vigente !== null && estado.confirmacionPara === vigente;
     const fotoVisible = borrador ? borrador.vistaPrevia ?? borrador.foto : publicacion?.foto;
     const tieneFoto = Boolean(fotoVisible?.trim());
+    if (estado.id === (recibida?.id ?? null) && estado.fotoAmpliada && !tieneFoto) {
+        setEstado({ ...estado, fotoAmpliada: false });
+    }
     const abierto = recibida !== null && (estado.fotoPreparada || !tieneFoto);
     const tituloId = publicacion ? `publicacion-productor-${publicacion.id}-titulo` : undefined;
     const variedad = publicacion?.variedad;
@@ -213,7 +220,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     const nombreEnvase = borrador?.envaseId === 0 ? null : envases.find((opcion) => opcion.id === borrador?.envaseId)?.nombre ?? publicacion?.envase?.nombreEnvase;
     const disponible = borrador?.disponible ?? publicacion?.publicacionDisponible;
     const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
-    const reemplazoFoto = <div className={estilosAcciones.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>;
+    const reemplazoFoto = <div className={estilosAcciones.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>;
     const vistaPrevia = borrador?.vistaPrevia;
 
     useEffect(() => {
@@ -305,7 +312,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
 
     async function comenzarEdicion() {
         if (!vigente || editando || cargando || operacionRef.current === estado.sesion || confirmando) return;
-        cerrarNotificacion();
         const solicitud = {};
         solicitudOpcionesRef.current = solicitud;
         setEstado((actual) => ({ ...actual, cargaPara: vigente }));
@@ -328,7 +334,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
     async function guardar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (!edicion || !borrador || operacionRef.current === estado.sesion) return;
-        cerrarNotificacion();
         if (!precioPublicacionValido(borrador.precio)) {
             notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
@@ -353,7 +358,6 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             notificar(validacionUbicaciones.error, "error");
             return;
         }
-        const formulario = new FormData();
         const cambios: CambiosPublicacionProductor = {
             precio: normalizarPrecioPublicacion(borrador.precio),
             cantidadUnidades: borrador.cantidadUnidades === "" ? null : Number(borrador.cantidadUnidades),
@@ -365,6 +369,35 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
             ubicaciones: validacionUbicaciones.ubicaciones,
             fechaVigencia: borrador.fechaVigencia || null,
         };
+        const original = crearBorrador(edicion.base);
+        const ubicacionesSinCambios = cambios.ubicaciones.length === original.ubicaciones.length
+            && cambios.ubicaciones.every((ubicacion, indice) => {
+                const anterior = original.ubicaciones[indice];
+                return ubicacion.nombreUbicacion === anterior.nombreUbicacion.trim()
+                    && ubicacion.urlMaps === anterior.urlMaps.trim()
+                    && (ubicacion.departamento ?? null) === (anterior.departamento ?? null);
+            });
+        const sinCambios =
+            cambios.precio === (original.precio || null)
+            && cambios.cantidadUnidades === (edicion.base.cantidadUnidades ?? null)
+            && cambios.comentario === (original.comentario.trim() || null)
+            && (cambios.fechaVigencia?.slice(0, 10) ?? "") === original.fechaVigencia.slice(0, 10)
+            && borrador.especieId === original.especieId
+            && borrador.variedadId === original.variedadId
+            && borrador.envaseId === original.envaseId
+            && borrador.kilosId === original.kilosId
+            && borrador.categoriaId === original.categoriaId
+            && borrador.calibreId === original.calibreId
+            && borrador.paisId === original.paisId
+            && borrador.disponible === original.disponible
+            && borrador.foto === original.foto
+            && borrador.archivo === null
+            && ubicacionesSinCambios;
+        if (sinCambios) {
+            setEstado((actual) => ({ ...actual, edicion: null }));
+            return;
+        }
+        const formulario = new FormData();
         formulario.set("cambios", JSON.stringify(cambios));
         if (borrador.archivo) formulario.set("foto", borrador.archivo);
         const sesion = estado.sesion;
@@ -434,30 +467,28 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-precio`}>Precio en pesos</label>
                             <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-precio`} slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }}
-                                value={borrador?.precio ?? (publicacion.precio === null ? "" : String(Number(publicacion.precio)))} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} readOnly={!editando} disabled={ocupado}
+                                value={borrador?.precio ?? (publicacion.precio === null ? "" : String(Number(publicacion.precio)))} placeholder={editando ? "Ingresar precio aquí" : "Consultar precio"} readOnly={!editando} disabled={!editando || ocupado}
                                 onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} />
                             {editando && <small className={estilosAcciones.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
                         </div>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-unidades`}>Unidades{nombreEnvase ? ` (${nombreEnvase})` : ""}</label>
                             <OutlinedInput color="secondary" className={estilosAcciones.entrada} size="small" id={`publicacion-productor-${publicacion.id}-unidades`} slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }}
-                                value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={ocupado}
+                                value={borrador?.cantidadUnidades ?? publicacion.cantidadUnidades ?? ""} placeholder={editando ? "Ingresar cantidad aquí" : "-"} readOnly={!editando} disabled={!editando || ocupado}
                                 onChange={(evento) => escribirCantidadUnidades(evento.target.value)} />
                         </div>
                         <div className={estilosAcciones.campo}>
                             <label className={estilosAcciones.etiqueta} htmlFor={`publicacion-productor-${publicacion.id}-vigencia`}>
                                 Fecha de vigencia
                             </label>
-                            <OutlinedInput
-                                color="secondary"
+                            <SelectorFecha
                                 className={estilosAcciones.entrada}
-                                size="small"
                                 id={`publicacion-productor-${publicacion.id}-vigencia`}
-                                type="date"
+                                labelAccesible="Fecha de vigencia"
                                 value={borrador?.fechaVigencia ?? publicacion.fechaVigencia ?? ""}
                                 readOnly={!editando}
-                                disabled={ocupado}
-                                onChange={(evento) => cambiar({ fechaVigencia: evento.target.value })}
+                                disabled={!editando || ocupado}
+                                onChange={(fechaVigencia) => cambiar({ fechaVigencia })}
                             />
                         </div>
                         <CampoComentario
@@ -473,11 +504,11 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                             <div className={estilosAcciones.marcoFoto}>
                                 <ImagenPublicacion key={publicacion.id} src={fotoVisible} alt={editando ? "Vista previa de la fotografía" : `Foto de ${especie.nombreEspecie}`} fill sizes="(min-width: 768px) 480px, 100vw" loading="eager" unoptimized className={estilosAcciones.imagenFoto} reemplazo={reemplazoFoto}
                                     onLoad={() => setEstado((actual) => ({ ...actual, fotoPreparada: true }))} onError={() => setEstado((actual) => ({ ...actual, fotoPreparada: true }))} />
-                                {!editando && tieneFoto && <button type="button" className={styles.ampliarFoto} aria-label={`Ampliar foto de ${especie.nombreEspecie}`} onClick={() => setEstado((actual) => ({ ...actual, fotoAmpliada: true }))} />}
+                                {!editando && tieneFoto && <button type="button" className={estilosFoto.ampliarFoto} aria-label={`Ampliar foto de ${especie.nombreEspecie}`} onClick={() => setEstado((actual) => ({ ...actual, fotoAmpliada: true }))} />}
                                 {editando && <>
                                     {tieneFoto && <button type="button" className={`${estilosAcciones.botonFoto} ${estilosAcciones.borrarFoto}`} onClick={() => cambiar({ foto: null, archivo: null, vistaPrevia: null })} disabled={ocupado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
-                                    <button type="button" className={estilosAcciones.botonFoto} onClick={() => fotoRef.current?.click()} disabled={ocupado}>{esWeb ? "Editar foto" : "Cámara"}</button>
-                                    {!esWeb && <button type="button" className={`${estilosAcciones.botonFoto} ${estilosAcciones.botonGaleria}`} onClick={() => galeriaRef.current?.click()} disabled={ocupado}>Galería</button>}
+                                    <button type="button" className={estilosAcciones.botonFoto} onClick={() => fotoRef.current?.click()} disabled={ocupado}><PhotoCameraOutlinedIcon fontSize="small" aria-hidden="true" /> {esWeb ? "Editar foto" : "Cámara"}</button>
+                                    {!esWeb && <button type="button" className={`${estilosAcciones.botonFoto} ${estilosAcciones.botonGaleria}`} onClick={() => galeriaRef.current?.click()} disabled={ocupado}><PhotoLibraryOutlinedIcon fontSize="small" aria-hidden="true" /> Galería</button>}
                                     <input ref={fotoRef} className={estilosAcciones.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={ocupado} aria-label="Fotografía" />
                                     {!esWeb && <input ref={galeriaRef} className={estilosAcciones.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={ocupado} aria-label="Fotografía desde galería" />}
                                 </>}
@@ -513,12 +544,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                     </div>
                 </form>
                 <ConfirmModal abierto={confirmando} titulo="Eliminar publicación" descripcion={`¿Querés eliminar la publicación de ${especie.nombreEspecie}? Esta acción no se puede deshacer.`} textoConfirmar="Sí, eliminar" procesando={estado.eliminando} alCancelar={() => { if (operacionRef.current !== estado.sesion) setEstado((actual) => ({ ...actual, confirmacionPara: null })); }} alConfirmar={() => void eliminar()} />
-                <Dialog open={abierto && !editando && estado.fotoAmpliada && tieneFoto} onClose={() => setEstado((actual) => ({ ...actual, fotoAmpliada: false }))} maxWidth={false} fullWidth aria-label="Foto ampliada del producto" slotProps={{ paper: { className: styles.modalFoto, "aria-label": "Foto ampliada del producto" }, backdrop: { sx: { backgroundColor: "rgba(0, 0, 0, 0.85)" } } }}>
-                    <button type="button" aria-label="Cerrar foto ampliada" onClick={() => setEstado((actual) => ({ ...actual, fotoAmpliada: false }))} className={`${estilosAcciones.cerrar} ${styles.cerrarFoto}`}><CloseIcon fontSize="small" /></button>
-                    <div className={styles.fotoAmpliada}>
-                        <ImagenPublicacion key={publicacion.id} src={publicacion.foto} alt={`Foto ampliada de ${especie.nombreEspecie}`} fill sizes="100vw" unoptimized className={styles.imagenAmpliada} reemplazo={reemplazoFoto} />
-                    </div>
-                </Dialog>
+                <FotoPublicacionAmpliada abierta={abierto && !editando && estado.fotoAmpliada && tieneFoto} alCerrar={() => setEstado((actual) => ({ ...actual, fotoAmpliada: false }))} src={fotoVisible} nombre={especie.nombreEspecie} reemplazo={reemplazoFoto} />
             </>}
         </DrawerDeslizable>
     </>;

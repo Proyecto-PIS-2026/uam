@@ -16,6 +16,8 @@ export function esCampoInvalido(campo: CampoFormulario): boolean {
 }
 
 export function controlVisible(campo: CampoFormulario): HTMLElement {
+    const seccionFecha = campo.closest(".MuiPickersInputBase-root")?.querySelector<HTMLElement>('[role="spinbutton"]');
+    if (seccionFecha) return seccionFecha;
     // El select de MUI valida un input invisible; el usuario interactúa con el combobox.
     return campo.closest(".MuiInputBase-root")?.querySelector<HTMLElement>('[role="combobox"]') ?? campo;
 }
@@ -50,7 +52,8 @@ export function crearMarcadorCamposInvalidos() {
 
     function marcar(campo: CampoFormulario) {
         if (marcas.has(campo)) return;
-        const elementos = [...new Set([campo, controlVisible(campo)])];
+        const grupoFecha = campo.closest<HTMLElement>(".MuiPickersInputBase-root");
+        const elementos = [...new Set([campo, controlVisible(campo), ...(grupoFecha ? [grupoFecha] : [])])];
         marcas.set(campo, elementos.map((elemento) => ({ elemento, ariaInvalid: elemento.getAttribute("aria-invalid") })));
         for (const elemento of elementos) {
             elemento.setAttribute("data-error-validacion", "true");

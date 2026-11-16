@@ -100,6 +100,7 @@ describe("CatalogosPublicacion", () => {
         await preparar();
         fireEvent.click(screen.getByRole("button", { name: "Agregar valor" }));
         const dialogo = screen.getByRole("dialog", { name: "Agregar valor" });
+        expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveAttribute("maxlength", "100");
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Nombre/ }), { target: { value: "Bolsa" } });
         mocks.listar.mockResolvedValueOnce([...elementos.empaquetados, { id: 5, nombre: "Bolsa" }]);
         fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
@@ -132,6 +133,7 @@ describe("CatalogosPublicacion", () => {
         const dialogo = screen.getByRole("dialog", { name: "Modificar valor" });
         expect(within(dialogo).getByText("El cambio se reflejará en todas las publicaciones que usan este valor.")).toBeInTheDocument();
         expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveValue("Cajón");
+        expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveAttribute("maxlength", "100");
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Nombre/ }), { target: { value: "Cajón grande" } });
         fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
 
@@ -145,6 +147,8 @@ describe("CatalogosPublicacion", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Modificar G - Grande" }));
         const dialogo = screen.getByRole("dialog", { name: "Modificar valor" });
         expect(within(dialogo).getByRole("textbox", { name: /Código/ })).toHaveValue("G");
+        expect(within(dialogo).getByRole("textbox", { name: /Código/ })).toHaveAttribute("maxlength", "60");
+        expect(within(dialogo).getByRole("textbox", { name: /Descripción/ })).toHaveAttribute("maxlength", "100");
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Descripción/ }), { target: { value: "Grande especial" } });
         fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
 
@@ -152,16 +156,27 @@ describe("CatalogosPublicacion", () => {
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
 
-    it.each(["alta", "edición"])("mantiene el formulario de %s abierto cuando el valor está duplicado", async (operacion) => {
+    it.each(["alta", "edición"])("mantiene el formulario de %s abierto y acumula hasta tres avisos al repetir un valor duplicado", async (operacion) => {
         mocks.guardar.mockResolvedValue({ ok: false, mensaje: "Ya existe un valor igual en este catálogo." });
         await preparar();
         fireEvent.click(screen.getByRole("button", { name: operacion === "alta" ? "Agregar valor" : "Modificar Cajón" }));
         const dialogo = screen.getByRole("dialog");
         fireEvent.change(within(dialogo).getByRole("textbox", { name: /Nombre/ }), { target: { value: "Bolsa" } });
-        fireEvent.click(within(dialogo).getByRole("button", { name: "Guardar" }));
-
-        const notificaciones = await screen.findByRole("region", { name: "Notificaciones" });
-        expect(within(notificaciones).getByRole("alert")).toHaveTextContent("Ya existe un valor igual");
+        const guardar = within(dialogo).getByRole("button", { name: "Guardar" });
+        let anteriores: HTMLElement[] = [];
+        for (let intento = 1; intento <= 4; intento += 1) {
+            fireEvent.click(guardar);
+            await waitFor(() => {
+                const avisos = screen.getAllByRole("alert");
+                expect(avisos).toHaveLength(Math.min(intento, 3));
+                anteriores.slice(-2).forEach((aviso, indice) => expect(avisos[indice]).toBe(aviso));
+                expect(anteriores).not.toContain(avisos.at(-1));
+                expect(guardar).toBeEnabled();
+            });
+            anteriores = screen.getAllByRole("alert");
+            anteriores.forEach((aviso) => expect(aviso).toHaveTextContent("Ya existe un valor igual"));
+        }
+        expect(mocks.guardar).toHaveBeenCalledTimes(4);
         expect(within(dialogo).getByRole("textbox", { name: /Nombre/ })).toHaveValue("Bolsa");
         expect(mocks.listar).toHaveBeenCalledOnce();
     });

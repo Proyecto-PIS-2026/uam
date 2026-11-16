@@ -1,0 +1,67 @@
+.ampliarFoto {
+    position: absolute;
+    inset: 0;
+    border: none;
+    border-radius: inherit;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.ampliarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+.modalFoto.modalFoto {
+    position: relative;
+    width: min(50rem, calc(100vw - 2rem));
+    margin: var(--espacio-secciones);
+    padding: 0;
+    border-radius: var(--radio-panel);
+    overflow: hidden;
+    background-color: var(--color-surface);
+}
+
+.fotoAmpliada {
+    position: relative;
+    width: 100%;
+    height: min(38rem, 80dvh);
+}
+
+.imagenAmpliada {
+    object-fit: cover;
+    object-position: center;
+}
+
+.cerrarFoto {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 1;
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-secondary);
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+    color: var(--color-secondary);
+    cursor: pointer;
+}
+
+.cerrarFoto:focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: -4px;
+}
+
+@media (width < 768px) {
+    .modalFoto.modalFoto {
+        width: min(32rem, calc(100vw - 1.5rem));
+        margin: var(--espacio-controles);
+    }
+
+    .fotoAmpliada {
+        height: min(30rem, 75dvh);
+    }
+}
