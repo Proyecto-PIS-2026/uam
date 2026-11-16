@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Collapse, IconButton, Switch, TextField } from "@mui/material";
-import CheckOutlinedIcon from "@mui/icons-material/CheckOutlined";
-import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { Collapse, Switch, TextField } from "@mui/material";
+import { useDespliegueConError } from "../useDespliegueConError";
 import styles from "./TarjetaVigencia.module.css";
 
 export interface ConfiguracionVigenciaFotos {
@@ -19,155 +17,76 @@ interface Props {
     etiquetaVencimiento?: string;
     ayudaVencimiento?: string;
     ayudaAvisos?: string;
-    maximoDiasVigencia?: number;
-    maximoDiasAnticipacion?: number;
     avisosIndependientes?: boolean;
     configuracion: ConfiguracionVigenciaFotos;
-    onGuardar: (configuracion: ConfiguracionVigenciaFotos) => Promise<void>;
+    onChange: (cambios: Partial<ConfiguracionVigenciaFotos>) => void;
+    guardando?: boolean;
+    modificados?: Partial<Record<keyof ConfiguracionVigenciaFotos, boolean>>;
+    errores?: Partial<Record<keyof ConfiguracionVigenciaFotos, boolean>>;
 }
 
-function sonIguales(primera: ConfiguracionVigenciaFotos, segunda: ConfiguracionVigenciaFotos) {
-    return (primera.habilitado === segunda.habilitado && primera.diasVigencia === segunda.diasVigencia && primera.avisosHabilitados === segunda.avisosHabilitados && primera.diasAnticipacion === segunda.diasAnticipacion);
-}
-
-function validarDias(valor: string, campo: "vigencia" | "anticipación", maximo?: number): string | null {
-    if (!/^[0-9]+$/.test(valor) || Number(valor) <= 0) {
-        return `La ${campo} debe ser un número entero mayor que cero.`;
-    }
-    if (!Number.isSafeInteger(Number(valor))) {
-        return `La ${campo} ingresada es demasiado grande.`;
-    }
-    if (maximo !== undefined && Number(valor) > maximo) {
-        return `La ${campo} no puede superar los ${maximo} días.`;
-    }
-    return null;
-}
-
-export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descripcion = "", etiquetaVencimiento = "", ayudaVencimiento = "", ayudaAvisos = "", maximoDiasVigencia, maximoDiasAnticipacion, avisosIndependientes = false, configuracion, onGuardar }: Props) {
-    const [valores, setValores] = useState(configuracion);
-    const [guardado, setGuardado] = useState(configuracion);
-    const [configuracionAnterior, setConfiguracionAnterior] = useState(configuracion);
-    const [guardando, setGuardando] = useState(false);
-
-    const { notificar } = useNotificacionToast();
-
-    if (!sonIguales(configuracionAnterior, configuracion)) {
-        setConfiguracionAnterior(configuracion);
-        setValores(configuracion);
-        setGuardado(configuracion);
-    }
-
-    const huboCambios = !sonIguales(valores, guardado);
-    const avisosDisponibles = avisosIndependientes || valores.habilitado;
-    const avisosActivos = avisosDisponibles && valores.avisosHabilitados;
+export default function TarjetaConfiguracionVigenciaFotos({ titulo = "", descripcion = "", etiquetaVencimiento = "", ayudaVencimiento = "", ayudaAvisos = "", avisosIndependientes = false, configuracion, onChange, guardando = false, modificados = {}, errores = {} }: Props) {
+    const avisosDisponibles = avisosIndependientes || configuracion.habilitado;
+    const avisosActivos = avisosDisponibles && configuracion.avisosHabilitados;
+    const mostrarVigencia = useDespliegueConError(configuracion.habilitado, Boolean(errores.diasVigencia), Boolean(modificados.diasVigencia));
+    const mostrarAnticipacion = useDespliegueConError(avisosActivos, Boolean(errores.diasAnticipacion), Boolean(modificados.diasAnticipacion));
 
     function cambiarDias(campo: "diasVigencia" | "diasAnticipacion", valor: string) {
-        if (!/^[0-9]*$/.test(valor)) {
-            return;
-        }
-        setValores((actual) => ({...actual, [campo]: valor}));
+        if (/^[0-9]*$/.test(valor)) onChange({ [campo]: valor });
     }
 
-    async function guardar() {
-        if (guardando || !huboCambios) {
-            return;
-        }
-        const errorVigencia = valores.habilitado ? validarDias(valores.diasVigencia, "vigencia", maximoDiasVigencia) : null;
-        if (errorVigencia) {
-            notificar(errorVigencia, "error");
-            return;
-        }
-
-        const errorAnticipacion = avisosActivos ? validarDias(valores.diasAnticipacion, "anticipación", maximoDiasAnticipacion) : null;
-        if (errorAnticipacion) {
-            notificar(errorAnticipacion, "error");
-            return;
-        }
-        if (valores.habilitado && avisosActivos && Number(valores.diasAnticipacion) >= Number(valores.diasVigencia)) {
-            notificar("La anticipación debe ser menor que la vigencia.", "error");
-            return;
-        }
-        const nuevaConfiguracion: ConfiguracionVigenciaFotos = {
-            habilitado: valores.habilitado,
-            avisosHabilitados: avisosActivos,
-            diasVigencia: valores.habilitado ? String(Number(valores.diasVigencia)) : "",
-            diasAnticipacion: avisosActivos ? String(Number(valores.diasAnticipacion)) : "",
-        };
-        setGuardando(true);
-        try {
-            await onGuardar(nuevaConfiguracion);
-            setValores(nuevaConfiguracion);
-            setGuardado(nuevaConfiguracion);
-            notificar("La configuración de vigencia se guardó correctamente.", "success");
-        } catch (error) {
-            notificar(error instanceof Error ? error.message : "No se pudo guardar la configuración.", "error");
-        } finally {
-            setGuardando(false);
-        }
-    }
-
-    const contenido = (
-        <form className={styles.tarjeta} noValidate onSubmit={(evento) => { evento.preventDefault(); void guardar(); }}>
+    return (
+        <div className={styles.tarjeta}>
             {titulo && <span className={styles.titulo}>{titulo}</span>}
             {descripcion && <span className={styles.descripcion}>{descripcion}</span>}
-            <div className={styles.filaEdicion}>
-                <div className={styles.opciones}>
-                    <label className={styles.filaSwitch} data-habilitado={valores.habilitado} data-guardando={guardando}>
-                        <span className={styles.textoSwitch}>
-                            {etiquetaVencimiento && (
-                                <span className={styles.etiquetaSwitch}>
-                                    {etiquetaVencimiento}
-                                </span>
-                            )}
-                            {ayudaVencimiento && (
-                                <span className={styles.ayudaSwitch}>
-                                    {ayudaVencimiento}
-                                </span>
-                            )}
-                        </span>
-                        <Switch checked={valores.habilitado} disabled={guardando} className={styles.switch}
-                            onChange={(_, checked) => {setValores((actual) => ({...actual, habilitado: checked, diasVigencia: checked ? actual.diasVigencia : "", avisosHabilitados: checked || avisosIndependientes ? actual.avisosHabilitados : false, diasAnticipacion: checked || avisosIndependientes ? actual.diasAnticipacion : ""}))}}
-                            slotProps={{input: {role: "switch", "aria-label": etiquetaVencimiento}}}
+            <div className={styles.opciones}>
+                <label className={styles.filaSwitch} data-habilitado={configuracion.habilitado} data-guardando={guardando}
+                    data-modificado={Boolean(modificados.habilitado)} data-error={Boolean(errores.habilitado)}>
+                    <span className={styles.textoSwitch}>
+                        {etiquetaVencimiento && <span className={styles.etiquetaSwitch}>{etiquetaVencimiento}</span>}
+                        {ayudaVencimiento && <span className={styles.ayudaSwitch}>{ayudaVencimiento}</span>}
+                    </span>
+                    <Switch checked={configuracion.habilitado} disabled={guardando} className={styles.switch}
+                        onChange={(_, habilitado) => onChange({ habilitado })}
+                        slotProps={{ input: { role: "switch", "aria-label": etiquetaVencimiento, "aria-invalid": Boolean(errores.habilitado) } }}
+                    />
+                </label>
+                <Collapse in={mostrarVigencia} timeout={300}>
+                    <div className={styles.opcionesDesplegadas}>
+                        <TextField required={configuracion.habilitado} fullWidth size="small" label="Días de vigencia"
+                            value={configuracion.diasVigencia} disabled={guardando || !mostrarVigencia}
+                            onChange={(evento) => cambiarDias("diasVigencia", evento.target.value)} className={styles.selectMui}
+                            data-modificado={Boolean(modificados.diasVigencia)} error={Boolean(errores.diasVigencia)}
+                            slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
                         />
-                    </label>               
-                    <Collapse in={valores.habilitado} timeout={300}>
-                        <div className={styles.opcionesDesplegadas}>
-                            <TextField required={valores.habilitado} fullWidth size="small" label="Días de vigencia" value={valores.diasVigencia} disabled={guardando || !valores.habilitado}
-                                onChange={(evento) => cambiarDias("diasVigencia", evento.target.value)}
-                                className={styles.selectMui}
-                                slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}
+                    </div>
+                </Collapse>
+                <Collapse in={avisosDisponibles || mostrarAnticipacion} timeout={300}>
+                    <div className={styles.opcionesDesplegadas}>
+                        <label className={styles.filaSwitch} data-habilitado={configuracion.avisosHabilitados} data-guardando={guardando || !avisosDisponibles}
+                            data-modificado={Boolean(modificados.avisosHabilitados)} data-error={Boolean(errores.avisosHabilitados)}>
+                            <span className={styles.textoSwitch}>
+                                <span className={styles.etiquetaSwitch}>Avisos de próximo vencimiento</span>
+                                {ayudaAvisos && <span className={styles.ayudaSwitch}>{ayudaAvisos}</span>}
+                            </span>
+                            <Switch checked={configuracion.avisosHabilitados} disabled={guardando || !avisosDisponibles} className={styles.switch}
+                                onChange={(_, avisosHabilitados) => onChange({ avisosHabilitados })}
+                                slotProps={{ input: { role: "switch", "aria-label": "Habilitar avisos de próximo vencimiento", "aria-invalid": Boolean(errores.avisosHabilitados) } }}
                             />
-                        </div>
-                    </Collapse>
-                    <Collapse in={avisosDisponibles} timeout={300}>
-                        <div className={styles.opcionesDesplegadas}>
-                            <label className={styles.filaSwitch} data-habilitado={valores.avisosHabilitados} data-guardando={guardando || !avisosDisponibles}>
-                                <span className={styles.textoSwitch}>
-                                    <span className={styles.etiquetaSwitch}>
-                                        Avisos de próximo vencimiento
-                                    </span>
-                                    <span className={styles.ayudaSwitch}>
-                                        {ayudaAvisos}
-                                    </span>
-                                </span>
-                                <Switch checked={valores.avisosHabilitados} disabled={guardando || !avisosDisponibles} className={styles.switch}
-                                    onChange={(_, checked) => {setValores((actual) => ({...actual, avisosHabilitados: checked, diasAnticipacion: checked ? actual.diasAnticipacion : ""}))}}
-                                    slotProps={{input: {role: "switch", "aria-label": "Habilitar avisos de próximo vencimiento"}}}
+                        </label>
+                        <Collapse in={mostrarAnticipacion} timeout={300}>
+                            <div className={styles.opcionesDesplegadas}>
+                                <TextField required={avisosActivos} fullWidth size="small" label="Días de anticipación del aviso"
+                                    value={configuracion.diasAnticipacion} disabled={guardando || !mostrarAnticipacion}
+                                    onChange={(evento) => cambiarDias("diasAnticipacion", evento.target.value)} className={styles.selectMui}
+                                    data-modificado={Boolean(modificados.diasAnticipacion)} error={Boolean(errores.diasAnticipacion)}
+                                    slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
                                 />
-                            </label>
-                            <Collapse in={valores.avisosHabilitados} timeout={300}>
-                                <div className={styles.anticipacionDesplegada}>
-                                    <TextField required={avisosActivos} fullWidth size="small" label="Días de anticipación del aviso" value={valores.diasAnticipacion} disabled={guardando || !avisosActivos} onChange={(evento) =>cambiarDias("diasAnticipacion", evento.target.value)} className={styles.selectMui} slotProps={{htmlInput: {inputMode: "numeric", pattern: "[0-9]*"}}}/>
-                                </div>
-                            </Collapse>
-                        </div>
-                    </Collapse>
-                </div>
-                <IconButton type="submit" aria-label={`Guardar configuración: ${titulo}`} disabled={guardando || !huboCambios} className={styles.botonGuardar}>
-                    <CheckOutlinedIcon />
-                </IconButton>
+                            </div>
+                        </Collapse>
+                    </div>
+                </Collapse>
             </div>
-        </form>
+        </div>
     );
-    return contenido; 
 }

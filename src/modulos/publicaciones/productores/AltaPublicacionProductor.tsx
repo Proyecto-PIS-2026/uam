@@ -137,22 +137,6 @@ function Campo({ nombre, valor, opciones: lista, cambiar, deshabilitado = false 
     </TextField>;
 }
 
-export default function AltaPublicacionProductor({ productorId }: { productorId: number }) {
-    const esWeb = useMediaQuery("(min-width: 768px)");
-    const { catalogos, error, cargando, reintentar } = useCatalogosPublicacion();
-    const [abierto, setAbierto] = useState(false);
-    const { notificar } = useNotificacionToast();
-
-    return <main className="contenedor-pagina secciones-pagina flex-1">
-        <AvisoErrorToast mensaje={cargando ? null : error} />
-        <header className="encabezado-pagina"><h1 className="titulo-pagina">Alta de publicación de Productor</h1></header>
-        <button type="button" className={styles.guardar} onClick={() => { setAbierto(true); }} disabled={cargando || !catalogos || !productorId} aria-busy={cargando}>Agregar producto</button>
-        {error && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { reintentar(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
-        {productorId > 0 && <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} productorId={productorId} abierto={abierto} esWeb={esWeb}
-            alCerrar={() => setAbierto(false)} alCrear={(texto) => { setAbierto(false); notificar(texto, "success"); }} />}
-    </main>;
-}
-
 export function DrawerAltaPublicacionProductor({ productorId, disponibilidadInicial = true, abierto, alCerrar, alCrear }: PropsDrawer) {
     const esWeb = useMediaQuery("(min-width: 768px)");
     const { catalogos, error, cargando, reintentar } = useCatalogosPublicacion();

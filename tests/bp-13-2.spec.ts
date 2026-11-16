@@ -161,20 +161,36 @@ async function configurar(page: Page, valores: { anticipacion?: string; habilita
   await page.getByRole("button", { name: "General", exact: true }).click();
   const titulo = rol === "OPERADOR" ? "Vigencia de fotos de operadores" : "Vigencia de fotos de productores";
   const tarjeta = page.getByText(titulo, { exact: true }).locator("..");
-  if (valores.habilitado !== undefined) await tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true }).setChecked(valores.habilitado);
-  if (valores.anticipacion !== undefined) await tarjeta.getByRole("textbox", { name: "Días de anticipación del aviso", exact: true }).fill(valores.anticipacion);
-  const [respuesta] = await Promise.all([
-    page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
-      && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
-    tarjeta.getByRole("button", { name: `Guardar configuración: ${titulo}`, exact: true }).click(),
-  ]);
-  expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
-  await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).toBeEnabled();
-  await expect(page.getByRole("status").filter({ hasText: "La configuración de vigencia se guardó correctamente." })).toBeVisible();
+  const vencimiento = tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true });
+  const anticipacion = tarjeta.getByRole("textbox", { name: "Días de anticipación del aviso", exact: true, includeHidden: true });
+  const avisos = tarjeta.getByRole("switch", { name: "Habilitar avisos de próximo vencimiento", exact: true, includeHidden: true });
+  async function guardar() {
+    const [respuesta] = await Promise.all([
+      page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
+        && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
+      page.getByRole("button", { name: "Guardar", exact: true }).click(),
+    ]);
+    expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
+    await expect(vencimiento).toBeEnabled();
+    await expect(page.getByRole("status").filter({ hasText: "La configuración se guardó correctamente." })).toBeVisible();
+  }
+  const habilitadoAnterior = await vencimiento.isChecked();
+  const habilitadoFinal = valores.habilitado ?? habilitadoAnterior;
+  const cambiaAnticipacion = valores.anticipacion !== undefined && (await anticipacion.inputValue()) !== valores.anticipacion;
+  if (cambiaAnticipacion && valores.anticipacion !== undefined) {
+    const avisosAnteriores = await avisos.isChecked();
+    await vencimiento.check();
+    await avisos.check();
+    await anticipacion.fill(valores.anticipacion);
+    await avisos.setChecked(avisosAnteriores);
+  }
+  await vencimiento.setChecked(habilitadoFinal);
+  if (cambiaAnticipacion || habilitadoFinal !== habilitadoAnterior) await guardar();
   await page.reload();
   await page.getByRole("button", { name: "General", exact: true }).click();
-  if (valores.anticipacion !== undefined) await expect(tarjeta.getByRole("textbox", { name: "Días de anticipación del aviso", exact: true })).toHaveValue(valores.anticipacion);
-  if (valores.habilitado === false) await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).not.toBeChecked();
+  if (valores.anticipacion !== undefined) await expect(anticipacion).toHaveValue(valores.anticipacion);
+  if (valores.habilitado === true) await expect(vencimiento).toBeChecked();
+  if (valores.habilitado === false) await expect(vencimiento).not.toBeChecked();
 }
 
 async function verFoto(page: Page, foto: Foto) {

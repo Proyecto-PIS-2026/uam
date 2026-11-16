@@ -142,15 +142,18 @@ async function deshabilitarAging(page: Page, rol: Rol) {
   await page.getByRole("button", { name: "General", exact: true }).click();
   const titulo = rol === "OPERADOR" ? "Vigencia de fotos de operadores" : "Vigencia de fotos de productores";
   const tarjeta = page.getByText(titulo, { exact: true }).locator("..");
-  await tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true }).setChecked(false);
-  const [respuesta] = await Promise.all([
-    page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
-      && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
-    tarjeta.getByRole("button", { name: `Guardar configuración: ${titulo}`, exact: true }).click(),
-  ]);
-  expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
-  await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).toBeEnabled();
-  await expect(page.getByRole("status").filter({ hasText: "La configuración de vigencia se guardó correctamente." })).toBeVisible();
+  const vencimiento = tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true });
+  if (await vencimiento.isChecked()) {
+    await vencimiento.setChecked(false);
+    const [respuesta] = await Promise.all([
+      page.waitForResponse((respuesta) => new URL(respuesta.url()).pathname === "/administracion"
+        && respuesta.request().method() === "POST" && respuesta.request().headers()["next-action"] !== undefined),
+      page.getByRole("button", { name: "Guardar", exact: true }).click(),
+    ]);
+    expect(respuesta.ok(), "El guardado de la vigencia debe responder correctamente").toBe(true);
+    await expect(vencimiento).toBeEnabled();
+    await expect(page.getByRole("status").filter({ hasText: "La configuración se guardó correctamente." })).toBeVisible();
+  }
   await page.reload();
   await page.getByRole("button", { name: "General", exact: true }).click();
   await expect(tarjeta.getByRole("switch", { name: "Vencimiento de fotos", exact: true })).not.toBeChecked();

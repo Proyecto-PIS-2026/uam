@@ -208,12 +208,6 @@
     outline-offset: 3px;
 }
 
-.vacio {
-    margin: var(--espacio-controles) 0 0;
-    color: var(--color-muted-foreground);
-    font-size: var(--tamano-texto-secundario);
-}
-
 .tablaPanel {
     overflow: hidden;
     container-type: inline-size;

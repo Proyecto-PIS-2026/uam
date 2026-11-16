@@ -1,55 +1,19 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import TarjetaOrdenamientoPredeterminado, { type ConfiguracionOrdenamiento } from "./TarjetaOrdenamientoPredeterminado";
-
-const mocks = vi.hoisted(() => ({
-    notificar: vi.fn(),
-}));
-
-vi.mock("@/compartido/componentes/NotificacionToast", () => ({
-    useNotificacionToast: () => ({ notificar: mocks.notificar }),
-}));
-
-beforeEach(() => {
-    vi.clearAllMocks();
-});
 
 afterEach(cleanup);
 
+const configuracion: ConfiguracionOrdenamiento = {
+    habilitado: true, ordenLanding: "nombre_asc", ordenMercadoVirtual: "menor_precio", ordenMercadoProduccion: "mayor_precio",
+};
 const etiquetaInicio = "Orden predeterminado de Inicio";
 const etiquetaVirtual = "Orden predeterminado de Mercado Virtual";
 const etiquetaProduccion = "Orden predeterminado de Mercado Producción";
 
-const etiquetasOrden = {
-    nombre_asc: "A-Z",
-    nombre_desc: "Z-A",
-    menor_precio: "Menor Precio",
-    mayor_precio: "Mayor Precio",
-    mas_vendidas: "Más vendidas",
-    mas_actualizadas: "Más actualizadas",
-};
-
-function crearConfiguracion(cambios: Partial<ConfiguracionOrdenamiento> = {}): ConfiguracionOrdenamiento {
-    return {
-        habilitado: true,
-        ordenLanding: "nombre_asc",
-        ordenMercadoVirtual: "menor_precio",
-        ordenMercadoProduccion: "mayor_precio",
-        ...cambios,
-    };
-}
-
-function preparar(configuracion = crearConfiguracion(), onGuardar = vi.fn().mockResolvedValue(undefined)) {
-    const props = { configuracion, onGuardar };
-    return { ...render(<TarjetaOrdenamientoPredeterminado {...props} />), props, onGuardar };
-}
-
-function obtenerSwitch() {
-    return screen.getByRole("switch", { name: "Permitir cambiar el orden" });
-}
-
-function botonGuardar() {
-    return screen.getByRole("button", { name: "Guardar configuración de ordenamiento" });
+function preparar(cambios: Partial<ConfiguracionOrdenamiento> = {}) {
+    const props = { configuracion: { ...configuracion, ...cambios }, onChange: vi.fn() };
+    return { ...render(<TarjetaOrdenamientoPredeterminado {...props} />), props };
 }
 
 function selector(etiqueta: string) {
@@ -62,38 +26,28 @@ async function seleccionarOrden(etiqueta: string, opcion: string) {
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
 }
 
-describe("TarjetaOrdenamientoPredeterminado", () => {
-    it("muestra los textos y los tres órdenes recibidos", () => {
-        preparar();
+describe("TarjetaOrdenamientoPredeterminado controlada", () => {
+    it("muestra la configuración sin formularios ni botones de guardado propios", () => {
+        const { container } = preparar();
         expect(screen.getByText("Orden de las publicaciones")).toBeInTheDocument();
-        expect(obtenerSwitch()).toBeChecked();
+        expect(screen.getByRole("switch", { name: "Permitir cambiar el orden" })).toBeChecked();
         expect(selector(etiquetaInicio)).toHaveTextContent("A-Z");
         expect(selector(etiquetaVirtual)).toHaveTextContent("Menor Precio");
         expect(selector(etiquetaProduccion)).toHaveTextContent("Mayor Precio");
-        expect(botonGuardar()).toBeDisabled();
+        expect(screen.queryByRole("button", { name: /^Guardar/ })).not.toBeInTheDocument();
+        expect(container.querySelector("form")).toBeNull();
     });
 
-    it.each([true, false])("muestra el estado inicial %s sin cambios pendientes", (habilitado) => {
-        preparar(crearConfiguracion({ habilitado }));
-        expect(obtenerSwitch()).toHaveProperty("checked", habilitado);
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("actualiza la descripción al cambiar el switch sin guardar automáticamente", () => {
-        const { onGuardar } = preparar();
-        expect(screen.getByText("Los usuarios pueden elegir cómo ordenar los resultados.")).toBeInTheDocument();
-        fireEvent.click(obtenerSwitch());
+    it("comunica solo el permiso y refleja la descripción recibida desde el panel", () => {
+        const { props, rerender } = preparar();
+        fireEvent.click(screen.getByRole("switch", { name: "Permitir cambiar el orden" }));
+        expect(props.onChange).toHaveBeenCalledExactlyOnceWith({ habilitado: false });
+        expect(props.configuracion).toEqual(configuracion);
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} configuracion={{ ...configuracion, habilitado: false }} />);
+        expect(screen.getByRole("switch", { name: "Permitir cambiar el orden" })).not.toBeChecked();
         expect(screen.getByText("Se utiliza únicamente el orden predeterminado.")).toBeInTheDocument();
         expect(screen.queryByText("Los usuarios pueden elegir cómo ordenar los resultados.")).not.toBeInTheDocument();
-        expect(botonGuardar()).toBeEnabled();
-        expect(onGuardar).not.toHaveBeenCalled();
-    });
-
-    it("mantiene los tres selectores habilitados con el switch apagado", () => {
-        preparar(crearConfiguracion({ habilitado: false }));
-        expect(selector(etiquetaInicio)).not.toHaveAttribute("aria-disabled", "true");
-        expect(selector(etiquetaVirtual)).not.toHaveAttribute("aria-disabled", "true");
-        expect(selector(etiquetaProduccion)).not.toHaveAttribute("aria-disabled", "true");
+        for (const etiqueta of [etiquetaInicio, etiquetaVirtual, etiquetaProduccion]) expect(selector(etiqueta)).not.toHaveAttribute("aria-disabled", "true");
     });
 
     it("ofrece solamente A-Z, Z-A y Más vendidas para Inicio", async () => {
@@ -102,9 +56,6 @@ describe("TarjetaOrdenamientoPredeterminado", () => {
         expect(await screen.findByRole("option", { name: "A-Z" })).toBeInTheDocument();
         expect(screen.getByRole("option", { name: "Z-A" })).toBeInTheDocument();
         expect(screen.getByRole("option", { name: "Más vendidas" })).toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Menor Precio" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Mayor Precio" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("option", { name: "Más actualizadas" })).not.toBeInTheDocument();
         expect(screen.getAllByRole("option")).toHaveLength(3);
     });
 
@@ -112,187 +63,68 @@ describe("TarjetaOrdenamientoPredeterminado", () => {
         preparar();
         fireEvent.mouseDown(selector(etiqueta));
         expect(await screen.findByRole("option", { name: "Menor Precio" })).toBeInTheDocument();
-        expect(screen.getByRole("option", { name: "Mayor Precio" })).toBeInTheDocument();
-        expect(screen.getByRole("option", { name: "A-Z" })).toBeInTheDocument();
-        expect(screen.getByRole("option", { name: "Z-A" })).toBeInTheDocument();
-        expect(screen.getByRole("option", { name: "Más vendidas" })).toBeInTheDocument();
-        expect(screen.getByRole("option", { name: "Más actualizadas" })).toBeInTheDocument();
+        for (const opcion of ["Mayor Precio", "A-Z", "Z-A", "Más vendidas", "Más actualizadas"]) {
+            expect(screen.getByRole("option", { name: opcion })).toBeInTheDocument();
+        }
         expect(screen.getAllByRole("option")).toHaveLength(6);
     });
 
     it.each([
-        { etiqueta: etiquetaInicio, opcion: "Z-A", inicio: "Z-A", virtual: "Menor Precio", produccion: "Mayor Precio" },
-        { etiqueta: etiquetaVirtual, opcion: "Mayor Precio", inicio: "A-Z", virtual: "Mayor Precio", produccion: "Mayor Precio" },
-        { etiqueta: etiquetaProduccion, opcion: "Menor Precio", inicio: "A-Z", virtual: "Menor Precio", produccion: "Menor Precio" },
-        { etiqueta: etiquetaVirtual, opcion: "Más actualizadas", inicio: "A-Z", virtual: "Más actualizadas", produccion: "Mayor Precio" },
-        { etiqueta: etiquetaProduccion, opcion: "Más actualizadas", inicio: "A-Z", virtual: "Menor Precio", produccion: "Más actualizadas" },
-    ])("cambia $etiqueta a $opcion sin modificar los otros órdenes", async ({ etiqueta, opcion, inicio, virtual, produccion }) => {
-        const { onGuardar } = preparar();
+        { etiqueta: etiquetaInicio, opcion: "Z-A", campo: "ordenLanding", valor: "nombre_desc" },
+        { etiqueta: etiquetaInicio, opcion: "Más vendidas", campo: "ordenLanding", valor: "mas_vendidas" },
+        { etiqueta: etiquetaVirtual, opcion: "Mayor Precio", campo: "ordenMercadoVirtual", valor: "mayor_precio" },
+        { etiqueta: etiquetaVirtual, opcion: "Más actualizadas", campo: "ordenMercadoVirtual", valor: "mas_actualizadas" },
+        { etiqueta: etiquetaProduccion, opcion: "Menor Precio", campo: "ordenMercadoProduccion", valor: "menor_precio" },
+        { etiqueta: etiquetaProduccion, opcion: "Más actualizadas", campo: "ordenMercadoProduccion", valor: "mas_actualizadas" },
+    ] as const)("comunica $campo sin sustituir otros valores del borrador", async ({ etiqueta, opcion, campo, valor }) => {
+        const { props } = preparar({ habilitado: false });
         await seleccionarOrden(etiqueta, opcion);
-        expect(selector(etiquetaInicio)).toHaveTextContent(inicio);
-        expect(selector(etiquetaVirtual)).toHaveTextContent(virtual);
-        expect(selector(etiquetaProduccion)).toHaveTextContent(produccion);
-        expect(botonGuardar()).toBeEnabled();
-        expect(onGuardar).not.toHaveBeenCalled();
+        expect(props.onChange).toHaveBeenCalledExactlyOnceWith({ [campo]: valor });
+        expect(selector(etiquetaInicio)).toHaveTextContent("A-Z");
+        expect(selector(etiquetaVirtual)).toHaveTextContent("Menor Precio");
+        expect(selector(etiquetaProduccion)).toHaveTextContent("Mayor Precio");
+        expect(props.configuracion).toEqual({ ...configuracion, habilitado: false });
     });
 
-    it("restaurar el switch al estado original elimina el cambio pendiente", () => {
-        preparar();
-        fireEvent.click(obtenerSwitch());
-        expect(botonGuardar()).toBeEnabled();
-        fireEvent.click(obtenerSwitch());
-        expect(obtenerSwitch()).toBeChecked();
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it.each([
-        { etiqueta: etiquetaInicio, nuevo: "Z-A", original: "A-Z" },
-        { etiqueta: etiquetaVirtual, nuevo: "Mayor Precio", original: "Menor Precio" },
-        { etiqueta: etiquetaProduccion, nuevo: "Menor Precio", original: "Mayor Precio" },
-        { etiqueta: etiquetaVirtual, nuevo: "Más actualizadas", original: "Menor Precio" },
-        { etiqueta: etiquetaProduccion, nuevo: "Más actualizadas", original: "Mayor Precio" },
-    ])("restaurar $etiqueta después de elegir $nuevo elimina el cambio pendiente", async ({ etiqueta, nuevo, original }) => {
-        preparar();
-        await seleccionarOrden(etiqueta, nuevo);
-        expect(botonGuardar()).toBeEnabled();
-        await seleccionarOrden(etiqueta, original);
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("apagar el switch conserva los tres órdenes seleccionados", async () => {
-        preparar();
-        await seleccionarOrden(etiquetaInicio, "Z-A");
-        await seleccionarOrden(etiquetaVirtual, "Mayor Precio");
-        await seleccionarOrden(etiquetaProduccion, "Menor Precio");
-        fireEvent.click(obtenerSwitch());
-        expect(obtenerSwitch()).not.toBeChecked();
+    it("refleja cambios y cancelaciones enviados por el panel", () => {
+        const { props, rerender } = preparar();
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} configuracion={{ ...configuracion, ordenLanding: "nombre_desc", ordenMercadoVirtual: "mas_actualizadas", ordenMercadoProduccion: "mas_vendidas" }} />);
         expect(selector(etiquetaInicio)).toHaveTextContent("Z-A");
-        expect(selector(etiquetaVirtual)).toHaveTextContent("Mayor Precio");
-        expect(selector(etiquetaProduccion)).toHaveTextContent("Menor Precio");
+        expect(selector(etiquetaVirtual)).toHaveTextContent("Más actualizadas");
+        expect(selector(etiquetaProduccion)).toHaveTextContent("Más vendidas");
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} />);
+        expect(selector(etiquetaInicio)).toHaveTextContent("A-Z");
+        expect(props.onChange).not.toHaveBeenCalled();
     });
 
-    it("guarda los cuatro valores juntos y muestra confirmación", async () => {
-        const { onGuardar } = preparar();
-        await seleccionarOrden(etiquetaInicio, "Z-A");
-        await seleccionarOrden(etiquetaVirtual, "Mayor Precio");
-        await seleccionarOrden(etiquetaProduccion, "Menor Precio");
-        fireEvent.click(obtenerSwitch());
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, ordenLanding: "nombre_desc", ordenMercadoVirtual: "mayor_precio", ordenMercadoProduccion: "menor_precio" }));
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de ordenamiento se guardó correctamente.", "success"));
-        expect(botonGuardar()).toBeDisabled();
+    it("marca individualmente los campos pendientes y permite quitar la marca", () => {
+        const { props, rerender } = preparar();
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} modificados={{ habilitado: true, ordenMercadoVirtual: true }} />);
+        expect(screen.getByRole("switch", { name: "Permitir cambiar el orden" }).closest("[data-modificado]")).toHaveAttribute("data-modificado", "true");
+        expect(selector(etiquetaInicio).closest("[data-modificado]")).toHaveAttribute("data-modificado", "false");
+        expect(selector(etiquetaVirtual).closest("[data-modificado]")).toHaveAttribute("data-modificado", "true");
+        expect(selector(etiquetaProduccion).closest("[data-modificado]")).toHaveAttribute("data-modificado", "false");
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} />);
+        expect(selector(etiquetaVirtual).closest("[data-modificado]")).toHaveAttribute("data-modificado", "false");
     });
 
-    it("permite configurar Más vendidas en las tres secciones desde el panel", async () => {
-        const { onGuardar } = preparar();
-        await seleccionarOrden(etiquetaInicio, "Más vendidas");
-        await seleccionarOrden(etiquetaVirtual, "Más vendidas");
-        await seleccionarOrden(etiquetaProduccion, "Más vendidas");
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: true, ordenLanding: "mas_vendidas", ordenMercadoVirtual: "mas_vendidas", ordenMercadoProduccion: "mas_vendidas" }));
+    it("presenta los errores del panel en campos pendientes", () => {
+        const { props, rerender } = preparar();
+        const marcas = { habilitado: true, ordenLanding: true };
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} modificados={marcas} errores={marcas} />);
+        expect(selector(etiquetaInicio)).toHaveAttribute("aria-invalid", "true");
+        expect(selector(etiquetaInicio).closest(".MuiOutlinedInput-root")).toHaveClass("Mui-error");
+        expect(screen.getByRole("switch", { name: "Permitir cambiar el orden" })).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByRole("switch", { name: "Permitir cambiar el orden" }).closest("[data-error]")).toHaveAttribute("data-error", "true");
     });
 
-    it.each([true, false])("permite guardar Más actualizadas en ambos mercados con habilitado=%s", async (habilitado) => {
-        const { onGuardar } = preparar(crearConfiguracion({ habilitado }));
-        await seleccionarOrden(etiquetaVirtual, "Más actualizadas");
-        await seleccionarOrden(etiquetaProduccion, "Más actualizadas");
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado, ordenLanding: "nombre_asc", ordenMercadoVirtual: "mas_actualizadas", ordenMercadoProduccion: "mas_actualizadas" }));
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de ordenamiento se guardó correctamente.", "success"));
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("permite guardar órdenes nuevos con el switch apagado", async () => {
-        const { onGuardar } = preparar(crearConfiguracion({ habilitado: false }));
-        await seleccionarOrden(etiquetaVirtual, "Mayor Precio");
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(onGuardar).toHaveBeenCalledExactlyOnceWith({ habilitado: false, ordenLanding: "nombre_asc", ordenMercadoVirtual: "mayor_precio", ordenMercadoProduccion: "mayor_precio" }));
-    });
-
-    it("bloquea los controles mientras guarda y evita envíos repetidos", async () => {
-        let finalizar!: () => void;
-        const onGuardar = vi.fn(() => new Promise<void>((resolve) => { finalizar = resolve }));
-        preparar(crearConfiguracion(), onGuardar);
-        fireEvent.click(obtenerSwitch());
-        fireEvent.click(botonGuardar());
-        expect(obtenerSwitch()).toBeDisabled();
-
-        for (const etiqueta of [etiquetaInicio, etiquetaVirtual, etiquetaProduccion]) {
-            expect(selector(etiqueta)).toHaveAttribute("aria-disabled", "true");
-        }
-
-        expect(botonGuardar()).toBeDisabled();
-        fireEvent.click(botonGuardar());
-        expect(onGuardar).toHaveBeenCalledOnce();
-        await act(async () => { finalizar() });
-        expect(obtenerSwitch()).toBeEnabled();
-
-        for (const etiqueta of [etiquetaInicio, etiquetaVirtual, etiquetaProduccion]) {
-            expect(selector(etiqueta)).not.toHaveAttribute("aria-disabled", "true");
-        }
-
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("conserva los cambios cuando falla el guardado", async () => {
-        preparar(crearConfiguracion(), vi.fn().mockRejectedValue(new Error("Error de conexión")));
-        await seleccionarOrden(etiquetaVirtual, "Mayor Precio");
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Error de conexión", "error"));
-        expect(selector(etiquetaVirtual)).toHaveTextContent("Mayor Precio");
-        await waitFor(() => expect(botonGuardar()).toBeEnabled());
-    });
-
-    it("permite reintentar después de un error", async () => {
-        const onGuardar = vi.fn().mockRejectedValueOnce(new Error("Error temporal")).mockResolvedValueOnce(undefined);
-        preparar(crearConfiguracion(), onGuardar);
-        fireEvent.click(obtenerSwitch());
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("Error temporal", "error"));
-        await waitFor(() => expect(botonGuardar()).toBeEnabled());
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("La configuración de ordenamiento se guardó correctamente.", "success"));
-        expect(onGuardar).toHaveBeenCalledTimes(2);
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("muestra un error genérico si el rechazo no es un Error", async () => {
-        preparar(crearConfiguracion(), vi.fn().mockRejectedValue("fallo"));
-        fireEvent.click(obtenerSwitch());
-        fireEvent.click(botonGuardar());
-        await waitFor(() => expect(mocks.notificar).toHaveBeenCalledWith("No se pudo guardar la configuración de ordenamiento.", "error"));
-        await waitFor(() => expect(botonGuardar()).toBeEnabled());
-    });
-
-    it.each([
-        { habilitado: false },
-        { ordenLanding: "nombre_desc" },
-        { ordenMercadoVirtual: "mayor_precio" },
-        { ordenMercadoProduccion: "menor_precio" },
-        { ordenMercadoVirtual: "mas_actualizadas" },
-        { ordenMercadoProduccion: "mas_actualizadas" },
-    ] satisfies Partial<ConfiguracionOrdenamiento>[])("sincroniza cambios recibidos del servidor: %j", (cambios) => {
-        const { rerender, props } = preparar();
-        const nuevaConfiguracion = crearConfiguracion(cambios);
-        rerender(<TarjetaOrdenamientoPredeterminado {...props} configuracion={nuevaConfiguracion} />);
-        expect(obtenerSwitch()).toHaveProperty("checked", nuevaConfiguracion.habilitado);
-        expect(selector(etiquetaInicio)).toHaveTextContent(etiquetasOrden[nuevaConfiguracion.ordenLanding]);
-        expect(selector(etiquetaVirtual)).toHaveTextContent(etiquetasOrden[nuevaConfiguracion.ordenMercadoVirtual]);
-        expect(selector(etiquetaProduccion)).toHaveTextContent(etiquetasOrden[nuevaConfiguracion.ordenMercadoProduccion]);
-        expect(botonGuardar()).toBeDisabled();
-    });
-
-    it("conserva la edición si recibe otro objeto con los mismos valores", async () => {
-        const { rerender, props } = preparar();
-        await seleccionarOrden(etiquetaVirtual, "Mayor Precio");
-        rerender(<TarjetaOrdenamientoPredeterminado {...props} configuracion={crearConfiguracion()} />);
-        expect(selector(etiquetaVirtual)).toHaveTextContent("Mayor Precio");
-        expect(botonGuardar()).toBeEnabled();
-    });
-
-    it("no ejecuta el guardado sin cambios pendientes", () => {
-        const { onGuardar } = preparar();
-        fireEvent.click(botonGuardar());
-        expect(onGuardar).not.toHaveBeenCalled();
+    it("deshabilita todos los controles durante el guardado global", () => {
+        const { props, rerender } = preparar();
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} guardando />);
+        expect(screen.getByRole("switch", { name: "Permitir cambiar el orden" })).toBeDisabled();
+        for (const etiqueta of [etiquetaInicio, etiquetaVirtual, etiquetaProduccion]) expect(selector(etiqueta)).toHaveAttribute("aria-disabled", "true");
+        rerender(<TarjetaOrdenamientoPredeterminado {...props} />);
+        expect(screen.getByRole("switch", { name: "Permitir cambiar el orden" })).toBeEnabled();
+        for (const etiqueta of [etiquetaInicio, etiquetaVirtual, etiquetaProduccion]) expect(selector(etiqueta)).not.toHaveAttribute("aria-disabled", "true");
     });
 });

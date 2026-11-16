@@ -78,56 +78,11 @@
     min-width: 0;
 }
 
-.filaTelefono {
-    display: grid;
-    grid-template-columns: 13rem minmax(0, 1fr);
-    gap: var(--espacio-controles);
-}
-
-.encabezadoSeccion {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--espacio-secciones);
-}
-
 .ayuda {
     margin: var(--espacio-textos) 0 0;
     color: var(--color-muted);
     font-size: var(--tamano-texto-secundario);
     line-height: var(--interlineado-texto);
-}
-
-.listaLocales {
-    display: flex;
-    flex-direction: column;
-    gap: var(--espacio-secciones);
-}
-
-.local {
-    display: flex;
-    flex-direction: column;
-    gap: var(--espacio-secciones);
-    padding: var(--padding-panel);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-panel);
-    background: var(--color-surface-muted);
-}
-
-.encabezadoLocal {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--espacio-secciones);
-}
-
-.grillaLocal {
-    display: grid;
-    grid-template-columns:
-    minmax(0, 1fr)
-    minmax(0, 1fr)
-    minmax(0, 1fr);
-    gap: var(--espacio-controles);
 }
 
 .grillaContraseña {
@@ -136,8 +91,6 @@
     gap: var(--espacio-controles);
 }
 
-.agregarLocal,
-.eliminarLocal,
 .cancelar,
 .guardar {
     min-height: var(--alto-control);
@@ -147,26 +100,6 @@
     font-size: var(--tamano-texto-secundario);
     font-weight: 600;
     cursor: pointer;
-}
-
-.agregarLocal {
-    border: 1px solid var(--color-secondary);
-    background: var(--color-surface);
-    color: var(--color-secondary);
-}
-
-.agregarLocal:hover:not(:disabled) {
-    background: var(--color-secondary-soft);
-}
-
-.eliminarLocal {
-    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
-}
-
-.eliminarLocal:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
 }
 
 .acciones {
@@ -198,8 +131,6 @@
     filter: brightness(0.92);
 }
 
-.agregarLocal:disabled,
-.eliminarLocal:disabled,
 .cancelar:disabled,
 .guardar:disabled {
     opacity: 0.55;
@@ -207,18 +138,8 @@
 }
 
 @media (max-width: 700px) {
-    .filaTelefono,
-    .grillaLocal,
     .grillaContraseña {
         grid-template-columns: 1fr;
-    }
-
-    .encabezadoSeccion {
-        flex-direction: column;
-    }
-
-    .agregarLocal {
-        width: 100%;
     }
 
     .acciones {

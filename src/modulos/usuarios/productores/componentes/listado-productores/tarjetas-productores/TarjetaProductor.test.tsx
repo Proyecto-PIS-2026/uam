@@ -8,6 +8,7 @@ const productor = {
     nombreFantasia: "Nombre 1",
     fotoPerfil: "",
     cantidadProductos: 3,
+    ubicaciones: [],
     departamentos: ["Canelones", "Salto"],
 };
 

@@ -4,28 +4,28 @@ import { test as testPrecarga } from "./precarga-operadores";
 import { iniciarSesionAdministrador, iniciarSesionOperador, iniciarSesionProductor } from "./autenticacion";
 
 const tituloImporte = "Importe de ajuste rápido de precios";
-const confirmacionGuardado = "El importe de ajuste rápido de precios se guardó correctamente.";
+const confirmacionGuardado = "La configuración se guardó correctamente.";
 const tituloListaInteligente = "Lista Inteligente";
 const confirmacionEnlace = /se guardó correctamente/i;
 
 const interruptorRestablecer = (page: Page) =>page.getByRole("switch", { name: "Permitir que los usuarios restablezcan su propia contraseña", exact: true });
-const guardarRestablecer = (page: Page) =>page.getByRole("button", { name: "Guardar configuración: Restablecimiento de contraseñas", exact: true });
+const guardarRestablecer = (page: Page) =>page.getByRole("button", { name: "Guardar", exact: true });
 const tarjetaLista = (page: Page) => page.getByText(tituloListaInteligente, { exact: true }).locator("..");
 const campoEnlace = (page: Page) => tarjetaLista(page).getByRole("textbox");
-const guardarEnlace = (page: Page) => tarjetaLista(page).getByRole("button", { name: "Guardar cambios", exact: true });
+const guardarEnlace = (page: Page) => page.getByRole("button", { name: "Guardar", exact: true });
 const estadoEnlace = (page: Page) => page.getByRole("status").filter({ hasText: confirmacionEnlace });
 
 async function guardarYConfirmarEnlace(page: Page) {
     await guardarEnlace(page).click();
     await expect(estadoEnlace(page)).toBeVisible({ timeout: 30_000 });
-    await expect(guardarEnlace(page)).toBeDisabled();
+    await expect(guardarEnlace(page)).toBeHidden();
 }
 
 const secciones = (page: Page) => page.getByRole("group", { name: "Secciones de configuración" });
 const filasUsuarios = (page: Page) => page.getByRole("button").filter({ has: page.getByText(/^(Administrador|Operador|Productor)$/, { exact: true }) });
 const tarjetaImporte = (page: Page) => page.getByText(tituloImporte, { exact: true }).locator("..");
 const campoImporte = (page: Page) => tarjetaImporte(page).getByRole("textbox", { name: tituloImporte, exact: true });
-const guardarImporte = (page: Page) => tarjetaImporte(page).getByRole("button", { name: "Guardar cambios", exact: true });
+const guardarImporte = (page: Page) => page.getByRole("button", { name: "Guardar", exact: true });
 
 
 async function seleccionarRol(page: Page, rol: string) {
@@ -60,7 +60,7 @@ async function fijarRestablecimiento(page: Page, habilitado: boolean) {
     await interruptorRestablecer(page).setChecked(habilitado);
     await expect(guardarRestablecer(page)).toBeEnabled();
     await guardarRestablecer(page).click();
-    await expect(guardarRestablecer(page)).toBeDisabled({ timeout: 30_000 });
+    await expect(guardarRestablecer(page)).toBeHidden({ timeout: 30_000 });
 }
 
 function botonPrecio(tarjeta: Locator) {
@@ -212,7 +212,7 @@ test("BP-18.2: abandonar un cambio conserva el importe guardado", async ({ page,
 
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(campoImporte(page)).toHaveValue(original);
-    await expect(guardarImporte(page)).toBeDisabled();
+    await expect(guardarImporte(page)).toBeHidden();
 });
 
 test("BP-18.2: rechaza cero sin reemplazar el importe guardado", async ({ page, usuariosAdministrativos }) => {
@@ -296,7 +296,7 @@ testPrecarga("BP-18.2: guarda el importe y lo aplica al ajuste rápido del opera
             await campoImporte(page).fill(nuevo);
             await guardarImporte(page).click();
             await expect(page.getByRole("status").filter({ hasText: confirmacionGuardado })).toBeVisible({ timeout: 30_000 });
-            await expect(guardarImporte(page)).toBeDisabled();
+            await expect(guardarImporte(page)).toBeHidden();
 
             await page.reload({ waitUntil: "domcontentloaded" });
             await expect(campoImporte(page)).toHaveValue(nuevo);
@@ -354,7 +354,7 @@ test("BP-18.3: guarda un enlace válido de lista inteligente y el publico lo usa
     } finally {
         try {
             await campoEnlace(page).fill(original);
-            if (await guardarEnlace(page).isEnabled()) await guardarYConfirmarEnlace(page);
+            if (await guardarEnlace(page).isVisible() && await guardarEnlace(page).isEnabled()) await guardarYConfirmarEnlace(page);
         } finally {
             await visitante.close();
         }

@@ -399,18 +399,6 @@
 
 }
 
-.ubicacion {
-    display: -webkit-box;
-    flex-basis: 100%;
-    margin: 0.125rem 0 0;
-    overflow: hidden;
-    color: var(--color-muted);
-    font-size: var(--tamano-texto-auxiliar);
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-}
-
 .estado {
     flex-shrink: 0;
     border-radius: 9999px;

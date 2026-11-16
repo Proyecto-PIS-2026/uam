@@ -45,41 +45,28 @@
     background-color: var(--color-surface);
 }
 
-.selectMui :global(.MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root:not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-border);
 }
 
-.selectMui :global(.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root:not(.Mui-error):hover .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-secondary);
 }
 
-.selectMui :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+.selectMui :global(.MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
     border-color: var(--color-secondary);
 }
 
-.accionesEdicion {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--espacio-inline);
-    flex-shrink: 0;
+.contenedorEdicion[data-modificado="true"] .selectMui :global(.MuiOutlinedInput-root:not(.Mui-error)) {
+    background-color: var(--color-warning-soft);
 }
 
-.botonGuardar {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    transition:
-        transform 0.35s ease,
-        background-color 0.35s ease !important;
+.contenedorEdicion[data-modificado="true"] .selectMui :global(.MuiOutlinedInput-root:not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
+    border-color: var(--color-warning);
 }
 
-/* Estado activo cuando hay cambios pendientes */
-.botonGuardarActivo {
-    background-color: var(--color-secondary-soft) !important;
-    color: var(--color-secondary) !important;
-}
-
-.botonGuardarActivo:hover {
-    transform: scale(1.06);
-    background-color: var(--color-secondary-soft) !important;
+@media (max-width: 767px) {
+    .descripcion {
+        display: none;
+    }
 }

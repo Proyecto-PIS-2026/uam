@@ -1,256 +1,259 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-
-import TarjetaInput from "../tarjetas-configuracion/input/TarjetaInput";
-import TarjetaUploadFotoEspecie from "../tarjetas-configuracion/fotos-especies/TarjetaUploadFotoEspecie";
-import { Divider } from "@mui/material";
-import type { Especie } from "../tarjetas-configuracion/fotos-especies/TarjetaUploadFotoEspecie";
+import { CircularProgress, Divider } from "@mui/material";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/acciones/foto-especie";
 import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
-import { CLAVES_VIGENCIA_PUBLICACIONES, MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES, type TipoPropietarioPublicacion } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
-import { CLAVES_AGING_FOTOS, type TipoPropietarioFoto } from "@/modulos/publicaciones/claves-aging-fotos";
-import { CLAVE_ANTICIPACION_AVISO_LOCALES, CLAVE_HABILITACION_AVISO_LOCALES, DIAS_ANTICIPACION_AVISO_LOCALES } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
+import { CLAVES_VIGENCIA_PUBLICACIONES } from "@/modulos/publicaciones/claves-vigencia-publicaciones";
+import { CLAVES_AGING_FOTOS } from "@/modulos/publicaciones/claves-aging-fotos";
+import { CLAVE_ANTICIPACION_AVISO_LOCALES, CLAVE_HABILITACION_AVISO_LOCALES } from "@/modulos/usuarios/operadores/configuracion-avisos-locales";
+import TarjetaInput from "../tarjetas-configuracion/input/TarjetaInput";
+import TarjetaUploadFotoEspecie, { type Especie } from "../tarjetas-configuracion/fotos-especies/TarjetaUploadFotoEspecie";
 import TarjetaAvisosLocales, { type ConfiguracionAvisosLocalesFormulario } from "../tarjetas-configuracion/avisos-locales/TarjetaAvisosLocales";
 import TarjetaOrdenamientoPredeterminado, { type ConfiguracionOrdenamiento, type OrdenPublicaciones } from "../tarjetas-configuracion/ordenamiento-predeterminado/TarjetaOrdenamientoPredeterminado";
 import TarjetaVigencia, { type ConfiguracionVigenciaFotos } from "../tarjetas-configuracion/vigencia/TarjetaVigencia";
 import TarjetaRestablecimientoContraseña from "../tarjetas-configuracion/restablecimiento-contraseña/TarjetaRestablecimientoContraseña";
+import { normalizarConfiguracion, validarBorradorConfiguracion } from "./borrador-configuracion";
+import { useBorradorConfiguracion } from "./useBorradorConfiguracion";
+import styles from "./ListadoConfiguracionesGenerales.module.css";
 
-interface ListadoConfiguracionesGeneralesProps {
+interface Props {
     configuracion: Record<string, string | null>;
     especies: Especie[];
 }
 
-export default function ListadoConfiguracionesGenerales({ configuracion, especies }: ListadoConfiguracionesGeneralesProps) {
+const clavesOrdenamiento: Record<keyof ConfiguracionOrdenamiento, string> = {
+    habilitado: "ordenamiento_habilitado",
+    ordenLanding: "orden_landing_page_default",
+    ordenMercadoVirtual: "orden_mercado_virtual_default",
+    ordenMercadoProduccion: "orden_mercado_produccion_default",
+};
+const clavesLocales: Record<keyof ConfiguracionAvisosLocalesFormulario, string> = {
+    habilitado: CLAVE_HABILITACION_AVISO_LOCALES,
+    diasAnticipacion: CLAVE_ANTICIPACION_AVISO_LOCALES,
+};
+
+function clavesVigencia([habilitado, diasVigencia, avisosHabilitados, diasAnticipacion]: readonly string[]): Record<keyof ConfiguracionVigenciaFotos, string> {
+    return { habilitado, diasVigencia, avisosHabilitados, diasAnticipacion };
+}
+
+const seccionesVigencia = [
+    { titulo: "Vigencia de fotos de operadores", etiqueta: "Vencimiento de fotos", claves: clavesVigencia(CLAVES_AGING_FOTOS.OPERADOR), avisosIndependientes: false },
+    { titulo: "Vigencia de fotos de productores", etiqueta: "Vencimiento de fotos", claves: clavesVigencia(CLAVES_AGING_FOTOS.PRODUCTOR), avisosIndependientes: false },
+    { titulo: "Vigencia de publicaciones de operadores", etiqueta: "Vencimiento de publicaciones", claves: clavesVigencia(CLAVES_VIGENCIA_PUBLICACIONES.OPERADOR), avisosIndependientes: true },
+    { titulo: "Vigencia de publicaciones de productores", etiqueta: "Vencimiento de publicaciones", claves: clavesVigencia(CLAVES_VIGENCIA_PUBLICACIONES.PRODUCTOR), avisosIndependientes: true },
+];
+
+function Separador() {
+    return <Divider sx={{ borderColor: "var(--color-border)", marginInline: "var(--padding-panel)" }} />;
+}
+
+export default function ListadoConfiguracionesGenerales({ configuracion, especies }: Props) {
     const router = useRouter();
+    const { notificar } = useNotificacionToast();
+    const borrador = useBorradorConfiguracion(normalizarConfiguracion(configuracion));
+    const { valores, guardado, cambios } = borrador;
     const [especieSeleccionada, setEspecieSeleccionada] = useState("");
-    const valorServer = configuracion.url_lista_inteligente ?? "";
-    const [listaInteligente, setListaInteligente] = useState(valorServer);
-    const [valorPropAnterior, setValorPropAnterior] = useState(valorServer);
-   
-    if (valorPropAnterior !== valorServer) {
-        setValorPropAnterior(valorServer);
-        setListaInteligente(valorServer);
-    }
-   
-    const importeServer = configuracion.incremento_precio ?? "";
-    const [importe, setImporte] = useState(importeServer);
-    const [importePropAnterior, setImportePropAnterior] = useState(importeServer);
+    const [fotosPendientes, setFotosPendientes] = useState<Record<number, File | null>>({});
+    const [fotosGuardadas, setFotosGuardadas] = useState<Record<number, { archivo: File | null; fotoAnterior: string | null }>>({});
+    const [errores, setErrores] = useState<Record<string, boolean>>({});
+    const [guardando, setGuardando] = useState(false);
+    const guardandoRef = useRef(false);
+    const hayCambios = Object.keys(cambios).length > 0 || Object.keys(fotosPendientes).length > 0;
 
-    if (importePropAnterior !== importeServer) {
-        setImportePropAnterior(importeServer);
-        setImporte(importeServer);
+    const fotosPorActualizar = Object.entries(fotosGuardadas).filter(([id, foto]) => {
+        const especie = especies.find((actual) => actual.id === Number(id));
+        return especie && especie.fotoEspecie === foto.fotoAnterior;
+    });
+    if (fotosPorActualizar.length !== Object.keys(fotosGuardadas).length) {
+        setFotosGuardadas(Object.fromEntries(fotosPorActualizar));
     }
-    
-    async function guardarListaInteligente(valor: string): Promise<void> {
-        await guardarConfiguraciones({url_lista_inteligente: valor});
-        setListaInteligente(valor);
-        router.refresh();
-    }
+    const fotosConfirmadas = Object.fromEntries(fotosPorActualizar.map(([id, foto]) => [id, foto.archivo]));
 
-    async function guardarFoto(especieId: number, archivo: File): Promise<void> {
-        await guardarFotoEspecie(especieId, archivo);
-        router.refresh();
-    }
-
-    async function eliminarFoto(especieId: number): Promise<void> {
-        await eliminarFotoEspecie(especieId);
-        router.refresh();
-    }
-
-    async function guardarImporte(valor: string): Promise<void> {
-        await guardarConfiguraciones({incremento_precio: valor});
-        setImporte(valor);
-        router.refresh();
-    }
-
-    async function guardarAvisosLocales(valores: ConfiguracionAvisosLocalesFormulario): Promise<void> {
-        await guardarConfiguraciones({
-            [CLAVE_HABILITACION_AVISO_LOCALES]: String(valores.habilitado),
-            [CLAVE_ANTICIPACION_AVISO_LOCALES]: valores.diasAnticipacion,
+    function cambiar(cambiosNuevos: Record<string, string>) {
+        if (guardandoRef.current) return;
+        borrador.cambiar(cambiosNuevos);
+        const siguientes = { ...valores, ...cambiosNuevos };
+        const pendientes = Object.fromEntries(Object.entries(siguientes).filter(([clave, valor]) => valor !== guardado[clave]));
+        const erroresActuales = validarBorradorConfiguracion(siguientes, pendientes).errores;
+        setErrores((actuales) => {
+            return Object.fromEntries(Object.keys(actuales).filter((clave) => erroresActuales[clave]).map((clave) => [clave, true]));
         });
-        router.refresh();
     }
 
-    function obtenerOrden(valor: string | null | undefined): OrdenPublicaciones {
-        switch (valor) {
-            case "menor_precio":
-            case "mayor_precio":
-            case "nombre_asc":
-            case "nombre_desc":
-            case "mas_vendidas":
-            case "mas_actualizadas":
-                return valor;
-            default:
-                return "mas_vendidas";
+    function cambiarCampos<T extends object>(campos: Partial<T>, claves: Record<keyof T, string>) {
+        const entradas = (Object.keys(campos) as (keyof T)[])
+            .filter((campo) => campos[campo] !== undefined)
+            .map((campo) => [claves[campo], String(campos[campo])]);
+        cambiar(Object.fromEntries(entradas));
+    }
+
+    function marcas<T extends object>(claves: Record<keyof T, string>, error = false): Partial<Record<keyof T, boolean>> {
+        return Object.fromEntries((Object.keys(claves) as (keyof T)[]).map((campo) => [
+            campo, error ? Boolean(errores[claves[campo]]) : valores[claves[campo]] !== guardado[claves[campo]],
+        ])) as Partial<Record<keyof T, boolean>>;
+    }
+
+    function cambiarFoto(id: number, archivo: File | null | undefined) {
+        if (guardandoRef.current) return;
+        setFotosPendientes((actuales) => {
+            const siguientes = { ...actuales };
+            if (archivo === undefined) delete siguientes[id];
+            else siguientes[id] = archivo;
+            return siguientes;
+        });
+    }
+
+    function cancelar() {
+        if (guardandoRef.current) return;
+        borrador.cancelar();
+        setFotosPendientes({});
+        setErrores({});
+    }
+
+    async function guardar(evento: FormEvent<HTMLFormElement>) {
+        evento.preventDefault();
+        if (guardandoRef.current || !hayCambios) return;
+        const validacion = validarBorradorConfiguracion(valores, cambios);
+        setErrores(validacion.errores);
+        if (validacion.mensaje) {
+            notificar(validacion.mensaje, "error");
+            return;
+        }
+        guardandoRef.current = true;
+        setGuardando(true);
+        let guardoAlgo = false;
+        try {
+            if (Object.keys(validacion.cambios).length > 0) {
+                await guardarConfiguraciones(validacion.cambios);
+                borrador.confirmar(validacion.cambios);
+                guardoAlgo = true;
+            }
+            for (const [identificador, archivo] of Object.entries(fotosPendientes)) {
+                const id = Number(identificador);
+                if (archivo === null) await eliminarFotoEspecie(id);
+                else await guardarFotoEspecie(id, archivo);
+                guardoAlgo = true;
+                const fotoAnterior = especies.find((especie) => especie.id === id)?.fotoEspecie ?? null;
+                setFotosGuardadas((actuales) => ({ ...actuales, [id]: { archivo, fotoAnterior } }));
+                setFotosPendientes((actuales) => {
+                    const siguientes = { ...actuales };
+                    delete siguientes[id];
+                    return siguientes;
+                });
+            }
+            notificar("La configuración se guardó correctamente.", "success");
+        } catch (error) {
+            const detalle = error instanceof Error ? error.message : "No se pudo guardar la configuración.";
+            notificar((guardoAlgo ? "Se guardaron algunos cambios. " : "") + detalle, "error");
+        } finally {
+            guardandoRef.current = false;
+            setGuardando(false);
+            if (guardoAlgo) router.refresh();
         }
     }
 
     const configuracionOrdenamiento: ConfiguracionOrdenamiento = {
-        habilitado: configuracion.ordenamiento_habilitado === "true",
-        ordenLanding: obtenerOrden(configuracion.orden_landing_page_default),
-        ordenMercadoVirtual: obtenerOrden(configuracion.orden_mercado_virtual_default),
-        ordenMercadoProduccion: obtenerOrden(configuracion.orden_mercado_produccion_default),
+        habilitado: valores.ordenamiento_habilitado === "true",
+        ordenLanding: valores.orden_landing_page_default as OrdenPublicaciones,
+        ordenMercadoVirtual: valores.orden_mercado_virtual_default as OrdenPublicaciones,
+        ordenMercadoProduccion: valores.orden_mercado_produccion_default as OrdenPublicaciones,
     };
 
-    async function guardarOrdenamiento(valores: ConfiguracionOrdenamiento): Promise<void> {
-        await guardarConfiguraciones({
-            ordenamiento_habilitado: String(valores.habilitado),
-            orden_landing_page_default: valores.ordenLanding,
-            orden_mercado_virtual_default: valores.ordenMercadoVirtual,
-            orden_mercado_produccion_default: valores.ordenMercadoProduccion,
-        });
-        router.refresh();
-    }
-
-    function obtenerVigenciaFotos(tipo: TipoPropietarioFoto): ConfiguracionVigenciaFotos {
-        const [habilitado, vigencia, avisos, anticipacion] = CLAVES_AGING_FOTOS[tipo];
-        return {
-            habilitado: configuracion[habilitado] === "true",
-            diasVigencia: configuracion[vigencia] ?? "",
-            avisosHabilitados: configuracion[avisos] === "true",
-            diasAnticipacion: configuracion[anticipacion] ?? "",
-        };
-    }
-
-    async function guardarVigenciaFotos(tipo: TipoPropietarioFoto, valores: ConfiguracionVigenciaFotos): Promise<void> {
-        const [habilitado, vigencia, avisos, anticipacion] = CLAVES_AGING_FOTOS[tipo];
-        await guardarConfiguraciones({
-            [habilitado]: String(valores.habilitado),
-            [vigencia]: valores.diasVigencia,
-            [avisos]: String(valores.avisosHabilitados),
-            [anticipacion]: valores.diasAnticipacion,
-        });
-        router.refresh();
-    }
-
-    function obtenerVigenciaPublicaciones(tipo: TipoPropietarioPublicacion): ConfiguracionVigenciaFotos {
-        const [habilitada, vigencia, avisos, anticipacion] = CLAVES_VIGENCIA_PUBLICACIONES[tipo];
-        return {
-            habilitado: configuracion[habilitada] === "true",
-            diasVigencia: configuracion[vigencia] ?? "",
-            avisosHabilitados: configuracion[avisos] === "true",
-            diasAnticipacion: configuracion[anticipacion] ?? "",
-        };
-    }
-
-    async function guardarVigenciaPublicaciones(tipo: TipoPropietarioPublicacion, valores: ConfiguracionVigenciaFotos): Promise<void> {
-        const [habilitada, vigencia, avisos, anticipacion] = CLAVES_VIGENCIA_PUBLICACIONES[tipo];
-        await guardarConfiguraciones({
-            [habilitada]: String(valores.habilitado),
-            [vigencia]: valores.diasVigencia,
-            [avisos]: String(valores.avisosHabilitados),
-            [anticipacion]: valores.diasAnticipacion,
-        });
-        router.refresh();
-    }
-
-    const restablecimientoHabilitado = configuracion.restablecimiento_contrasena_habilitado === "true";
-
-    async function guardarRestablecimiento(habilitado: boolean): Promise<void> {
-        await guardarConfiguraciones({
-            restablecimiento_contrasena_habilitado: String(habilitado),
-        });
-        router.refresh();
-    }
-
-    const contenido = (
-        <div className="secciones-pagina" style={{ gap: "1rem" }}>
-            <TarjetaInput
-                titulo="Lista Inteligente"
-                descripcion="Configurá la URL de acceso a la Lista Inteligente."
-                tipo="url"
-                valor={listaInteligente}
-                mensajeExito="La URL de la Lista Inteligente se guardó correctamente."
-                onChangeValor={setListaInteligente}
-                onGuardarValor={guardarListaInteligente}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaInput
-                titulo="Importe de ajuste rápido de precios"
-                descripcion="Configurá el importe utilizado para aumentar o disminuir rápidamente el precio de una publicación."
-                tipo="numero"
-                valor={importe}
-                mensajeExito="El importe de ajuste rápido de precios se guardó correctamente."
-                onChangeValor={setImporte}
-                onGuardarValor={guardarImporte}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaOrdenamientoPredeterminado
-                configuracion={configuracionOrdenamiento}
-                onGuardar={guardarOrdenamiento}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaVigencia
-                titulo="Vigencia de fotos de operadores"
-                etiquetaVencimiento="Vencimiento de fotos"
-                ayudaVencimiento="Aplicar un período de vigencia a las fotos de operadores."
-                ayudaAvisos="Notificar a los operadores."
-                configuracion={obtenerVigenciaFotos("OPERADOR")}
-                maximoDiasVigencia={36500}
-                onGuardar={(valores) => guardarVigenciaFotos("OPERADOR", valores)}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaVigencia
-                titulo="Vigencia de fotos de productores"
-                descripcion="Configurá la vigencia de las fotos de publicaciones de productores y sus avisos de próximo vencimiento."
-                etiquetaVencimiento="Vencimiento de fotos"
-                ayudaVencimiento="Aplicar un período de vigencia a las fotos de productores."
-                ayudaAvisos="Notificar a los productores."
-                configuracion={obtenerVigenciaFotos("PRODUCTOR")}
-                maximoDiasVigencia={36500}
-                onGuardar={(valores) => guardarVigenciaFotos("PRODUCTOR", valores)}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaVigencia
-                titulo="Vigencia de publicaciones de operadores"
-                avisosIndependientes
-                maximoDiasAnticipacion={MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES}
-                descripcion="Configurá el plazo predeterminado y máximo de las publicaciones de operadores y sus avisos de próximo vencimiento."
-                etiquetaVencimiento="Vencimiento de publicaciones"
-                ayudaVencimiento="Al guardar, las publicaciones sin fecha reciben el plazo y las fechas posteriores se acortan. Las fechas anteriores se conservan. Desactivar mantiene las fechas existentes."
-                ayudaAvisos="Notificar según la fecha de cada publicación, aunque el vencimiento administrativo esté desactivado."
-                configuracion={obtenerVigenciaPublicaciones("OPERADOR")}
-                onGuardar={(valores) => guardarVigenciaPublicaciones("OPERADOR", valores)}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaVigencia
-                titulo="Vigencia de publicaciones de productores"
-                avisosIndependientes
-                maximoDiasAnticipacion={MAXIMO_DIAS_ANTICIPACION_PUBLICACIONES}
-                descripcion="Configurá el plazo predeterminado y máximo de las publicaciones de productores y sus avisos de próximo vencimiento."
-                etiquetaVencimiento="Vencimiento de publicaciones"
-                ayudaVencimiento="Al guardar, las publicaciones sin fecha reciben el plazo y las fechas posteriores se acortan. Las fechas anteriores se conservan. Desactivar mantiene las fechas existentes."
-                ayudaAvisos="Notificar según la fecha de cada publicación, aunque el vencimiento administrativo esté desactivado."
-                configuracion={obtenerVigenciaPublicaciones("PRODUCTOR")}
-                onGuardar={(valores) => guardarVigenciaPublicaciones("PRODUCTOR", valores)}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaAvisosLocales
-                configuracion={{
-                    habilitado: configuracion[CLAVE_HABILITACION_AVISO_LOCALES] !== "false",
-                    diasAnticipacion: configuracion[CLAVE_ANTICIPACION_AVISO_LOCALES] ?? String(DIAS_ANTICIPACION_AVISO_LOCALES),
-                }}
-                onGuardar={guardarAvisosLocales}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaRestablecimientoContraseña
-                titulo="Restablecimiento de contraseñas"
-                etiqueta="Permitir que los usuarios restablezcan su propia contraseña"
-                habilitado={restablecimientoHabilitado}
-                onGuardar={guardarRestablecimiento}
-            />
-            <Divider sx={{borderColor: "var(--color-border)", marginInline: "var(--padding-panel)"}}/>
-            <TarjetaUploadFotoEspecie
-                titulo="Fotos de especies"
-                especies={especies}
-                especieSeleccionada={especieSeleccionada}
-                onChangeEspecie={setEspecieSeleccionada}
-                onGuardarFoto={guardarFoto}
-                onEliminarFoto={eliminarFoto}
-            />
-        </div>
+    return (
+        <form className={styles.formulario} aria-label="Configuración general" aria-busy={guardando} noValidate onSubmit={guardar}>
+            <div className="secciones-pagina" style={{ gap: "1rem" }}>
+                <TarjetaInput
+                    titulo="Lista Inteligente"
+                    descripcion="Configurá la URL de acceso a la Lista Inteligente."
+                    tipo="url"
+                    valor={valores.url_lista_inteligente}
+                    onChangeValor={(valor) => cambiar({ url_lista_inteligente: valor })}
+                    guardando={guardando}
+                    modificado={valores.url_lista_inteligente !== guardado.url_lista_inteligente}
+                    error={errores.url_lista_inteligente}
+                />
+                <Separador />
+                <TarjetaInput
+                    titulo="Importe de ajuste rápido de precios"
+                    descripcion="Configurá el importe utilizado para aumentar o disminuir rápidamente el precio de una publicación."
+                    tipo="numero"
+                    valor={valores.incremento_precio}
+                    onChangeValor={(valor) => cambiar({ incremento_precio: valor })}
+                    guardando={guardando}
+                    modificado={valores.incremento_precio !== guardado.incremento_precio}
+                    error={errores.incremento_precio}
+                />
+                <Separador />
+                <TarjetaOrdenamientoPredeterminado
+                    configuracion={configuracionOrdenamiento}
+                    onChange={(campos) => cambiarCampos<ConfiguracionOrdenamiento>(campos, clavesOrdenamiento)}
+                    guardando={guardando}
+                    modificados={marcas<ConfiguracionOrdenamiento>(clavesOrdenamiento)}
+                />
+                <Separador />
+                {seccionesVigencia.map(({ titulo, etiqueta, claves, avisosIndependientes }) => (
+                    <div key={titulo}>
+                        <TarjetaVigencia
+                            titulo={titulo}
+                            etiquetaVencimiento={etiqueta}
+                            avisosIndependientes={avisosIndependientes}
+                            configuracion={{
+                                habilitado: valores[claves.habilitado] === "true",
+                                diasVigencia: valores[claves.diasVigencia],
+                                avisosHabilitados: valores[claves.avisosHabilitados] === "true",
+                                diasAnticipacion: valores[claves.diasAnticipacion],
+                            }}
+                            onChange={(campos) => cambiarCampos<ConfiguracionVigenciaFotos>(campos, claves)}
+                            guardando={guardando}
+                            modificados={marcas<ConfiguracionVigenciaFotos>(claves)}
+                            errores={marcas<ConfiguracionVigenciaFotos>(claves, true)}
+                        />
+                        <Separador />
+                    </div>
+                ))}
+                <TarjetaAvisosLocales
+                    configuracion={{
+                        habilitado: valores[CLAVE_HABILITACION_AVISO_LOCALES] === "true",
+                        diasAnticipacion: valores[CLAVE_ANTICIPACION_AVISO_LOCALES],
+                    }}
+                    onChange={(campos) => cambiarCampos<ConfiguracionAvisosLocalesFormulario>(campos, clavesLocales)}
+                    guardando={guardando}
+                    modificados={marcas<ConfiguracionAvisosLocalesFormulario>(clavesLocales)}
+                    errores={marcas<ConfiguracionAvisosLocalesFormulario>(clavesLocales, true)}
+                />
+                <Separador />
+                <TarjetaRestablecimientoContraseña
+                    titulo="Restablecimiento de contraseñas"
+                    etiqueta="Permitir que los usuarios restablezcan su propia contraseña"
+                    habilitado={valores.restablecimiento_contrasena_habilitado === "true"}
+                    onChange={(habilitado) => cambiar({ restablecimiento_contrasena_habilitado: String(habilitado) })}
+                    guardando={guardando}
+                    modificado={valores.restablecimiento_contrasena_habilitado !== guardado.restablecimiento_contrasena_habilitado}
+                />
+                <Separador />
+                <TarjetaUploadFotoEspecie
+                    titulo="Fotos de especies"
+                    especies={especies}
+                    especieSeleccionada={especieSeleccionada}
+                    onChangeEspecie={setEspecieSeleccionada}
+                    cambios={fotosPendientes}
+                    confirmadas={fotosConfirmadas}
+                    onChangeFoto={cambiarFoto}
+                    guardando={guardando}
+                />
+                {(hayCambios || guardando) && (
+                    <div className={styles.acciones} role="group" aria-label="Acciones de configuración">
+                        <button type="button" className={styles.cancelar} disabled={guardando} onClick={cancelar}>Cancelar</button>
+                        <button type="submit" formNoValidate aria-label="Guardar" className={styles.guardar} disabled={guardando}>
+                            {guardando && <CircularProgress size={18} color="inherit" aria-label="Guardando configuración" />}
+                            Guardar
+                        </button>
+                    </div>
+                )}
+            </div>
+        </form>
     );
-    return contenido; 
 }

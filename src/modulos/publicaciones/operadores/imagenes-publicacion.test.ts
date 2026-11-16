@@ -5,12 +5,10 @@ import {
     ErrorImagenPublicacion,
     eliminarImagenPublicacionGestionada,
     guardarImagenPublicacion,
-    leerImagenPublicacion,
-    tipoContenidoImagen,
 } from "./imagenes-publicacion";
 import { AlmacenamientoImagenesPostgres } from "@/infraestructura/imagenes/almacenamiento-postgres";
-import { ErrorImagenNoEncontrada, ErrorImagenYaExiste } from "@/infraestructura/imagenes/almacenamiento-imagenes";
-import { crearServicioImagenes } from "@/infraestructura/imagenes/imagenes";
+import { ErrorImagenNoEncontrada, ErrorImagenYaExiste, tipoContenidoImagen } from "@/infraestructura/imagenes/almacenamiento-imagenes";
+import { crearServicioImagenes, imagenes } from "@/infraestructura/imagenes/imagenes";
 
 const registros = vi.hoisted(() => ({ crear: vi.fn(), leer: vi.fn(), eliminar: vi.fn() }));
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({ db: { orm: { public: { Imagen: {
@@ -126,20 +124,20 @@ describe("almacenamiento de imágenes", () => {
     it("lee los bytes de una imagen PNG conservando su URL existente", async () => {
         const contenido = await foto();
         registros.leer.mockResolvedValue({ contenido });
-        await expect(leerImagenPublicacion(42, NOMBRE)).resolves.toEqual(contenido);
+        await expect(imagenes.leer("publicaciones", 42, NOMBRE)).resolves.toEqual(contenido);
         expect(registros.leer).toHaveBeenCalledExactlyOnceWith({ clave: CLAVE });
     });
 
     it("distingue una imagen ausente de un error de lectura de PostgreSQL", async () => {
         registros.leer.mockResolvedValueOnce(null);
-        await expect(leerImagenPublicacion(42, NOMBRE)).rejects.toBeInstanceOf(ErrorImagenNoEncontrada);
+        await expect(imagenes.leer("publicaciones", 42, NOMBRE)).rejects.toBeInstanceOf(ErrorImagenNoEncontrada);
         const error = new Error("Conexión interrumpida");
         registros.leer.mockRejectedValueOnce(error);
-        await expect(leerImagenPublicacion(42, NOMBRE)).rejects.toBe(error);
+        await expect(imagenes.leer("publicaciones", 42, NOMBRE)).rejects.toBe(error);
     });
 
     it.each([`../${NOMBRE}`, `${NOMBRE}/otro`, `..%2F${NOMBRE}`, "foto.png", `${UUID}.svg`])("impide nombres o rutas no gestionadas %s", async (nombre) => {
-        await expect(leerImagenPublicacion(42, nombre)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
+        await expect(imagenes.leer("publicaciones", 42, nombre)).rejects.toBeInstanceOf(ErrorImagenPublicacion);
         expect(registros.leer).not.toHaveBeenCalled();
     });
 

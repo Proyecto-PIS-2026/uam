@@ -34,7 +34,6 @@ const historico: HistoricoProducto = {
 };
 
 const opcionesFiltros = { variedades: ["Cavendish", "Orgánica"], paises: ["ECUADOR", "BRASIL"], calibres: ["M", "G"], categorias: ["I", "II"] };
-const filtrosVacios = { variedad: undefined, pais: undefined, calibre: undefined, categoria: undefined };
 
 type Parametros = Awaited<Parameters<typeof Page>[0]["searchParams"]>;
 
@@ -72,7 +71,7 @@ describe("Página de precios históricos", () => {
         expect(suspense.type).toBe(Suspense);
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2023-10-05", hasta: "2026-10-05",
-        }, filtrosVacios);
+        });
         expect(componente.type).toBe(preciosHistoricosMock);
         expect(componente.props.historico).toBe(historico);
         expect(componente.props.producto.id).toBe("60");
@@ -89,7 +88,7 @@ describe("Página de precios históricos", () => {
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2023-10-05", hasta: "2026-10-05",
-        }, filtrosVacios);
+        });
         expect(componente.props.producto.id).toBe("60");
         expect(suspense.props.fallback.props.producto.id).toBe("60");
         expect(componente.props.error).toBeUndefined();
@@ -108,7 +107,7 @@ describe("Página de precios históricos", () => {
         expect(componente.props.producto).toMatchObject({ variedad: "Orgánica", pais: "ECUADOR", calibre: "G", categoria: "II" });
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2024-11-01", hasta: "2025-11-08",
-        }, { variedad: "Orgánica", pais: "ECUADOR", calibre: "G", categoria: "II" });
+        });
     });
 
     it.each([
@@ -130,7 +129,7 @@ describe("Página de precios históricos", () => {
         expect(suspense.props.fallback.props.producto).toMatchObject(seleccion);
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2023-10-05", hasta: "2026-10-05",
-        }, esperado ? seleccion : filtrosVacios);
+        });
     });
 
     it("calcula el inicio desde hoy menos tres años aunque se solicite otra fecha de fin", async () => {
@@ -140,7 +139,7 @@ describe("Página de precios históricos", () => {
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2023-10-05", hasta: "2025-11-08",
-        }, filtrosVacios);
+        });
         expect(componente.props.desde).toBe("2023-10-05");
         expect(componente.props.hasta).toBe("2025-11-08");
     });
@@ -152,7 +151,7 @@ describe("Página de precios históricos", () => {
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2024-07-01", hasta: "2026-10-05",
-        }, filtrosVacios);
+        });
         expect(componente.props.desde).toBe("2024-07-01");
         expect(componente.props.hasta).toBe("2026-10-05");
     });
@@ -163,12 +162,28 @@ describe("Página de precios históricos", () => {
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2021-02-28", hasta: "2024-02-29",
-        }, filtrosVacios);
+        });
         expect(componente.props.desde).toBe("2021-02-28");
         expect(componente.props.hasta).toBe("2024-02-29");
     });
 
-    it("consulta el intervalo solicitado y conserva los filtros de presentación", async () => {
+    it("carga todas las presentaciones del período y conserva los filtros de la URL para aplicarlos en la vista", async () => {
+        const historicoPeriodo: HistoricoProducto = {
+            ...historico,
+            from: "2025-11-01", to: "2025-11-08",
+            series: [{
+                date: "2025-11-01",
+                presentations: [
+                    { variety: "Cavendish", country: "ECUADOR", caliber: "M", measure_unit: "KG", prices: [
+                        { category: "I", min_kg: 70, max_kg: 75, min_un: 70, max_un: 75, is_reference: true },
+                    ] },
+                    { variety: "Orgánica", country: "BRASIL", caliber: "G", measure_unit: "KG", prices: [
+                        { category: "II", min_kg: 80, max_kg: 85, min_un: 80, max_un: 85, is_reference: false },
+                    ] },
+                ],
+            }],
+        };
+        obtenerHistoricoPreciosMock.mockResolvedValue({ historico: historicoPeriodo, opcionesFiltros });
         const { suspense, componente } = await resolverHistorico({
             species_id: "60", from: "2025-11-01", to: "2025-11-08",
             variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I",
@@ -176,10 +191,13 @@ describe("Página de precios históricos", () => {
 
         expect(obtenerHistoricoPreciosMock).toHaveBeenCalledExactlyOnceWith({
             speciesId: 60, desde: "2025-11-01", hasta: "2025-11-08",
-        }, { variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I" });
+        });
         expect(componente.props.producto).toMatchObject({
             variedad: "Cavendish", pais: "ECUADOR", calibre: "M", categoria: "I",
         });
+        expect(componente.props.historico).toBe(historicoPeriodo);
+        expect(componente.props.historico.series[0].presentations).toHaveLength(2);
+        expect(componente.props.opcionesFiltros).toBe(opcionesFiltros);
         expect(suspense.key).toContain("2025-11-01");
         expect(suspense.key).toContain("2025-11-08");
     });

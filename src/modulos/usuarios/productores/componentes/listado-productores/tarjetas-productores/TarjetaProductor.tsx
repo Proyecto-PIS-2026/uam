@@ -2,7 +2,7 @@ import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import Link from "next/link";
-import type { ProductorListado } from "../../../acciones/consultas-listado-por-operador";
+import type { ProductorListado } from "../../../acciones/consultas-productores";
 import styles from "./TarjetaProductor.module.css";
 
 type TarjetaProductorProps = {
