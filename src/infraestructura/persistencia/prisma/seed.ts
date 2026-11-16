@@ -16,6 +16,7 @@ import { crearOfertasDemo, type OfertaDemo } from "./ofertas-demo";
 import { crearOfertasProductoresDemo } from "./ofertas-productores-demo";
 import { CALIBRES_GENERALES_ADICIONALES, ENVASES_PUBLICACION, KILOS_EMPAQUETADO } from "./catalogos-publicacion";
 import { atributosPublicacionDemo } from "./atributos-publicacion-demo";
+import { fotoOperador } from "./fotos-operadores-demo";
 import { especiesPrioritarias } from "../../../compartido/prioridad-especies";
 import { claveImagen, urlImagen } from "../../imagenes/almacenamiento-imagenes";
 import { convertirFechaVigenciaAInstant } from "../../../modulos/publicaciones/vigencia-publicacion";
@@ -353,19 +354,6 @@ function archivosOperadores(): Map<string, string> {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return new Map();
     throw error;
   }
-}
-
-function fotoOperador(nombreOperador: string, archivos: Map<string, string>): string | null {
-  const base = nombreOperador.toLocaleLowerCase("es")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/^-+|-+$/g, "");
-
-  for (const extension of [".webp", ".jpeg", ".jpg", ".png", ".jfif"]) {
-    const archivo = archivos.get(`${base}${extension}`);
-    if (archivo) return `/operadores/${encodeURIComponent(archivo)}`;
-  }
-  return null;
 }
 
 function validarFuente(consulta: ConsultaUam): Map<string, number> {
