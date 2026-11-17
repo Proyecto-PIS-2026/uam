@@ -39,39 +39,31 @@ test("BP-20 y BP-20.2 muestra el perfil público y el detalle de sus productos",
   const tarjetasOperador = page.locator('a[href^="/operadores/"]');
   await expect(tarjetasOperador.first()).toBeVisible();
 
-  // Elegimos un operador con productos si existe; si no, validamos su perfil y el estado vacío del catálogo.
-  let operadorSeleccionado = tarjetasOperador.first();
-  for (let indice = 0; indice < await tarjetasOperador.count(); indice += 1) {
-    const tarjeta = tarjetasOperador.nth(indice);
-    const texto = (await tarjeta.innerText()).replace(/\s+/g, " ");
-    if (/\b[1-9]\d*\s*productos?\b/i.test(texto)) {
-      operadorSeleccionado = tarjeta;
-      break;
-    }
-  }
+  const conProductos = tarjetasOperador.filter({ hasText: /\b[1-9]\d*\s*productos?\b/i });
+  await expect(conProductos.first(), "El seed debe tener un operador con productos publicados").toBeVisible();
+  const operadorSeleccionado = conProductos.first();
 
   const nombreOperador = (await operadorSeleccionado.locator("p").first().innerText()).trim();
   const rutaPerfil = await operadorSeleccionado.getAttribute("href");
   expect(rutaPerfil).toBeTruthy();
 
-  await page.goto(rutaPerfil!);
+  await operadorSeleccionado.click();
+  await expect(page).toHaveURL((url) => decodeURIComponent(url.pathname) === decodeURIComponent(new URL(rutaPerfil!, url.origin).pathname));
 
   await expect(page.getByRole("heading", { name: nombreOperador, level: 1 })).toBeVisible();
   await expect(page.getByRole("link", { name: `Contactar a ${nombreOperador} por WhatsApp` })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Publicaciones" })).toBeVisible();
 
   const tarjetasProducto = page.getByRole("button", { name: /^Ver detalles de / });
-  if (await tarjetasProducto.count()) {
-    await tarjetasProducto.first().click();
+  await expect(tarjetasProducto.first()).toBeVisible();
+  await tarjetasProducto.first().click();
 
-    const detalle = page.getByRole("dialog", { name: "Detalle de publicación" });
-    await expect(detalle).toBeVisible();
-    await expect(detalle.getByText("Empaquetado", { exact: true })).toBeVisible();
-    await expect(detalle.getByText("Kilos", { exact: true })).toHaveCount(0);
-    await expect(detalle.getByText("Calibre")).toBeVisible();
-    await expect(detalle.getByText("Categoría")).toBeVisible();
-    await expect(detalle.getByText("País")).toBeVisible();
-    await expect(detalle.getByRole("link", { name: `Contactar a ${nombreOperador} por WhatsApp`, exact: true })).toBeVisible();  } else {
-    await expect(page.getByText("No hay publicaciones disponibles.")).toBeVisible();
-  }
+  const detalle = page.getByRole("dialog", { name: "Detalle de publicación" });
+  await expect(detalle).toBeVisible();
+  await expect(detalle.getByText("Empaquetado", { exact: true })).toBeVisible();
+  await expect(detalle.getByText("Kilos", { exact: true })).toHaveCount(0);
+  await expect(detalle.getByText("Calibre")).toBeVisible();
+  await expect(detalle.getByText("Categoría")).toBeVisible();
+  await expect(detalle.getByText("País")).toBeVisible();
+  await expect(detalle.getByRole("link", { name: `Contactar a ${nombreOperador} por WhatsApp`, exact: true })).toBeVisible();
 });
