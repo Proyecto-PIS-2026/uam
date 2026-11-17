@@ -90,8 +90,8 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
             return foto;
           },
           procesar: async (rol) => {
-            const { obtenerConfiguracionAgingFotos } = await import("../src/modulos/publicaciones/configuracion-aging-fotos");
-            const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
+            const { obtenerConfiguracionAgingFotos } = await import("../src/modulos/publicaciones/imagenes/vigencia/configuracion-aging-fotos");
+            const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/imagenes/vigencia/procesar-vencimientos-fotos");
             const configuracion = await obtenerConfiguracionAgingFotos(rol);
             return db.transaction(async (tx) => {
               await tx.execute(db.raw.sql`LOCK TABLE imagen, publicacion IN SHARE ROW EXCLUSIVE MODE`.affectedCount().build());

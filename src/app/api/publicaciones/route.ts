@@ -2,8 +2,8 @@ import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { altaPublicacionOperador } from "@/modulos/publicaciones/altaPublicacionOperador";
-import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { altaPublicacionOperador } from "@/modulos/publicaciones/operadores/operaciones/alta-publicacion";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/consultas/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { revalidatePath } from "next/cache";
 import { ErrorCuerpoDemasiadoGrande, leerJsonLimitado } from "@/infraestructura/http/cuerpo-limitado";

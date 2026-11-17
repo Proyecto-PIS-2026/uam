@@ -19,7 +19,7 @@ import { atributosPublicacionDemo } from "./atributos-publicacion-demo";
 import { fotoOperador } from "./fotos-operadores-demo";
 import { especiesPrioritarias } from "../../../compartido/prioridad-especies";
 import { claveImagen, urlImagen } from "../../imagenes/almacenamiento-imagenes";
-import { convertirFechaVigenciaAInstant } from "../../../modulos/publicaciones/vigencia-publicacion";
+import { convertirFechaVigenciaAInstant } from "../../../modulos/publicaciones/vigencia/vigencia-publicacion";
 
 const prisma = postgres<Contract>({
   contractJson,

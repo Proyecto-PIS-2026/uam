@@ -6,7 +6,7 @@ import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { IndicadorVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import { DescripcionVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
-import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
+import type { PublicacionMiMercadoProductor } from "../../productores/tipos";
 import styles from "./TarjetaPublicacion.module.css";
 
 type Props = {

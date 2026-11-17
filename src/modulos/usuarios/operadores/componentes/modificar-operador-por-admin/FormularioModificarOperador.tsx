@@ -3,7 +3,7 @@
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import { Temporal } from "temporal-polyfill";
@@ -12,10 +12,10 @@ import TextField from "@mui/material/TextField";
 import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import Switch from "@mui/material/Switch";
 import { useRouter } from "next/navigation";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 
-import { modificarOperador } from "../../acciones/modificarOperador";
-import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
+import { modificarOperador } from "../../acciones/modificar-operador";
+import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas/consultas-naves";
 import type { OperadorParaModificar } from "../../tipos";
 import { LARGO_MAXIMO_COMENTARIO_LICENCIA } from "../../comentario-licencia";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";

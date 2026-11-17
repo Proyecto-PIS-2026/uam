@@ -14,7 +14,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 }));
 
 vi.mock(
-    "@/modulos/usuarios/administradores/componentes/modificar-administrador/obtenerAdministradorParaModificar",
+    "@/modulos/usuarios/administradores/consultas/obtener-administrador-para-modificar",
     () => ({ obtenerAdministradorParaModificar: mocks.obtenerAdministrador }),
 );
 

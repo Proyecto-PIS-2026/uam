@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarPrecio, incrementarPrecio, cargarPublicacionesMiMercado } from "./acciones";
-import { PublicacionNoEncontradaError } from "./consultas-mi-mercado";
+import { PublicacionNoEncontradaError } from "../operadores/operaciones/actualizar-precio-publicacion";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { redirect } from "next/navigation";
 import { RUTA_INICIO_SESION } from "@/modulos/identidad-acceso/autenticacion/rutas-sesion";
@@ -23,15 +23,18 @@ const mocks = vi.hoisted(() => ({
     revalidatePath: vi.fn(),
 }));
 
-vi.mock("../../usuarios/operadores/operador-actual", () => ({
+vi.mock("../../usuarios/operadores/consultas/operador-actual", () => ({
     obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
 }));
 
 vi.mock("./consultas-mi-mercado", () => ({
+    obtenerPublicacionesDeOperador: mocks.obtenerPublicacionesDeOperador,
+}));
+
+vi.mock("../operadores/operaciones/actualizar-precio-publicacion", () => ({
     actualizarPrecioPublicacion: mocks.actualizarPrecioPublicacion,
     incrementarPrecioPublicacion: mocks.incrementarPrecioPublicacion,
     ConflictoPublicacionError: class extends Error {},
-    obtenerPublicacionesDeOperador: mocks.obtenerPublicacionesDeOperador,
     PublicacionNoEncontradaError: class extends Error {
         constructor() {
             super("La publicación no existe o no pertenece al operador.");

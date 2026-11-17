@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import FormularioModificarProductor from "./FormularioModificarProductor";
-import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
+import type { ProductorParaModificar } from "../../consultas/obtener-productor-para-modificar";
 
 const { push, modificarProductorMock } = vi.hoisted(() => ({
     push: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 
-vi.mock("./modificarProductor", () => ({
+vi.mock("../../acciones/modificar-productor", () => ({
     modificarProductor: modificarProductorMock,
 }));
 

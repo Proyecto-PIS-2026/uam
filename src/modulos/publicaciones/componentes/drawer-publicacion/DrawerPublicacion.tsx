@@ -9,10 +9,10 @@ import Link from "next/link";
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-productor";
 import { formatearEmpaquetado } from "../../empaquetado-publicacion";
-import TextoAjustable from "./TextoAjustable";
+import TextoAjustable from "../../../../compartido/componentes/TextoAjustable";
 import UbicacionesRetiro from "./UbicacionesRetiro";
 import ComentarioPublicacion from "./ComentarioPublicacion";
 import styles from "./DrawerPublicacion.module.css";

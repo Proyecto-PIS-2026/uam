@@ -9,12 +9,12 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
-import { useActualizacionesPublicaciones } from "@/modulos/publicaciones/tiempo-real/use-actualizaciones-publicaciones";
+import { useActualizacionesPublicaciones } from "@/modulos/publicaciones/tiempo-real/useActualizacionesPublicaciones";
 
 import DrawerEditarPublicacion from "../../../../publicaciones/operadores/componentes/DrawerEditarPublicacion";
 import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../../../publicaciones/operadores/tipos";
-import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/tipos";
-import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/catalogos/tipos";
+import type { PublicacionPerfilAdmin } from "../../consultas/consultas-perfil-admin";
 import TarjetaPublicacionAdmin from "./TarjetaPublicacionAdmin";
 
 type CatalogoOperadorAdminProps = {

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { decodificarParametroRuta } from "@/compartido/decodificar-parametro-ruta";
 import { requerirSinSesion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
-import { obtenerPerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-publico";
+import { obtenerPerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas/consultas-perfil-publico";
 import CatalogoOperador from "../../../../modulos/usuarios/operadores/componentes/perfil-publico-operador/CatalogoOperador";
 import PerfilOperador from "../../../../modulos/usuarios/operadores/componentes/perfil-publico-operador/PerfilOperador";
 

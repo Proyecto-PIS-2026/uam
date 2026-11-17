@@ -7,7 +7,7 @@ import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import { Checkbox, MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";

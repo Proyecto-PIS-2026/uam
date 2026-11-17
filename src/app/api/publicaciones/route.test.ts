@@ -28,7 +28,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: mocks.obtenerSesion,
 }));
-vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
+vi.mock("@/modulos/usuarios/operadores/consultas/operador-actual", () => ({
     obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado,
 }));
 
@@ -51,7 +51,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
     },
 }));
 
-vi.mock("@/modulos/publicaciones/altaPublicacionOperador", () => ({
+vi.mock("@/modulos/publicaciones/operadores/operaciones/alta-publicacion", () => ({
     altaPublicacionOperador: mocks.altaPublicacionOperador,
 }));
 

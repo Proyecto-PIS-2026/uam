@@ -6,10 +6,10 @@ import type { SeleccionPublicacion } from "./seleccion-publicacion";
 type BaseDatos = typeof import("@/infraestructura/persistencia/prisma/db").db;
 type Rol = "OPERADOR" | "PRODUCTOR";
 let db: BaseDatos;
-let altaOperador: typeof import("./altaPublicacionOperador").altaPublicacionOperador;
-let altaProductor: typeof import("./altaPublicacionProductor").altaPublicacionProductor;
-let editarOperador: typeof import("./operadores/modificar-publicacion").modificarPublicacionOperador;
-let editarProductor: typeof import("./productores/modificar-publicacion").modificarPublicacionProductor;
+let altaOperador: typeof import("./operadores/operaciones/alta-publicacion").altaPublicacionOperador;
+let altaProductor: typeof import("./productores/operaciones/alta-publicacion").altaPublicacionProductor;
+let editarOperador: typeof import("./operadores/operaciones/modificar-publicacion").modificarPublicacionOperador;
+let editarProductor: typeof import("./productores/operaciones/modificar-publicacion").modificarPublicacionProductor;
 let operador: { id: number; usuarioId: number };
 let productor: { id: number; usuarioId: number };
 let especieId: number;
@@ -57,10 +57,10 @@ beforeAll(async () => {
         throw new Error("Esta prueba requiere la base de integración configurada en DATABASE_URL_TEST.");
     }
     ({ db } = await import("@/infraestructura/persistencia/prisma/db"));
-    ({ altaPublicacionOperador: altaOperador } = await import("./altaPublicacionOperador"));
-    ({ altaPublicacionProductor: altaProductor } = await import("./altaPublicacionProductor"));
-    ({ modificarPublicacionOperador: editarOperador } = await import("./operadores/modificar-publicacion"));
-    ({ modificarPublicacionProductor: editarProductor } = await import("./productores/modificar-publicacion"));
+    ({ altaPublicacionOperador: altaOperador } = await import("./operadores/operaciones/alta-publicacion"));
+    ({ altaPublicacionProductor: altaProductor } = await import("./productores/operaciones/alta-publicacion"));
+    ({ modificarPublicacionOperador: editarOperador } = await import("./operadores/operaciones/modificar-publicacion"));
+    ({ modificarPublicacionProductor: editarProductor } = await import("./productores/operaciones/modificar-publicacion"));
     const [op, prod, origenes, empaquetados, cantidades, categoria, calibre] = await Promise.all([
         db.orm.public.Operador.select("id", "usuarioId").first(),
         db.orm.public.Productor.select("id", "usuarioId").first(),

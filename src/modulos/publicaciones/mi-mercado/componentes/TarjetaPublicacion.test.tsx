@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import TarjetaPublicacionProductor from "./TarjetaPublicacionProductor";
-import type { Publicacion } from "../tipos";
+import type { Publicacion } from "../../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
 import styles from "./TarjetaPublicacion.module.css";
 

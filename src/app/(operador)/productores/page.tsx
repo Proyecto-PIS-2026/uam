@@ -1,6 +1,6 @@
 import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
-import { obtenerProductoresDisponibles } from "@/modulos/usuarios/productores/acciones/consultas-productores";
+import { obtenerProductoresDisponibles } from "@/modulos/usuarios/productores/consultas/consultas-productores";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/listado-productores/ListadoProductores";
 export const dynamic = "force-dynamic";
 

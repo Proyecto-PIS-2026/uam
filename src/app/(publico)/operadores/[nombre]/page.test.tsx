@@ -1,6 +1,6 @@
 import { render, screen } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-publico";
+import type { PerfilPublicoOperador } from "../../../../modulos/usuarios/operadores/consultas/consultas-perfil-publico";
 import Page from "./page";
 
 const mocks = vi.hoisted(() => ({
@@ -17,7 +17,7 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: mocks.obtenerSesion,
 }));
 
-vi.mock("../../../../modulos/usuarios/operadores/consultas-perfil-publico", () => ({
+vi.mock("../../../../modulos/usuarios/operadores/consultas/consultas-perfil-publico", () => ({
     obtenerPerfilPublicoOperador: mocks.obtenerPerfil,
 }));
 

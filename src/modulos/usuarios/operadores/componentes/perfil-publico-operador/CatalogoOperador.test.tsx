@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicacionPerfil } from "../../consultas-perfil-publico";
+import type { PublicacionPerfil } from "../../consultas/consultas-perfil-publico";
 import CatalogoOperador from "./CatalogoOperador";
 
 const nombreBotonAgrupar = /^Agrupar(?:\s*por especie)?$/;
@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: tiempoReal.refresh }),
 }));
 
-vi.mock("../../../../publicaciones/tiempo-real/use-actualizaciones-publicaciones", () => ({
+vi.mock("../../../../publicaciones/tiempo-real/useActualizacionesPublicaciones", () => ({
     useActualizacionesPublicaciones: tiempoReal.suscribir,
 }));
 

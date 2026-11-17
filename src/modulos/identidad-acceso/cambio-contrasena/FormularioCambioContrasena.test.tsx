@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import Formulario from "./FormularioCambioContrasena";
-import { cambiarMiContrasena } from "./cambiarMiContrasena";
+import { cambiarMiContrasena } from "./cambiar-mi-contrasena";
 const m = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: m.push }) }));
-vi.mock("./cambiarMiContrasena", () => ({ cambiarMiContrasena: vi.fn() }));
+vi.mock("./cambiar-mi-contrasena", () => ({ cambiarMiContrasena: vi.fn() }));
 const accion = vi.mocked(cambiarMiContrasena);
 function completar() {
     fireEvent.change(screen.getByLabelText("Contraseña actual", { exact: true }), { target: { value: "Anterior123" } });

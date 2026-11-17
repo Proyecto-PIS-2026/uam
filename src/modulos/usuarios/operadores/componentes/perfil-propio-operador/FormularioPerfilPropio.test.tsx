@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Temporal } from "temporal-polyfill";
 import type { ReactNode } from "react";
-import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
+import type { PerfilPropioOperador } from "../../consultas/consultas-perfil-propio";
 import FormularioPerfilPropio from "./FormularioPerfilPropio";
 
 const mocks = vi.hoisted(() => ({
@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }) }));
-vi.mock("../../acciones/modificarPerfilPropio", () => ({ modificarPerfilPropio: mocks.modificar }));
+vi.mock("../../acciones/modificar-perfil-propio", () => ({ modificarPerfilPropio: mocks.modificar }));
 vi.mock("@/compartido/componentes/NotificacionToast", () => ({
     useNotificacionToast: () => ({ notificar: mocks.notificar, cerrarNotificacion: vi.fn() }),
     ProveedorNotificacionesToast: ({ children }: { children: ReactNode }) => children,

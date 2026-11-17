@@ -3,8 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Temporal } from "temporal-polyfill";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { ErrorEdicionPublicacionProductor } from "@/modulos/publicaciones/productores/modificar-publicacion";
-import { ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
+import { ErrorEdicionPublicacionProductor } from "@/modulos/publicaciones/productores/operaciones/modificar-publicacion";
+import { ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/operaciones/baja-publicacion-autorizada";
 import { LIMITE_FORMULARIO_PUBLICACION } from "@/infraestructura/http/cuerpo-limitado";
 
 const registrarEstadisticaMock = vi.hoisted(() => vi.fn());
@@ -44,7 +44,7 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
     obtenerSesion: mocks.sesion,
 }));
 
-vi.mock("@/modulos/publicaciones/productores/modificar-publicacion", () => ({
+vi.mock("@/modulos/publicaciones/productores/operaciones/modificar-publicacion", () => ({
     obtenerPublicacionProductorEditable: mocks.editable,
     modificarPublicacionProductor: mocks.modificar,
     ErrorEdicionPublicacionProductor: class extends Error {
@@ -54,11 +54,11 @@ vi.mock("@/modulos/publicaciones/productores/modificar-publicacion", () => ({
     },
 }));
 
-vi.mock("@/modulos/publicaciones/operadores/consultas-edicion-publicacion", () => ({
+vi.mock("@/modulos/publicaciones/catalogos/consultas-edicion-publicacion", () => ({
     obtenerOpcionesEdicionPublicacion: mocks.opciones,
 }));
 
-vi.mock("@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada", async () => {
+vi.mock("@/modulos/publicaciones/productores/operaciones/baja-publicacion-autorizada", async () => {
     class ErrorBajaPublicacionProductor extends Error {
         readonly status = 404;
     }

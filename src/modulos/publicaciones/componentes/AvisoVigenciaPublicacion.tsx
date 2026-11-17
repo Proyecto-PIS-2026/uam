@@ -1,5 +1,5 @@
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import type { EstadoVigenciaPublicacion } from "../estado-vigencia-publicacion";
+import type { EstadoVigenciaPublicacion } from "../vigencia/estado-vigencia-publicacion";
 import styles from "./AvisoVigenciaFoto.module.css";
 
 type Props = { estado?: EstadoVigenciaPublicacion; fechaVigencia?: string | null };

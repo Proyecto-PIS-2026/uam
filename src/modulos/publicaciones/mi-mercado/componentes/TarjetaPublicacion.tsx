@@ -11,7 +11,7 @@ import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { IndicadorVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import { DescripcionVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
-import type { Publicacion } from "../tipos";
+import type { Publicacion } from "../../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import styles from "./TarjetaPublicacion.module.css";

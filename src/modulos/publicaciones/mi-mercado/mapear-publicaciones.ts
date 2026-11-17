@@ -1,6 +1,6 @@
-import type { Publicacion } from "./tipos";
+import type { Publicacion } from "../tipos";
 import type { obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
-import  { convertirInstantAFechaVigencia, esPublicacionVencida  } from "../vigencia-publicacion";
+import  { convertirInstantAFechaVigencia, esPublicacionVencida  } from "../vigencia/vigencia-publicacion";
 
 type RelacionesPublicacion = Awaited<ReturnType<typeof obtenerPublicacionesDeOperador>>;
 

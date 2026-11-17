@@ -1,21 +1,9 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
-import type { Publicacion } from "./tipos";
-import { convertirInstantAFechaVigencia, esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
-import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
-import { agregarEstadoVigenciaPropias } from "../estado-vigencia-propias";
-
-export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
-    publicacionProductorId: number;
-    pais: string;
-    fechaVigencia: string | null;
-    ubicaciones: {
-        id: number;
-        nombreUbicacion: string;
-        urlMaps: string;
-        departamento?: string | null;
-    }[];
-};
+import { obtenerProductorActual } from "../../usuarios/productores/consultas/productor-actual";
+import type { PublicacionMiMercadoProductor } from "../productores/tipos";
+import { convertirInstantAFechaVigencia, esPublicacionVencida } from "@/modulos/publicaciones/vigencia/vigencia-publicacion";
+import { agregarEstadoFotosPropias } from "../imagenes/vigencia/estado-fotos-propias";
+import { agregarEstadoVigenciaPropias } from "../vigencia/estado-vigencia-propias";
 
 async function consultarPublicacionesProductor(productorId: number) {
     return db.orm.public.PublicacionProductor

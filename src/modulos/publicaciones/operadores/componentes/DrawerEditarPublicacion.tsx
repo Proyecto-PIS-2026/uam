@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useState, type ReactNode } from "react";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
 import SelectorFecha from "@/compartido/componentes/SelectorFecha";
@@ -18,16 +17,17 @@ import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import FotoPublicacionAmpliada from "../../componentes/FotoPublicacionAmpliada";
 import estilosFoto from "../../componentes/FotoPublicacionAmpliada.module.css";
 import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
 import { AvisoVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
-import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
-import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
-import styles from "./DrawerEditarPublicacion.module.css";
+import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../tipos";
+import type { OpcionCategoria, OpcionEdicion, OpcionVariedad } from "../../catalogos/tipos";
+import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO } from "../../precio-publicacion";
+import { useEdicionPublicacion } from "../hooks/useEdicionPublicacion";
+import styles from "../../componentes/formulario-publicacion/formulario-publicacion.module.css";
 import CampoComentario from "../../componentes/CampoComentario";
 
 type DrawerEditarPublicacionProps = {
@@ -56,281 +56,22 @@ type DrawerEditarPublicacionProps = {
     paises: OpcionEdicion[];
 };
 
-const formatoCantidad = /^(0|[1-9]\d{0,9})$/;
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
-function precioParaEdicion(precio: string | null) {
-    if (precio === null) return "";
-    const valor = Number(precio);
-    return Number.isInteger(valor) ? String(valor) : precio;
-}
-
 function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, mostrarAvisoFoto = false, esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
-    const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
-    const [fotoAmpliada, setFotoAmpliada] = useState(false);
-    const [baseEdicion, setBaseEdicion] = useState(recibida);
-    const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
-    const vigente = guardada?.origen === recibida ? guardada.datos : recibida;
-    const publicacion = editando ? baseEdicion : vigente;
-    const [precioEditado, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
-    const [cantidadUnidadesEditado, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
-    const [comentarioEditado, setComentario] = useState(() => publicacion.comentario ?? "");
-    const [fotoEditado, setFoto] = useState(publicacion.foto);
-    const [fotoNueva, setFotoNueva] = useState<File | null>(null);
-    const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
-    const [especieIdEditado, setEspecieId] = useState(publicacion.especieId);
-    const [variedadIdEditado, setVariedadId] = useState(publicacion.variedadId ?? 0);
-    const [categoriaIdEditado, setCategoriaId] = useState(publicacion.categoriaId ?? 0);
-    const [calibreIdEditado, setCalibreId] = useState(publicacion.calibreId ?? 0);
-    const [envaseIdEditado, setEnvaseId] = useState(publicacion.envaseId ?? 0);
-    const [kilosIdEditado, setKilosId] = useState(publicacion.kilosId ?? 0);
-    const [paisIdEditado, setPaisId] = useState(publicacion.paisId ?? 0);
-    const [disponibleEditado, setDisponible] = useState(publicacion.disponible);
-    const precio = editando ? precioEditado : (precioParaEdicion(publicacion.precio));
-    const cantidadUnidades = editando ? cantidadUnidadesEditado : (publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
-    const comentario = editando ? comentarioEditado : (publicacion.comentario ?? "");
-    const foto = editando ? fotoEditado : (publicacion.foto);
-    const especieId = editando ? especieIdEditado : (publicacion.especieId);
-    const variedadId = editando ? variedadIdEditado : (publicacion.variedadId ?? 0);
-    const categoriaId = editando ? categoriaIdEditado : (publicacion.categoriaId ?? 0);
-    const calibreId = editando ? calibreIdEditado : (publicacion.calibreId ?? 0);
-    const envaseId = editando ? envaseIdEditado : (publicacion.envaseId ?? 0);
-    const kilosId = editando ? kilosIdEditado : (publicacion.kilosId ?? 0);
-    const paisId = editando ? paisIdEditado : (publicacion.paisId ?? 0);
-    const disponible = editando ? disponibleEditado : (publicacion.disponible);
-    const inputFotoRef = useRef<HTMLInputElement>(null);
-    const inputGaleriaRef = useRef<HTMLInputElement>(null);
-    const urlVistaPreviaRef = useRef<string | null>(null);
-    const idBase = `editar-publicacion-${publicacion.publicacionOperadorId}`;
-    const ocupado = guardando || eliminando || actualizando;
-    const bloqueado = ocupado || !editando;
-    const fotoVisible = editando || guardada?.origen === recibida ? vistaPrevia ?? foto : publicacion.foto;
-    if (fotoAmpliada && !fotoVisible?.trim()) setFotoAmpliada(false);
-    const especieSeleccionada = especies.find((opcion) => opcion.id === especieId);
-    const nombreFoto = especieSeleccionada?.nombre ?? publicacion.especie;
+    const {
+        publicacion, editando, setEditando, fotoAmpliada, setFotoAmpliada,
+        precio, cantidadUnidades, comentario, fotoVisible, nombreFoto,
+        variedadSeleccionada, especieId, variedadId, categoriaId, calibreId,
+        envaseId, kilosId, paisId, disponible, inputFotoRef,
+        inputGaleriaRef, idBase, ocupado, bloqueado, variedadesDisponibles,
+        envasesDisponibles, categoriasDisponibles, paisesOrdenados, fechaFormateada, fechaVigenciaEditada,
+        setFechaVigencia, seleccionarFoto, borrarFoto, escribirPrecio, escribirCantidadUnidades,
+        cambiarPrecio, cambiarEspecie, cambiarVariedad, prepararEdicion, cancelarEdicion,
+        solicitarGuardado, setCategoriaId, setCalibreId, setEnvaseId, setKilosId,
+        setPaisId, setDisponible, setComentario,
+    } = useEdicionPublicacion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, modoInicial, puedeModificar, eliminando, actualizando, guardando, setGuardando });
     const reemplazoFoto = <div className={styles.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>;
-    const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
-    const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
-    const envasesDisponibles = envases;
-    const categoriasDisponibles = categorias;
-    const paisesOrdenados = [...paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre));
-    const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
-    const [fechaVigenciaEditada, setFechaVigencia] = useState(publicacion.fechaVigencia ?? "");
-    useEffect(() => {
-        return () => {
-            if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        };
-    }, []);
-    useEffect(() => {
-        if (!editando && guardada?.origen !== recibida && urlVistaPreviaRef.current) {
-            URL.revokeObjectURL(urlVistaPreviaRef.current);
-            urlVistaPreviaRef.current = null;
-        }
-    }, [editando, guardada, recibida]);
-
-    function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
-        if (bloqueado) return;
-        const archivo = evento.target.files?.[0];
-        if (!archivo) return;
-
-        if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
-            notificar("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.", "error");
-            evento.target.value = "";
-            return;
-        }
-
-        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        const url = URL.createObjectURL(archivo);
-        urlVistaPreviaRef.current = url;
-        setVistaPrevia(url);
-        setFotoNueva(archivo);
-        cerrarNotificacion();
-        evento.target.value = "";
-    }
-
-    function borrarFoto() {
-        if (bloqueado) return;
-        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        urlVistaPreviaRef.current = null;
-        setVistaPrevia(null);
-        setFotoNueva(null);
-        setFoto(null);
-    }
-
-    function escribirPrecio(nuevoPrecio: string) {
-        if (bloqueado) return;
-        if (esEntradaPrecioPublicacion(nuevoPrecio)) setPrecio(nuevoPrecio);
-    }
-
-    function escribirCantidadUnidades(nuevaCantidad: string) {
-        if (bloqueado) return;
-        if (nuevaCantidad === "") {
-            setCantidadUnidades("");
-            return;
-        }
-        if (!/^\d+$/.test(nuevaCantidad)) return;
-        const valorLimpio = String(Number(nuevaCantidad));
-        if (Number(valorLimpio) > 2147483647) return;
-        setCantidadUnidades(valorLimpio);
-    }
-
-    function cambiarPrecio(cantidad: number) {
-        if (bloqueado) return;
-        const precioActual = Number(precio || "0");
-        if (!Number.isInteger(precioActual)) return;
-        const nuevoPrecio = Math.min(MAXIMO_PRECIO_PUBLICACION, precioActual + cantidad);
-        setPrecio(nuevoPrecio <= 0 ? "" : String(nuevoPrecio));
-    }
-
-    function cambiarEspecie(nuevaEspecieId: number) {
-        if (bloqueado) return;
-        setEspecieId(nuevaEspecieId);
-        setVariedadId(0);
-    }
-
-    function cambiarVariedad(nuevaVariedadId: number) {
-        if (bloqueado) return;
-        setVariedadId(nuevaVariedadId);
-    }
-
-    function prepararEdicion() {
-        setFotoAmpliada(false);
-        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        urlVistaPreviaRef.current = null;
-        if (inputFotoRef.current) inputFotoRef.current.value = "";
-        if (inputGaleriaRef.current) inputGaleriaRef.current.value = "";
-        setBaseEdicion(vigente);
-        setVistaPrevia(null);
-        setFotoNueva(null);
-        setFoto(vigente.foto);
-        setPrecio(precioParaEdicion(vigente.precio));
-        setCantidadUnidades(vigente.cantidadUnidades == null ? "" : String(vigente.cantidadUnidades));
-        setComentario(vigente.comentario ?? "");
-        setEspecieId(vigente.especieId);
-        setVariedadId(vigente.variedadId ?? 0);
-        setEnvaseId(vigente.envaseId ?? 0);
-        setKilosId(vigente.kilosId ?? 0);
-        setCategoriaId(vigente.categoriaId ?? 0);
-        setCalibreId(vigente.calibreId ?? 0);
-        setPaisId(vigente.paisId ?? 0);
-        setDisponible(vigente.disponible);
-        cerrarNotificacion();
-        setFechaVigencia(vigente.fechaVigencia ?? "");
-    }
-
-    function cancelarEdicion() {
-        if (modoInicial === "edicion") { alCerrar(); return; }
-        prepararEdicion();
-        setEditando(false);
-    }
-
-    function solicitarGuardado(evento: FormEvent<HTMLFormElement>) {
-        evento.preventDefault();
-        if (bloqueado) return;
-        if (!precioPublicacionValido(precio)) {
-            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
-            return;
-        }
-
-        const cantidadNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
-        if (cantidadNormalizada !== "" && !formatoCantidad.test(cantidadNormalizada)) {
-            notificar("La cantidad de unidades debe ser un número entero de hasta 10 dígitos.", "error");
-            return;
-        }
-
-        const variedadValida = variedadId === 0 || variedadesDisponibles.some((opcion) => opcion.id === variedadId);
-        const envaseValido = envaseId === 0 || envasesDisponibles.some((opcion) => opcion.id === envaseId);
-        const kilosValidos = kilosId === 0 || kilos.some((opcion) => opcion.id === kilosId);
-        const categoriaValida = categoriaId === 0 || categoriasDisponibles.some((opcion) => opcion.id === categoriaId);
-        const calibreValido = calibreId === 0 || calibres.some((opcion) => opcion.id === calibreId);
-        const paisValido = paisId === 0 || paises.some((opcion) => opcion.id === paisId);
-        if (!especieSeleccionada || !variedadValida || !envaseValido || !kilosValidos || !categoriaValida || !calibreValido || !paisValido) {
-            notificar("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.", "error");
-            return;
-        }
-
-        void guardar();
-    }
-
-    async function guardar() {
-        if (bloqueado || !alGuardar) return;
-        const precioNuevo = normalizarPrecioPublicacion(precio);
-        const precioOriginal = precioParaEdicion(publicacion.precio).trim() || null;
-        const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
-        const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
-        const cantidadOriginal = publicacion.cantidadUnidades ?? null;
-        const comentarioFinal = comentario.trim() || null;
-        const comentarioOriginal = publicacion.comentario ?? null;
-
-        const sinCambios =
-            precioNuevo === precioOriginal &&
-            cantidadFinal === cantidadOriginal &&
-            comentarioFinal === comentarioOriginal &&
-            foto === publicacion.foto &&
-            fotoNueva === null &&
-            especieId === publicacion.especieId &&
-            variedadId === (publicacion.variedadId ?? 0) &&
-            categoriaId === (publicacion.categoriaId ?? 0) &&
-            calibreId === (publicacion.calibreId ?? 0) &&
-            envaseId === (publicacion.envaseId ?? 0) &&
-            kilosId === (publicacion.kilosId ?? 0) &&
-            paisId === (publicacion.paisId ?? 0) &&
-            disponible === publicacion.disponible &&
-            fechaVigenciaEditada === (publicacion.fechaVigencia ?? "");
-
-        if(sinCambios) {
-            if(modoInicial === "consulta") {
-                setFotoNueva(null);
-                setEditando(false);
-            } else {
-                alCerrar();
-            }
-            return;
-        }
-
-        const cambios: CambiosPublicacionOperador = {
-            version: publicacion.version ?? 0,
-            precio: precioNuevo,
-            cantidadUnidades: cantidadFinal,
-            comentario: comentarioFinal,
-            foto: foto === publicacion.foto ? undefined : foto,
-            especieId,
-            variedadId: variedadId || null,
-            categoriaId: categoriaId || null,
-            calibreId: calibreId || null,
-            envaseId: envaseId || null,
-            kilosId: kilosId || null,
-            paisId: paisId || null,
-            disponible,
-            fechaVigencia: fechaVigenciaEditada || null,
-        };
-        setGuardando(true);
-        try {
-            await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
-            setGuardada({ origen: recibida, datos: {
-                ...publicacion, ...cambios, version: cambios.version + 1, foto,
-                estadoFoto: fotoNueva || (foto === null && publicacion.foto !== null) ? null : publicacion.estadoFoto,
-                estadoVigencia: cambios.fechaVigencia === publicacion.fechaVigencia ? publicacion.estadoVigencia : undefined,
-                especie: especieSeleccionada?.nombre ?? publicacion.especie,
-                variedad: variedadSeleccionada?.nombre ?? "",
-                envase: envases.find((opcion) => opcion.id === envaseId)?.nombre ?? "",
-                kilos: kilos.find((opcion) => opcion.id === kilosId)?.nombre ?? "",
-                categoria: categorias.find((opcion) => opcion.id === categoriaId)?.nombre ?? "",
-                calibre: calibres.find((opcion) => opcion.id === calibreId)?.nombre ?? "",
-            } });
-            if (modoInicial === "consulta") {
-                setFotoNueva(null);
-                setEditando(false);
-            } else {
-                alCerrar();
-            }
-        } catch (error) {
-            notificar(error instanceof Error ? error.message : "No se pudieron guardar los cambios. Intentá de nuevo.", "error");
-        } finally {
-            setGuardando(false);
-        }
-    }
     const envaseActual = envaseId ? envases.find(p => p.id === envaseId)?.nombre || publicacion.envase : null;
     const campoPrecio = (
         <div key="precio" className={styles.campo}>

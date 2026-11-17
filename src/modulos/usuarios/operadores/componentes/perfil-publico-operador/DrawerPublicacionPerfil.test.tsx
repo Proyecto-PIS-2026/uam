@@ -10,8 +10,8 @@ import {
     vi,
 } from "vitest";
 
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
 import { DrawerPublicacionPerfil } from "./DrawerPublicacionPerfil";
 
 const usarMediaQueryMock = vi.hoisted(() => vi.fn(() => true));
@@ -216,7 +216,7 @@ vi.mock("@mui/icons-material/Close", async () => {
     };
 });
 
-vi.mock("./TextoAjustable", () => ({
+vi.mock("../../../../../compartido/componentes/TextoAjustable", () => ({
     default: ({
         children,
         className,

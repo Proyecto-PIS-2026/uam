@@ -6,7 +6,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import Alert from "@mui/material/Alert";
 import Fade from "@mui/material/Fade";
 import Portal from "@mui/material/Portal";
-import { useErroresValidacionNativa } from "./validacion-nativa-toast";
+import { useErroresValidacionNativa } from "../hooks/useErroresValidacionNativa";
 import styles from "./NotificacionToast.module.css";
 
 type TipoNotificacion = "success" | "error" | "warning" | "info";

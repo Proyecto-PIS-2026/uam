@@ -3,7 +3,7 @@ import { Temporal } from "temporal-polyfill";
 import "temporal-polyfill/global";
 import { obtenerPublicacionesMiMercadoProductor } from "./consultas-mi-mercado-productor";
 
-vi.mock("../configuracion-aging-fotos", () => ({
+vi.mock("../imagenes/vigencia/configuracion-aging-fotos", () => ({
     obtenerConfiguracionAgingFotos: async () => ({ habilitado: true, diasVigencia: 3, avisosHabilitados: true, diasAnticipacionAviso: 1 }),
 }));
 

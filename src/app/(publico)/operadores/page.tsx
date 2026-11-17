@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { redirigirAMercadoPropio } from '@/modulos/identidad-acceso/autorizacion/controles';
 import { autorizado } from '@/modulos/identidad-acceso/autorizacion/permisos';
-import { obtenerOperadoresPublicos } from '@/modulos/usuarios/operadores/consultas-listado-publico';
+import { obtenerOperadoresPublicos } from '@/modulos/usuarios/operadores/consultas/consultas-listado-publico';
 import ListadoOperadores from '@/modulos/usuarios/operadores/componentes/listado-operadores/ListadoOperadores';
 
 export default async function Page() {

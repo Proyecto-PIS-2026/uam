@@ -13,7 +13,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 }));
 
 vi.mock(
-    "@/modulos/usuarios/productores/componentes/modificar-productor-por-admin/obtenerProductorParaModificar",
+    "@/modulos/usuarios/productores/consultas/obtener-productor-para-modificar",
     () => ({
         obtenerProductorParaModificar: mocks.obtenerProductorParaModificar,
     }),

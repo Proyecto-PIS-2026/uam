@@ -89,8 +89,8 @@ const test = base.extend<{ aging: Escenario }, { backend: Backend }>({
             return foto;
           },
           procesar: async (rol, limite) => {
-            const { obtenerConfiguracionAgingFotos } = await import("../src/modulos/publicaciones/configuracion-aging-fotos");
-            const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
+            const { obtenerConfiguracionAgingFotos } = await import("../src/modulos/publicaciones/imagenes/vigencia/configuracion-aging-fotos");
+            const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/imagenes/vigencia/procesar-vencimientos-fotos");
             const configuracion = await obtenerConfiguracionAgingFotos(rol);
             return db.transaction(async (tx) => {
               if (!configuracion.habilitado) return procesarVencimientosFotos({ tx, limite, fecha: limite.slice(0, 10) }, configuracion, rol);

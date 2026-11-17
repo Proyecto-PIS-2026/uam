@@ -1,10 +1,10 @@
 import MiMercado from "./MiMercado";
 import { obtenerPublicacionesDeOperador } from "../consultas-mi-mercado";
 import { mapearPublicacionesMiMercado } from "../mapear-publicaciones";
-import { obtenerOpcionesEdicionPublicacion } from "../../operadores/consultas-edicion-publicacion";
-import { obtenerOperadorActual, obtenerOperadorPorNombre } from "../../../usuarios/operadores/operador-actual";
+import { obtenerOpcionesEdicionPublicacion } from "../../catalogos/consultas-edicion-publicacion";
+import { obtenerOperadorActual, obtenerOperadorPorNombre } from "../../../usuarios/operadores/consultas/operador-actual";
 import { autorizado } from "../../../identidad-acceso/autorizacion/permisos";
-import { obtenerConfiguracion } from "@/modulos/administracion/acciones/consultas-configuracion";
+import { obtenerConfiguracion } from "@/modulos/administracion/configuracion/repositorio-configuracion";
 import { notFound, redirect } from "next/navigation";
 import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
 

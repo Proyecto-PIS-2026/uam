@@ -1,9 +1,9 @@
 import { obtenerSesion, type RolUsuario } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/acciones/consultas-configuracion";
+import { actualizarConfiguracion, obtenerConfiguracion } from "@/modulos/administracion/configuracion/repositorio-configuracion";
 import { GET, PATCH } from "./route";
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
-vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
+vi.mock("@/modulos/administracion/configuracion/repositorio-configuracion", () => ({
     actualizarConfiguracion: vi.fn(),
     obtenerConfiguracion: vi.fn(),
 }));

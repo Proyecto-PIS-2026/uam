@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
-import type { PerfilPropioOperador as Perfil } from "../../consultasPerfilPropio";
+import type { PerfilPropioOperador as Perfil } from "../../consultas/consultas-perfil-propio";
 import PerfilPropioOperador from "./PerfilPropioOperador";
 
 vi.mock("next/image", () => ({

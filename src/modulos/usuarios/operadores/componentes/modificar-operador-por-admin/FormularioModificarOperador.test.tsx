@@ -3,7 +3,7 @@ import { Temporal } from "temporal-polyfill";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import FormularioModificarOperador from "./FormularioModificarOperador";
-import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
+import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas/consultas-naves";
 import type { OperadorParaModificar } from "../../tipos";
 
 const { push, modificarOperadorMock } = vi.hoisted(() => ({
@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 
-vi.mock("../../acciones/modificarOperador", () => ({
+vi.mock("../../acciones/modificar-operador", () => ({
     modificarOperador: modificarOperadorMock,
 }));
 

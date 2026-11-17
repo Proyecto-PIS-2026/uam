@@ -7,15 +7,16 @@ import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useRouter } from "next/navigation";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
-import EncabezadoPagina from "../../../../compartido/EncabezadoPagina";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
-import FiltrosPublicaciones, { compararPublicacionesPorPrioridad } from "../../filtros/FiltrosPublicaciones";
-import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
-import DrawerPublicacionProductor from "./DrawerPublicacionProductor";
-import { DrawerAltaPublicacionProductor } from "../../productores/AltaPublicacionProductor";
+import EncabezadoPagina from "../../../../compartido/componentes/EncabezadoPagina";
+import type { PublicacionListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-operador";
+import FiltrosPublicaciones from "../../filtros/FiltrosPublicaciones";
+import { compararPublicacionesPorPrioridad } from "../../filtros/ordenar-publicaciones";
+import type { PublicacionMiMercadoProductor } from "../../productores/tipos";
+import DrawerPublicacionProductor from "../../productores/componentes/DrawerPublicacionProductor";
+import { DrawerAltaPublicacionProductor } from "../../productores/componentes/AltaPublicacionProductor";
 import TarjetaPublicacionProductor from "./TarjetaPublicacionProductor";
 import styles from "./MiMercado.module.css";
-import { useSeleccionPublicacion } from "../use-seleccion-publicacion";
+import { useSeleccionPublicacion } from "../hooks/useSeleccionPublicacion";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 

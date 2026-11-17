@@ -4,7 +4,7 @@ import Pagina from "./page";
 
 const mocks = vi.hoisted(() => ({ requerirProductor: vi.fn(), consultar: vi.fn(), notFound: vi.fn(), propsFormulario: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ requerirProductor: mocks.requerirProductor }));
-vi.mock("@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor", () => ({ obtenerMiPerfilProductor: mocks.consultar }));
+vi.mock("@/modulos/usuarios/productores/consultas/consultas-mi-perfil-productor", () => ({ obtenerMiPerfilProductor: mocks.consultar }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("@/modulos/usuarios/productores/componentes/modificar-productor-por-admin/FormularioModificarProductor", () => ({
     default: (props: unknown) => { mocks.propsFormulario(props); return <div>Formulario propio</div> },

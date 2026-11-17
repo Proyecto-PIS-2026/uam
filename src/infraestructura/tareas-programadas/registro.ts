@@ -1,7 +1,7 @@
-import { procesarVencimientosFotos } from "../../modulos/publicaciones/procesar-vencimientos-fotos";
-import { obtenerConfiguracionAgingFotos } from "../../modulos/publicaciones/configuracion-aging-fotos";
-import type { ConfiguracionAgingFotos } from "../../modulos/publicaciones/vigencia-fotos";
-import type { TipoPropietarioFoto } from "../../modulos/publicaciones/claves-aging-fotos";
+import { procesarVencimientosFotos } from "../../modulos/publicaciones/imagenes/vigencia/procesar-vencimientos-fotos";
+import { obtenerConfiguracionAgingFotos } from "../../modulos/publicaciones/imagenes/vigencia/configuracion-aging-fotos";
+import type { ConfiguracionAgingFotos } from "../../modulos/publicaciones/imagenes/vigencia/vigencia-fotos";
+import type { TipoPropietarioFoto } from "../../modulos/publicaciones/imagenes/vigencia/claves-aging-fotos";
 import type { TareaDiaria } from "./tipos";
 import { obtenerConfiguracionAvisosLocales } from "../../modulos/usuarios/operadores/configuracion-avisos-locales";
 import { procesarVencimientosLocales } from "../../modulos/usuarios/operadores/procesar-vencimientos-locales";

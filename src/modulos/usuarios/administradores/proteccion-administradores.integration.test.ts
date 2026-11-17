@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { cambiarHabilitacionUsuario } from "@/modulos/administracion/componentes/configuracion-usuarios/acciones/cambiarHabilitacionUsuario";
-import { bajaAdministrador } from "./bajaAdministrador";
+import { cambiarHabilitacionUsuario } from "@/modulos/administracion/usuarios/acciones/cambiar-habilitacion-usuario";
+import { bajaAdministrador } from "./acciones/baja-administrador";
 
 const mocks = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => mocks);

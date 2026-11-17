@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ guardar: vi.fn(), push: vi.fn(), refresh: vi.f
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }),
 }));
-vi.mock("@/modulos/usuarios/administradores/modificar-mi-perfil", () => ({
+vi.mock("@/modulos/usuarios/administradores/acciones/modificar-mi-perfil", () => ({
     modificarMiPerfilAdministrador: mocks.guardar,
 }));
 

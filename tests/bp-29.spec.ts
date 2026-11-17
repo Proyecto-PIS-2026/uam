@@ -443,7 +443,7 @@ nuevos.describe(() => {
     }
 
     nuevos("CP-29-06: aging sólo genera el aviso cuando está habilitado", async ({ page, precargaOperadores: datos, fotoPropia, backendNotificaciones }) => {
-        const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/procesar-vencimientos-fotos");
+        const { procesarVencimientosFotos } = await import("../src/modulos/publicaciones/imagenes/vigencia/procesar-vencimientos-fotos");
         const { db } = backendNotificaciones;
         const configuracionActiva = {
             habilitado: true,

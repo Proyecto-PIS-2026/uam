@@ -14,8 +14,8 @@ const m = vi.hoisted(() => ({
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: m.sesion }));
 vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: m.habilitado }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect }));
-vi.mock("@/modulos/usuarios/administradores/consultar-mi-perfil", () => ({ consultarMiPerfilAdministrador: m.obtenerPerfilAdmin }));
-vi.mock("@/modulos/usuarios/operadores/consultasPerfilPropio", () => ({ obtenerPerfilPropioOperador: m.obtenerPerfilOperador }));
+vi.mock("@/modulos/usuarios/administradores/consultas/consultar-mi-perfil", () => ({ consultarMiPerfilAdministrador: m.obtenerPerfilAdmin }));
+vi.mock("@/modulos/usuarios/operadores/consultas/consultas-perfil-propio", () => ({ obtenerPerfilPropioOperador: m.obtenerPerfilOperador }));
 vi.mock("@/modulos/usuarios/operadores/componentes/perfil-propio-operador/PerfilPropioOperador", () => ({ default: m.perfilOperador }));
 
 describe("BP-11.1: página de consulta de mi perfil", () => {

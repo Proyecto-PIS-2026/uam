@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import FormularioModificarAdministrador from "./FormularioModificarAdministrador";
-import type { AdministradorParaModificar } from "./obtenerAdministradorParaModificar";
+import type { AdministradorParaModificar } from "../../consultas/obtener-administrador-para-modificar";
 
 const { push, modificarMock, modificarMiPerfilMock, notificarMock } = vi.hoisted(() => ({
     push: vi.fn(),
@@ -15,11 +15,11 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ push }),
 }));
 
-vi.mock("./modificarAdministrador", () => ({
+vi.mock("../../acciones/modificar-administrador", () => ({
     modificarAdministrador: modificarMock,
 }));
 
-vi.mock("../../perfil-propio/modificarMiPerfilAdministrador", () => ({
+vi.mock("../../acciones/modificar-perfil-propio-administrador", () => ({
     modificarMiPerfilAdministrador: modificarMiPerfilMock,
 }));
 

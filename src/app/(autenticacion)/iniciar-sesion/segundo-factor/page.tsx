@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
-import { obtenerSegundoFactorPendiente } from "@/modulos/identidad-acceso/autenticacion/segundo-factor";
-import { obtenerTokenSegundoFactor } from "@/modulos/identidad-acceso/autenticacion/cookie-segundo-factor";
-import { obtenerUriVinculacion } from "@/modulos/identidad-acceso/autenticacion/segundo-factor-criptografia";
-import FormularioSegundoFactor from "./formularioSegundoFactor";
+import { obtenerSegundoFactorPendiente } from "@/modulos/identidad-acceso/autenticacion/segundo-factor/segundo-factor";
+import { obtenerTokenSegundoFactor } from "@/modulos/identidad-acceso/autenticacion/segundo-factor/cookie-segundo-factor";
+import { obtenerUriVinculacion } from "@/modulos/identidad-acceso/autenticacion/segundo-factor/segundo-factor-criptografia";
+import FormularioSegundoFactor from "../../../../modulos/identidad-acceso/autenticacion/segundo-factor/componentes/FormularioSegundoFactor";
 
 export const metadata = { title: "Verificación en dos pasos | UAM", robots: { index: false, follow: false } };
 

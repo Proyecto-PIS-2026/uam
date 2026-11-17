@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaAdministracion, { dynamic } from "./page";
 
-type PropsUsuarios = ComponentProps<typeof import("@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios").default>;
+type PropsUsuarios = ComponentProps<typeof import("@/modulos/administracion/usuarios/componentes/ConfiguracionUsuarios").default>;
 type DatosUsuarios = PropsUsuarios["datos"];
 
 const mocks = vi.hoisted(() => ({
@@ -17,15 +17,15 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     requerirAdministrador: mocks.requerirAdministrador,
 }));
 
-vi.mock("@/modulos/administracion/componentes/configuracion-usuarios/acciones/ConsultaUsuarios", () => ({
+vi.mock("@/modulos/administracion/usuarios/consultas/consultas-usuarios", () => ({
     default: mocks.consultarUsuarios,
 }));
 
-vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
+vi.mock("../../../modulos/administracion/estadisticas/consultas-estadisticas", () => ({
     obtenerEstadisticas: mocks.obtenerEstadisticas,
 }));
 
-vi.mock("@/compartido/EncabezadoPagina", () => ({
+vi.mock("@/compartido/componentes/EncabezadoPagina", () => ({
     default: ({ titulo, subtitulo, cantidad }: { titulo: string; subtitulo: string; cantidad: number | null }) => (
         <header>
             <h1>{titulo}</h1>
@@ -35,7 +35,7 @@ vi.mock("@/compartido/EncabezadoPagina", () => ({
     ),
 }));
 
-vi.mock("@/modulos/administracion/componentes/contenedor-configuracion/ContenedorConfiguraciones", () => ({
+vi.mock("@/modulos/administracion/componentes/contenedor-configuracion/PanelAdministracion", () => ({
     default: ({ general, usuarios, estadisticas, catalogos }: { general: ReactNode; usuarios: ReactNode; estadisticas: ReactNode; catalogos: ReactNode }) => (
         <div>
             <section aria-label="General">{general}</section>
@@ -46,19 +46,19 @@ vi.mock("@/modulos/administracion/componentes/contenedor-configuracion/Contenedo
     ),
 }));
 
-vi.mock("@/modulos/administracion/componentes/configuracion-general/contenedor-configuracion-general/ContenedorConfiguracionGenerales", () => ({
+vi.mock("@/modulos/administracion/configuracion/componentes/ConfiguracionGeneral", () => ({
     default: () => <div>Configuraciones generales</div>,
 }));
 
-vi.mock("@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios", () => ({
+vi.mock("@/modulos/administracion/usuarios/componentes/ConfiguracionUsuarios", () => ({
     default: mocks.usuarios,
 }));
 
-vi.mock("@/modulos/administracion/componentes/catalogos-publicacion/CatalogosPublicacion", () => ({
+vi.mock("@/modulos/administracion/catalogos/componentes/CatalogosPublicacion", () => ({
     default: () => <div>Catálogos de publicaciones</div>,
 }));
 
-vi.mock("@/modulos/administracion/componentes/estadistica/ContenedorEstadistica", () => ({
+vi.mock("@/modulos/administracion/estadisticas/componentes/ContenedorEstadistica", () => ({
     default: ({ datosIniciales }: { datosIniciales: unknown }) => (
         <output data-testid="datos-estadisticas">{JSON.stringify(datosIniciales)}</output>
     ),
