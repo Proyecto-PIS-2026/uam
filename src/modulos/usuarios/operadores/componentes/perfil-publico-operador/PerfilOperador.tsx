@@ -6,12 +6,12 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
-import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
-import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
+import HojasDecorativas from "../../../../../compartido/componentes/HojasDecorativas";
+import type { PerfilPublicoOperador } from "../../consultas/consultas-perfil-publico";
 
 import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import styles from "./PerfilOperador.module.css";

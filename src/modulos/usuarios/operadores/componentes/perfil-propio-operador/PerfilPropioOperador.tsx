@@ -10,13 +10,13 @@ import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import Link from "next/link";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
-import BotonVolver from "@/compartido/BotonVolver";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
-import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
+import type { PerfilPropioOperador } from "../../consultas/consultas-perfil-propio";
 import FormularioPerfilPropio from "./FormularioPerfilPropio";
 import styles from "./PerfilPropioOperador.module.css";
-import estilosFormulario from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
+import estilosFormulario from "@/modulos/usuarios/componentes/formulario-usuario.module.css";
 
 function formatearFecha(fecha: string): string {
     const [anio, mes, dia] = fecha.split("-");

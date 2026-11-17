@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 import FormularioModificarOperador from "@/modulos/usuarios/operadores/componentes/modificar-operador-por-admin/FormularioModificarOperador";
-import { obtenerNaves } from "@/modulos/usuarios/operadores/consultas-naves";
-import { obtenerOperadorParaModificar } from "@/modulos/usuarios/operadores/consultas-modificacion-operador";
+import { obtenerNaves } from "@/modulos/usuarios/operadores/consultas/consultas-naves";
+import { obtenerOperadorParaModificar } from "@/modulos/usuarios/operadores/consultas/consultas-modificacion-operador";
 
 export const dynamic = "force-dynamic";
 

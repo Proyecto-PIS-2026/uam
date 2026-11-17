@@ -6,7 +6,7 @@ import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/contr
 const mocks = vi.hoisted(() => ({ suscribir: vi.fn(), desuscribir: vi.fn(), obtenerVersion: vi.fn(), obtenerVersionProductores: vi.fn(), sesion: vi.fn(), consultaProductores: vi.fn(), operador: vi.fn(), autorizado: vi.fn() }));
 vi.mock("@/infraestructura/tiempo-real/escuchar-publicaciones", () => ({ escuchaPublicaciones: { suscribir: mocks.suscribir, obtenerVersion: mocks.obtenerVersion, obtenerVersionProductores: mocks.obtenerVersionProductores } }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.sesion }));
-vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.operador }));
+vi.mock("@/modulos/usuarios/operadores/consultas/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.operador }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/permisos", () => ({ autorizado: mocks.autorizado }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirConsultaProductores: mocks.consultaProductores, ErrorAutorizacion: class extends Error { constructor(public status: number, mensaje: string) { super(mensaje) } } }));
 

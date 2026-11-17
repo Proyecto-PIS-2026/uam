@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
-import FormularioAltaUsuario from '@/modulos/usuarios/administradores/componentes/alta-usuario/FormularioAltaUsuario';
-import { obtenerNaves } from '@/modulos/usuarios/operadores/consultas-naves';
+import FormularioAltaUsuario from '@/modulos/usuarios/alta-usuario/FormularioAltaUsuario';
+import { obtenerNaves } from '@/modulos/usuarios/operadores/consultas/consultas-naves';
 import { requerirAdministrador } from '@/modulos/identidad-acceso/autorizacion/controles';
 
 

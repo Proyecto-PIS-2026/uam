@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 import FormularioModificarAdministrador from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador";
-import { obtenerAdministradorParaModificar } from "@/modulos/usuarios/administradores/componentes/modificar-administrador/obtenerAdministradorParaModificar";
+import { obtenerAdministradorParaModificar } from "@/modulos/usuarios/administradores/consultas/obtener-administrador-para-modificar";
 
 export const dynamic = "force-dynamic";
 

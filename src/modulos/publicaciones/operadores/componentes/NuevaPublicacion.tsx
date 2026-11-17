@@ -22,10 +22,10 @@ import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import Image from "next/image";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
-import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionOperador";
-import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
+import type { DatosAltaPublicacionOperador } from "../validaciones/validar-alta-publicacion";
+import { ordenarOpcionesPorNombre } from "../../catalogos/ordenar-opciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
-import drawerStyles from "./DrawerEditarPublicacion.module.css";
+import drawerStyles from "../../componentes/formulario-publicacion/formulario-publicacion.module.css";
 import CampoComentario from "../../componentes/CampoComentario";
 
 type Opcion = { id: number; nombre: string };

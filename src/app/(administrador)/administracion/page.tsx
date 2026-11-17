@@ -1,12 +1,12 @@
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
-import ContenedorConfiguracionGeneral from "@/modulos/administracion/componentes/contenedor-configuracion/ContenedorConfiguraciones";
-import ContenedorConfiguracionGenerales from "@/modulos/administracion/componentes/configuracion-general/contenedor-configuracion-general/ContenedorConfiguracionGenerales";
-import ConfiguracionUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/ConfiguracionUsuarios";
-import ContenedorEstadistica from "@/modulos/administracion/componentes/estadistica/ContenedorEstadistica";
-import { obtenerEstadisticas } from "@/modulos/administracion/acciones/consultas-configuracion";
-import consultarDatosModificarUsuarios from "@/modulos/administracion/componentes/configuracion-usuarios/acciones/ConsultaUsuarios";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
+import PanelAdministracion from "@/modulos/administracion/componentes/contenedor-configuracion/PanelAdministracion";
+import ConfiguracionGeneral from "@/modulos/administracion/configuracion/componentes/ConfiguracionGeneral";
+import ConfiguracionUsuarios from "@/modulos/administracion/usuarios/componentes/ConfiguracionUsuarios";
+import ContenedorEstadistica from "@/modulos/administracion/estadisticas/componentes/ContenedorEstadistica";
+import { obtenerEstadisticas } from "../../../modulos/administracion/estadisticas/consultas-estadisticas";
+import consultarDatosModificarUsuarios from "@/modulos/administracion/usuarios/consultas/consultas-usuarios";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import CatalogosPublicacion from "@/modulos/administracion/componentes/catalogos-publicacion/CatalogosPublicacion";
+import CatalogosPublicacion from "@/modulos/administracion/catalogos/componentes/CatalogosPublicacion";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +27,8 @@ export default async function PaginaAdministracion() {
                         cantidad={null}
                         subtitulo="Configuración"
                     />
-                    <ContenedorConfiguracionGeneral
-                        general={<ContenedorConfiguracionGenerales />}
+                    <PanelAdministracion
+                        general={<ConfiguracionGeneral />}
                         usuarios={<ConfiguracionUsuarios datos={datosUsuarios} />}
                         estadisticas={<ContenedorEstadistica datosIniciales={estadisticas} />}
                         catalogos={<CatalogosPublicacion />}

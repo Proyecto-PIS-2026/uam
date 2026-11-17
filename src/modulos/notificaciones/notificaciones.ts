@@ -3,7 +3,7 @@ import type { DatosSesion, RolUsuario } from "@/modulos/identidad-acceso/autenti
 import type { NotificacionesUsuario } from "./tipos";
 import { urlInternaNotificacion } from "./validacion-url";
 import { textoVisibleNotificacion } from "./texto-visible";
-import { procesarVencimientosUsuario } from "@/modulos/publicaciones/procesar-vencimientos";
+import { procesarVencimientosUsuario } from "@/modulos/publicaciones/vigencia/procesar-vencimientos";
 
 export type DestinatariosNotificacion = {
     texto: string;

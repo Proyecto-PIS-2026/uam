@@ -1,8 +1,8 @@
 import { requerirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
-import MercadoProduccion from "@/modulos/publicaciones/componentes/contenedor-publicacion/MercadoProduccion";
-import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
-import { obtenerConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
-import { convertirOrdenMercados } from "@/modulos/consulta-mercado/acciones/ordenamiento-publicaciones";
+import MercadoProduccion from "@/modulos/consulta-mercado/componentes/MercadoProduccion";
+import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
+import { obtenerConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/consultas/configuracion-ordenamiento";
+import { convertirOrdenMercados } from "@/modulos/consulta-mercado/filtros/ordenamiento-publicaciones";
 
 export const dynamic = "force-dynamic";
 

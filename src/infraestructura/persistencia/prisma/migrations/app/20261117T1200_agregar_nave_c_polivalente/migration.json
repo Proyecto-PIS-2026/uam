@@ -1,0 +1,9 @@
+{
+  "from": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "to": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "providedInvariants": [
+    "uam:nave-c-polivalente"
+  ],
+  "createdAt": "2026-11-17T12:38:41.529Z",
+  "migrationHash": "4b19cd79b2d700fa3a9802aa4ef9b8a65eb47db55b2b772b5029723c92f8dc4c"
+}

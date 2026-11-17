@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import PerfilAdministrador, { RUTA_MI_PERFIL } from "./PerfilAdministrador";
-import type { PerfilAdministrador as DatosPerfilAdministrador } from "../../acciones/consultas-perfil-administrador";
+import type { PerfilAdministrador as DatosPerfilAdministrador } from "../../consultas/consultas-perfil-administrador";
 
 const mocks = vi.hoisted(() => ({ restablecer: vi.fn(), refresh: vi.fn(), notificar: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
-vi.mock("../../restablecerSegundoFactorAdministrador", () => ({ restablecerSegundoFactorAdministrador: mocks.restablecer }));
+vi.mock("../../acciones/restablecer-segundo-factor-administrador", () => ({ restablecerSegundoFactorAdministrador: mocks.restablecer }));
 vi.mock("@/compartido/componentes/NotificacionToast", () => ({ useNotificacionToast: () => ({ notificar: mocks.notificar }) }));
 
 const administradorBase: DatosPerfilAdministrador = {

@@ -4,9 +4,9 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import TextField from "@mui/material/TextField";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/modificar-mi-perfil";
-import type { MiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultar-mi-perfil";
-import styles from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
+import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/acciones/modificar-mi-perfil";
+import type { MiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultas/consultar-mi-perfil";
+import styles from "@/modulos/usuarios/componentes/formulario-usuario.module.css";
 
 export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilAdministrador }) {
     const router = useRouter();

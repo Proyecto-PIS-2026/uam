@@ -2,9 +2,9 @@ import type { ComponentProps, ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaPublicaciones, { dynamic } from "./page";
-import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
+import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/consultas/configuracion-ordenamiento";
 
-type PropsContenedor = ComponentProps<typeof import("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones").default>;
+type PropsContenedor = ComponentProps<typeof import("@/modulos/consulta-mercado/componentes/ContenedorPublicaciones").default>;
 
 const mocks = vi.hoisted(() => ({
     redirigirAMercadoPropio: vi.fn(),
@@ -18,19 +18,19 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     redirigirAMercadoPropio: mocks.redirigirAMercadoPropio,
 }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/ConsultarPublicacionOperador.action", () => ({
+vi.mock("@/modulos/consulta-mercado/acciones/consultar-publicaciones-operador", () => ({
     default: mocks.obtenerPublicaciones,
 }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/configuracion-ordenamiento", () => ({
+vi.mock("@/modulos/consulta-mercado/consultas/configuracion-ordenamiento", () => ({
     obtenerConfiguracionOrdenamiento: mocks.obtenerConfiguracion,
 }));
 
-vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones", () => ({
+vi.mock("@/modulos/consulta-mercado/componentes/ContenedorPublicaciones", () => ({
     default: mocks.contenedor,
 }));
 
-vi.mock("@/compartido/EncabezadoPagina", () => ({
+vi.mock("@/compartido/componentes/EncabezadoPagina", () => ({
     default: mocks.encabezado,
 }));
 

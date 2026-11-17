@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import FormularioAltaUsuario from "../administradores/componentes/alta-usuario/FormularioAltaUsuario";
+import FormularioAltaUsuario from "../alta-usuario/FormularioAltaUsuario";
 import FormularioModificarOperador from "../operadores/componentes/modificar-operador-por-admin/FormularioModificarOperador";
 import FormularioModificarProductor from "../productores/componentes/modificar-productor-por-admin/FormularioModificarProductor";
 
@@ -17,10 +17,10 @@ vi.mock("next/navigation", () => ({
     useSearchParams: () => ({ get: () => mocks.rol }),
     useRouter: () => ({ push: mocks.push }),
 }));
-vi.mock("@/modulos/usuarios/operadores/altaOperador", () => ({ altaOperador: mocks.altaOperador }));
-vi.mock("@/modulos/usuarios/productores/altaProductor", () => ({ altaProductor: mocks.altaProductor }));
-vi.mock("@/modulos/usuarios/operadores/acciones/modificarOperador", () => ({ modificarOperador: mocks.modificarOperador }));
-vi.mock("@/modulos/usuarios/productores/componentes/modificar-productor-por-admin/modificarProductor", () => ({ modificarProductor: mocks.modificarProductor }));
+vi.mock("@/modulos/usuarios/operadores/acciones/alta-operador", () => ({ altaOperador: mocks.altaOperador }));
+vi.mock("@/modulos/usuarios/productores/acciones/alta-productor", () => ({ altaProductor: mocks.altaProductor }));
+vi.mock("@/modulos/usuarios/operadores/acciones/modificar-operador", () => ({ modificarOperador: mocks.modificarOperador }));
+vi.mock("@/modulos/usuarios/productores/acciones/modificar-productor", () => ({ modificarProductor: mocks.modificarProductor }));
 
 const URLOriginal = URL;
 const revocarUrl = vi.fn();

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { altaPublicacionProductor } from "@/modulos/publicaciones/altaPublicacionProductor";
+import { altaPublicacionProductor } from "@/modulos/publicaciones/productores/operaciones/alta-publicacion";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";

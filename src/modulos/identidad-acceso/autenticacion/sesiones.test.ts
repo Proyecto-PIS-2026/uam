@@ -3,7 +3,7 @@
 import { createHmac as crearFirmaHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cerrarSesion, crearSesion, obtenerSesion } from "./sesiones";
-import { obtenerVersionSegundoFactor } from "./segundo-factor-criptografia";
+import { obtenerVersionSegundoFactor } from "./segundo-factor/segundo-factor-criptografia";
 
 const cookiesSimuladas = vi.hoisted(() => ({
     get: vi.fn(),

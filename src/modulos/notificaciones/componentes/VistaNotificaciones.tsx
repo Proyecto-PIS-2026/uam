@@ -11,7 +11,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";

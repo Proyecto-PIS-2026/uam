@@ -1,6 +1,6 @@
-import type { Publicacion } from "./tipos";
+import type { Publicacion } from "../tipos";
 import type { obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
-import  { convertirInstantAFechaVigencia, esPublicacionVencida  } from "../vigencia-publicacion";
+import  { convertirInstantAFechaVigencia, esPublicacionVencida  } from "../vigencia/vigencia-publicacion";
 
 type RelacionesPublicacion = Awaited<ReturnType<typeof obtenerPublicacionesDeOperador>>;
 
@@ -15,6 +15,7 @@ export function mapearPublicacionesMiMercado(relaciones: RelacionesPublicacion):
             paisId: rel.paisId,
             foto: pub.foto as string | null,
             estadoFoto: pub.estadoFoto,
+            estadoVigencia: pub.estadoVigencia,
             precio: pub.precio === null ? null : String(pub.precio),
             fecha: pub.fecha.toString(),
             fechaVigencia: convertirInstantAFechaVigencia(pub.fechaVigencia),

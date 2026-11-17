@@ -5,7 +5,7 @@ import { dividirPeriodoHistorico } from "./periodos-historicos";
 import type { HistoricoProducto } from "./tipos";
 import { fusionarHistoricos } from "./transformar-historico";
 
-const ANIOS_INICIALES = 9;
+const ANIOS_INICIALES = 6;
 const PEDIDOS_POR_LOTE = 3;
 const actualizacionesEnCurso = new Map<string, Promise<void>>();
 

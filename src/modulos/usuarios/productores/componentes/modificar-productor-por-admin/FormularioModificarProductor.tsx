@@ -1,17 +1,17 @@
 "use client";
 
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 
-import { modificarMiPerfilProductor } from "../../perfil-propio/modificarMiPerfilProductor";
-import { modificarProductor } from "./modificarProductor";
-import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
+import { modificarMiPerfilProductor } from "../../acciones/modificar-mi-perfil-productor";
+import { modificarProductor } from "../../acciones/modificar-productor";
+import type { ProductorParaModificar } from "../../consultas/obtener-productor-para-modificar";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import styles from "./FormularioModificarProductor.module.css";

@@ -51,7 +51,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/permisos", () => ({
     autorizado: mocks.autorizado,
 }));
 
-vi.mock("@/modulos/publicaciones/altaPublicacionProductor", () => ({
+vi.mock("@/modulos/publicaciones/productores/operaciones/alta-publicacion", () => ({
     altaPublicacionProductor: mocks.altaPublicacionProductor,
 }));
 

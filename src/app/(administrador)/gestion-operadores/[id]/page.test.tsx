@@ -21,15 +21,15 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
-vi.mock("../../../../modulos/usuarios/operadores/consultas-perfil-admin", () => ({
+vi.mock("../../../../modulos/usuarios/operadores/consultas/consultas-perfil-admin", () => ({
     obtenerPerfilAdminOperador: mocks.obtenerPerfil,
 }));
 
-vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
+vi.mock("@/modulos/administracion/configuracion/repositorio-configuracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 
-vi.mock("../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion", () => ({
+vi.mock("../../../../modulos/publicaciones/catalogos/consultas-edicion-publicacion", () => ({
     obtenerOpcionesEdicionPublicacion: mocks.obtenerOpciones,
 }));
 

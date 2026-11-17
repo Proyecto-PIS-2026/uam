@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
 
-import { obtenerPerfilAdminOperador } from "../../../../modulos/usuarios/operadores/consultas-perfil-admin";
-import { obtenerOpcionesEdicionPublicacion } from "../../../../modulos/publicaciones/operadores/consultas-edicion-publicacion";
-import { obtenerConfiguracion } from "@/modulos/administracion/acciones/consultas-configuracion";
+import { obtenerPerfilAdminOperador } from "../../../../modulos/usuarios/operadores/consultas/consultas-perfil-admin";
+import { obtenerOpcionesEdicionPublicacion } from "../../../../modulos/publicaciones/catalogos/consultas-edicion-publicacion";
+import { obtenerConfiguracion } from "@/modulos/administracion/configuracion/repositorio-configuracion";
 import PerfilOperadorAdmin from "../../../../modulos/usuarios/operadores/componentes/perfil-admin-operador/PerfilOperadorAdmin";
 
 export const dynamic = "force-dynamic"; // Consultar la base en cada visita, sin cachear la página

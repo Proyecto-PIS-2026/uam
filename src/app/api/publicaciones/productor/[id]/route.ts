@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { obtenerOpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/consultas-edicion-publicacion";
-import { ErrorEdicionPublicacionProductor, modificarPublicacionProductor, obtenerPublicacionProductorEditable } from "@/modulos/publicaciones/productores/modificar-publicacion";
-import { bajaPublicacionProductorAutorizada, ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
+import { obtenerOpcionesEdicionPublicacion } from "@/modulos/publicaciones/catalogos/consultas-edicion-publicacion";
+import { ErrorEdicionPublicacionProductor, modificarPublicacionProductor, obtenerPublicacionProductorEditable } from "@/modulos/publicaciones/productores/operaciones/modificar-publicacion";
+import { bajaPublicacionProductorAutorizada, ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/operaciones/baja-publicacion-autorizada";
 import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
-import { agregarEstadoFotosPropias } from "@/modulos/publicaciones/estado-fotos-propias";
+import { agregarEstadoFotosPropias } from "@/modulos/publicaciones/imagenes/vigencia/estado-fotos-propias";
+import { agregarEstadoVigenciaPropias } from "@/modulos/publicaciones/vigencia/estado-vigencia-propias";
 import { registrarPublicacion } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 
@@ -85,7 +86,8 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
             }
         }
         const [publicacion] = await agregarEstadoFotosPropias([resultado.publicacion], "PRODUCTOR");
-        return NextResponse.json({ publicacion });
+        const [{ estadoVigencia }] = await agregarEstadoVigenciaPropias([{ fechaVigencia: resultado.fechaVigencia }], "PRODUCTOR");
+        return NextResponse.json({ publicacion: { ...publicacion, estadoVigencia } });
     } catch (error) {
         return respuestaError(error);
     }

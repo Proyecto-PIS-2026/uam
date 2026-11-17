@@ -4,8 +4,9 @@ import { controlarSesionEnAccion, exigirSesionEnAccion } from "../../identidad-a
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
 import { ErrorAutorizacion } from "../../identidad-acceso/autorizacion/controles";
 import { revalidatePath } from "next/cache";
-import { obtenerOperadorAutorizado } from "../../usuarios/operadores/operador-actual";
-import { actualizarPrecioPublicacion, incrementarPrecioPublicacion, ConflictoPublicacionError, obtenerPublicacionesDeOperador, PublicacionNoEncontradaError } from "./consultas-mi-mercado";
+import { obtenerOperadorAutorizado } from "../../usuarios/operadores/consultas/operador-actual";
+import { obtenerPublicacionesDeOperador } from "./consultas-mi-mercado";
+import { actualizarPrecioPublicacion, incrementarPrecioPublicacion, ConflictoPublicacionError, PublicacionNoEncontradaError } from "../operadores/operaciones/actualizar-precio-publicacion";
 import { mapearPublicacionesMiMercado } from "./mapear-publicaciones";
 
 export async function cargarPublicacionesMiMercado(operadorId: number) {

@@ -3,10 +3,10 @@ import { obtenerTareasDiarias } from "./registro";
 import type { ContextoTareaDiaria } from "./tipos";
 
 const mocksConfiguracion = vi.hoisted(() => ({ obtener: vi.fn() }));
-vi.mock("../../modulos/publicaciones/configuracion-aging-fotos", () => ({ obtenerConfiguracionAgingFotos: mocksConfiguracion.obtener }));
+vi.mock("../../modulos/publicaciones/imagenes/vigencia/configuracion-aging-fotos", () => ({ obtenerConfiguracionAgingFotos: mocksConfiguracion.obtener }));
 
 const mocks = vi.hoisted(() => ({ procesar: vi.fn() }));
-vi.mock("../../modulos/publicaciones/procesar-vencimientos-fotos", () => ({ procesarVencimientosFotos: mocks.procesar }));
+vi.mock("../../modulos/publicaciones/imagenes/vigencia/procesar-vencimientos-fotos", () => ({ procesarVencimientosFotos: mocks.procesar }));
 const locales = vi.hoisted(() => ({ db: { orm: {} }, configurar: vi.fn(), procesar: vi.fn() }));
 vi.mock("../persistencia/prisma/db", () => ({ db: locales.db }));
 vi.mock("../../modulos/usuarios/operadores/configuracion-avisos-locales", () => ({

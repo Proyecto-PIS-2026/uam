@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 
 import CatalogoProductorAdmin from "./CatalogoProductorAdmin";
-import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
-import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
+import type { PublicacionPerfilAdminProductor } from "../../consultas/consultas-perfil-productor-admin";
+import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/productores/tipos";
 
 const mocks = vi.hoisted(() => ({ refresh: vi.fn(), bajaPendiente: vi.fn<(completar: () => void) => void>(), yaEliminada: false }));
 
@@ -11,7 +11,7 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
-vi.mock("../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor", () => ({
+vi.mock("../../../../publicaciones/productores/componentes/DrawerPublicacionProductor", () => ({
     default: ({ publicacion, alCerrar, alGuardar, alEliminada }: {
         publicacion: PublicacionMiMercadoProductor | null;
         alCerrar: () => void;

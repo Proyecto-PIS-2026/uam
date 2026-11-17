@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { decodificarParametroRuta } from "@/compartido/decodificar-parametro-ruta";
 import { requerirOperador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
-import PerfilProductor from "@/modulos/usuarios/productores/componentes/perfil-operador-productor/perfil-productor/PerfilProductor";
-import CatalogoProductor from "@/modulos/usuarios/productores/componentes/perfil-operador-productor/catalogo-productor/CatalogoProductor";
+import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/consultas/consultas-perfil-por-operador";
+import PerfilProductor from "@/modulos/usuarios/productores/componentes/perfil-operador-productor/PerfilProductor";
+import CatalogoProductor from "@/modulos/usuarios/productores/componentes/perfil-operador-productor/CatalogoProductor";
 
 export const dynamic = "force-dynamic";
 

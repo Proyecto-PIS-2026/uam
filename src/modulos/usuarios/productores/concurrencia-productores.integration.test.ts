@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { altaOperador } from "../operadores/altaOperador";
-import { altaAdministrador } from "../administradores/altaAdministrador";
-import { altaProductor } from "./altaProductor";
-import { modificarProductor } from "./componentes/modificar-productor-por-admin/modificarProductor";
+import { altaOperador } from "../operadores/acciones/alta-operador";
+import { altaAdministrador } from "../administradores/acciones/alta-administrador";
+import { altaProductor } from "./acciones/alta-productor";
+import { modificarProductor } from "./acciones/modificar-productor";
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirAdministrador: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

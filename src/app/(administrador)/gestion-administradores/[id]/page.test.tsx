@@ -21,7 +21,7 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound, redirect: mocks.redirect }));
 
-vi.mock("@/modulos/usuarios/administradores/acciones/consultas-perfil-administrador", () => ({
+vi.mock("@/modulos/usuarios/administradores/consultas/consultas-perfil-administrador", () => ({
     obtenerPerfilAdministrador: mocks.obtenerPerfil,
 }));
 

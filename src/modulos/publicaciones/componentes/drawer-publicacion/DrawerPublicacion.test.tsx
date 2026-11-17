@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-productor";
 import { DrawerPublicacion } from "./DrawerPublicacion";
 
 const usarMediaQueryMock = vi.hoisted(() => vi.fn(() => true));
@@ -158,7 +158,7 @@ vi.mock("@mui/icons-material/Close", async () => {
     return { default: () => React.createElement("span", { "data-testid": "CloseIcon" }) };
 });
 
-vi.mock("./TextoAjustable", () => ({
+vi.mock("../../../../compartido/componentes/TextoAjustable", () => ({
     default: ({ children, className }: { children: ReactNode; className?: string }) => <span className={className}>{children}</span>,
 }));
 

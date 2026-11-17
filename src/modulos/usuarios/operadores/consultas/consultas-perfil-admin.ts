@@ -1,0 +1,169 @@
+import { db } from "../../../../infraestructura/persistencia/prisma/db";
+import { convertirInstantAFechaVigencia } from "../../../publicaciones/vigencia/vigencia-publicacion";
+// Datos de una publicación tal como los ve el administrador
+export type PublicacionPerfilAdmin = {
+    id: number;
+    version: number;
+    publicacionOperadorId: number;
+    especieId: number;
+    variedadId: number | null;
+    envaseId: number | null;
+    kilosId: number | null;
+    categoriaId: number | null;
+    calibreId: number | null;
+    paisId: number | null;
+    foto: string | null;
+    precio: string | null;
+    cantidadUnidades?: number | null;
+    comentario?: string | null;
+    fecha: string;
+    fechaVigencia: string | null;
+    disponible: boolean; // El admin ve también las publicaciones no disponibles
+    especie: string;
+    variedad: string;
+    envase: string;
+    kilos: string;
+    categoria: string;
+    calibre: string;
+    codigoCalibre: string;
+    pais: string;
+};
+
+// Datos del perfil de un operador tal como los ve el administrador
+export type PerfilAdminOperador = {
+    id: number;
+    nombreFantasia: string;
+    fotoPerfil: string | null;
+    whatsApp: string;
+    solicitoRestablecimiento: boolean;
+    enLicencia?: boolean;
+    comentario?: string | null;
+    locales: {
+        numeroLocal: string;
+        nombreNave: string;
+        finContrato: string | null; // El admin ve también los locales con contrato vencido
+    }[];
+    publicaciones: PublicacionPerfilAdmin[];
+};
+
+export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdminOperador | null> {
+    if (!Number.isInteger(id) || id <= 0) {
+        return null;
+    }
+
+    const operador = await db.orm.public.Operador
+        .select("id", "nombreFantasia", "fotoPerfil", "whatsApp", "enLicencia", "comentario")
+        .include("usuario", (usuario) => usuario.select("solicitoRestablecimiento"))
+        .include("locales", (locales) => locales
+            .select("numeroLocal", "finContrato")
+            .include("nave", (nave) => nave.select("nombreNave"))) // Incluir la nave a la que pertenece el local
+        .first({ id }); // El primer operador que coincida con el id (es único)
+
+    if (!operador) {
+        return null;
+    }
+
+    // Al Administrador le mostramos todos locales, ya sea que estén vigentes o no
+    // También mostramos operadores aunque ya haya terminado el contrato de todos sus locales
+    const locales: PerfilAdminOperador["locales"] = [];
+
+    for (const local of operador.locales) {
+        const fin = local.finContrato;
+        let finContrato: string | null;
+        if (fin == null) {
+            finContrato = null;
+        } else {
+            finContrato = fin.toZonedDateTimeISO("America/Montevideo").toPlainDate().toString();
+        }
+        locales.push({ 
+            numeroLocal: local.numeroLocal, 
+            nombreNave: local.nave.nombreNave,
+            finContrato
+        });
+    }
+
+    locales.sort((a, b) => 
+        a.nombreNave.localeCompare(b.nombreNave, "es")
+        || a.numeroLocal.localeCompare(b.numeroLocal, "es", { numeric: true})
+    );
+
+    // Obtener las publicaciones
+    const consultaCompleta = db.orm.public.PublicacionOperador
+        .where({ operadorId: operador.id })
+        .include("pais", (consultaPais) => consultaPais.select("nombrePais"))
+        .include("publicacion", (consultaPublicacion) => {
+            const camposPublicacion = consultaPublicacion.select(
+                "id",
+                "version",
+                "foto",
+                "precio",
+                "cantidadUnidades",
+                "comentario",
+                "fecha",
+                "fechaVigencia",
+                "publicacionActiva",
+                "publicacionDisponible",
+                "tipoPublicacion",
+                "envaseId", "kilosId",
+                "categoriaId",
+                "calibreId"
+            );
+            const conEnvase = camposPublicacion.include("especie").include("variedad").include("envase").include("kilos");
+            const conCategoria = conEnvase.include("categoria");
+            const completo = conCategoria.include("calibre");
+
+            return completo;
+        });
+
+    const completas = await consultaCompleta.all();
+    const publicaciones: PublicacionPerfilAdmin[] = [];
+    
+    for (const completa of completas) {
+        const publicacion = completa.publicacion;
+        const visible = publicacion.publicacionActiva && publicacion.tipoPublicacion === "OPERADOR";
+        if (visible) {
+            publicaciones.push({
+                id: publicacion.id,
+                version: publicacion.version,
+                publicacionOperadorId: completa.id,
+                especieId: publicacion.especie.id,
+                variedadId: publicacion.variedad?.id ?? null,
+                envaseId: publicacion.envaseId,
+                kilosId: publicacion.kilosId,
+                categoriaId: publicacion.categoriaId,
+                calibreId: publicacion.calibreId,
+                paisId: completa.paisId,
+                foto: publicacion.foto,
+                precio: publicacion.precio,
+                cantidadUnidades: publicacion.cantidadUnidades,
+                comentario: publicacion.comentario,
+                fecha: publicacion.fecha.toString(),
+                fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
+                disponible: publicacion.publicacionDisponible,
+                especie: publicacion.especie.nombreEspecie,
+                variedad: publicacion.variedad?.nombreVariedad ?? "",
+                envase: publicacion.envase?.nombreEnvase ?? "",
+                kilos: publicacion.kilos?.valor ?? "",
+                categoria: publicacion.categoria?.nombreCategoria ?? "",
+                calibre: publicacion.calibre?.nombreCalibre ?? "",
+                codigoCalibre: publicacion.calibre?.codigoCalibre ?? "",
+                pais: completa.pais?.nombrePais ?? "",
+                
+            });
+        }
+    }
+
+    const operadorResultante: PerfilAdminOperador = {
+        id: operador.id,
+        nombreFantasia: operador.nombreFantasia,
+        fotoPerfil: operador.fotoPerfil,
+        whatsApp: operador.whatsApp,
+        solicitoRestablecimiento: operador.usuario.solicitoRestablecimiento,
+        enLicencia: operador.enLicencia,
+        locales,
+        publicaciones,
+        ...(operador.comentario ? { comentario: operador.comentario } : {}),
+    };
+
+    return operadorResultante;
+}

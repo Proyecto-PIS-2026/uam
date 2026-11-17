@@ -1,0 +1,24 @@
+[
+  {
+    "id": "data_migration.nave_c_polivalente",
+    "label": "Agregar la nave C - Polivalente",
+    "operationClass": "data",
+    "invariantId": "uam:nave-c-polivalente",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Agregar la nave sin modificar las existentes ni duplicarla",
+        "sql": "INSERT INTO \"public\".\"nave\" (\"nombreNave\") VALUES ('C - Polivalente') ON CONFLICT (\"nombreNave\") DO NOTHING;"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verificar que existe la nave C - Polivalente",
+        "sql": "SELECT EXISTS (SELECT 1 FROM \"public\".\"nave\" WHERE \"nombreNave\" = 'C - Polivalente') AS result;"
+      }
+    ]
+  }
+]
