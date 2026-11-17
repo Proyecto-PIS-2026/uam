@@ -243,3 +243,23 @@ test("BP-17.1 @new informa el error cuando la consulta del histórico falla", as
   await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert"))
     .toHaveText("No pudimos cargar los precios históricos. Intentá nuevamente en unos minutos.", { timeout: 60_000 });
 });
+
+test("BP-17.1 @new indica que la consulta está cargando", async ({ page }) => {
+  test.setTimeout(90_000);
+  await cargarHistorico(page);
+  // Un período fuera del ya cargado obliga a consultar al servidor; uno interno se resuelve en el cliente.
+  await completarFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }), "2019-01-01");
+  await completarFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }), "2019-01-02");
+
+  let demorar = false;
+  await page.route(/\/precios-historicos\?/, async (route) => {
+    if (demorar) await new Promise((resolver) => setTimeout(resolver, 4_000));
+    await route.continue();
+  });
+  demorar = true;
+  await page.getByRole("button", { name: "Consultar", exact: true }).click();
+  await expect(page.getByRole("progressbar", { name: "Cargando precios históricos" }).first()).toBeVisible();
+  demorar = false;
+  await esperarHistorico(page);
+  await expect(page.getByRole("main").getByRole("status")).toHaveText("No hay registros históricos para los filtros y el período seleccionados.");
+});
