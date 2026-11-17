@@ -3,6 +3,44 @@ import { test } from "./precarga-operadores";
 
 const rutaListado = "/operadores";
 
+test("BP-20 no muestra públicamente a un operador deshabilitado", async ({ page, precargaOperadores }) => {
+  test.slow();
+
+  const { db, operadorA } = precargaOperadores;
+  const especie = await db.orm.public.Especie.where({ especieActiva: true }).select("id").first();
+  if (!especie) throw new Error("La base E2E necesita las especies de la seed.");
+
+  // El listado público exige una publicación disponible cuando el operador no está de licencia.
+  await db.transaction(async (tx) => {
+    const publicacion = await tx.orm.public.Publicacion.create({
+      especieId: especie.id,
+      tipoPublicacion: "OPERADOR",
+      publicacionActiva: true,
+      publicacionDisponible: true,
+      fechaVigencia: null,
+    });
+    await tx.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId: operadorA.id });
+  });
+
+  const buscador = page.getByRole("searchbox", { name: "Buscar operadores" });
+  const todasLasTarjetas = page.locator('a[href^="/operadores/"]');
+  const tarjetaOperador = todasLasTarjetas.filter({ hasText: operadorA.nombre });
+
+  await page.goto(rutaListado);
+  await buscador.fill(operadorA.nombre);
+  await expect(tarjetaOperador).toHaveCount(1);
+
+  await db.orm.public.Usuario.where({ id: operadorA.usuarioId }).update({ habilitado: false });
+
+  await page.goto(rutaListado);
+  await expect(todasLasTarjetas.first()).toBeVisible();
+  await buscador.fill(operadorA.nombre);
+  await expect(tarjetaOperador).toHaveCount(0);
+
+  await page.goto(`/operadores/${encodeURIComponent(operadorA.nombre)}`);
+  await expect(page.getByRole("heading", { name: operadorA.nombre, level: 1 })).toHaveCount(0);
+});
+
 test("BP-20.1 muestra el listado público de operadores", async ({ page }) => {
   test.slow();
 
