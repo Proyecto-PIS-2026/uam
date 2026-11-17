@@ -3,11 +3,11 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { CLAVES_VIGENCIA_PUBLICACIONES, type TipoPropietarioPublicacion } from "./claves-vigencia-publicaciones";
 import { obtenerEstadoVigenciaPublicacion, type ConfiguracionAvisosVigencia, type FechaVigenciaPublicacion } from "./estado-vigencia-publicacion";
 
-export async function obtenerConfiguracionAvisosVigencia(tipo: TipoPropietarioPublicacion): Promise<ConfiguracionAvisosVigencia> {
+export async function obtenerConfiguracionAvisosVigencia(tipo: TipoPropietarioPublicacion, cliente: Pick<typeof db, "orm"> = db): Promise<ConfiguracionAvisosVigencia> {
     const [, , claveAvisos, claveAnticipacion] = CLAVES_VIGENCIA_PUBLICACIONES[tipo];
     const [avisos, anticipacion] = await Promise.all([
-        db.orm.public.Configuracion.where({ nombreConfiguracion: claveAvisos }).select("valorConfiguracion").first(),
-        db.orm.public.Configuracion.where({ nombreConfiguracion: claveAnticipacion }).select("valorConfiguracion").first(),
+        cliente.orm.public.Configuracion.where({ nombreConfiguracion: claveAvisos }).select("valorConfiguracion").first(),
+        cliente.orm.public.Configuracion.where({ nombreConfiguracion: claveAnticipacion }).select("valorConfiguracion").first(),
     ]);
     return {
         avisosHabilitados: avisos?.valorConfiguracion !== "false",

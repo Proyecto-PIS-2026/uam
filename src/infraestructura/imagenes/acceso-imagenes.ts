@@ -1,6 +1,7 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
+import { esPublicacionVencida } from "@/modulos/publicaciones/vigencia/vigencia-publicacion";
 import { type CategoriaImagen, urlImagen } from "./almacenamiento-imagenes";
 import { Temporal } from "@js-temporal/polyfill";
 
@@ -36,13 +37,13 @@ export async function puedeLeerImagen(categoria: CategoriaImagen, id: number, ar
     }
 
     const publicacion = await db.orm.public.Publicacion
-        .select("foto", "tipoPublicacion", "publicacionActiva", "publicacionDisponible")
+        .select("foto", "tipoPublicacion", "publicacionActiva", "publicacionDisponible", "fechaVigencia")
         .where({ id }).first();
     if (!publicacion || publicacion.foto !== url) return false;
     const sesion = await obtenerSesion();
     if (publicacion.tipoPublicacion === "PRODUCTOR") {
         if (autorizado("productor.publicacion.consultar", sesion)) {
-            return sesion?.rol === "ADMINISTRADOR" || publicacion.publicacionActiva && publicacion.publicacionDisponible;
+            return sesion?.rol === "ADMINISTRADOR" || publicacion.publicacionActiva && publicacion.publicacionDisponible && !esPublicacionVencida(publicacion.fechaVigencia);
         }
         if (sesion?.rol !== "PRODUCTOR") return false;
         const productor = await db.orm.public.Productor.select("id").where({ usuarioId: sesion.usuarioId }).first();
@@ -56,5 +57,5 @@ export async function puedeLeerImagen(categoria: CategoriaImagen, id: number, ar
     if (sesion?.rol === "OPERADOR") {
         return !!await db.orm.public.Operador.select("id").where({ id: relacion.operadorId, usuarioId: sesion.usuarioId }).first();
     }
-    return publicacion.publicacionActiva && publicacion.publicacionDisponible && await tieneLocalVigente(relacion.operadorId);
+    return publicacion.publicacionActiva && publicacion.publicacionDisponible && !esPublicacionVencida(publicacion.fechaVigencia) && await tieneLocalVigente(relacion.operadorId);
 }

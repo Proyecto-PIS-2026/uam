@@ -24,12 +24,12 @@ describe("estado visual de vigencia de publicaciones", () => {
         expect(obtenerEstadoVigenciaPublicacion("2026-11-04", configuracion, finDelDia.add({ nanoseconds: 1 }))).toBe("vencida");
     });
 
-    it("activa el aviso exactamente al alcanzar la anticipación configurada", () => {
-        const limite = ahora.add({ hours: 7 * 24 });
+    it("activa el aviso desde las 00 de Uruguay aunque la vigencia termine al final del último día", () => {
+        const medianoche = Temporal.Instant.from("2026-11-04T03:00:00Z");
 
-        expect(obtenerEstadoVigenciaPublicacion(limite.add({ nanoseconds: 1 }), configuracion, ahora)).toBeNull();
-        expect(obtenerEstadoVigenciaPublicacion(limite, configuracion, ahora)).toBe("por-vencer");
-        expect(obtenerEstadoVigenciaPublicacion(limite.subtract({ nanoseconds: 1 }), configuracion, ahora)).toBe("por-vencer");
+        expect(obtenerEstadoVigenciaPublicacion("2026-11-11", configuracion, medianoche.subtract({ nanoseconds: 1 }))).toBeNull();
+        expect(obtenerEstadoVigenciaPublicacion("2026-11-11", configuracion, medianoche)).toBe("por-vencer");
+        expect(obtenerEstadoVigenciaPublicacion("2026-11-12", configuracion, medianoche)).toBeNull();
     });
 
     it("respeta un plazo distinto sin marcar publicaciones lejanas", () => {

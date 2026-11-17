@@ -1,0 +1,39 @@
+[
+  {
+    "id": "dropTable.presentacion",
+    "label": "Drop table \"presentacion\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "presentacion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"presentacion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"presentacion\"",
+        "sql": "DROP TABLE \"public\".\"presentacion\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"presentacion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"presentacion\""
+        ]
+      }
+    ]
+  }
+]
