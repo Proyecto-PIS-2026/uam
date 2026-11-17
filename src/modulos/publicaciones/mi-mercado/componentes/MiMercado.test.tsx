@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../operadores/tipos";
 import MiMercado from "./MiMercado";
-import type { Publicacion } from "../tipos";
+import type { Publicacion } from "../../tipos";
 
 type DrawerMockProps = {
   abierto: boolean;
@@ -33,7 +33,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refrescar, replace: mocks.reemplazar }) }));
 vi.mock("../acciones", () => ({ cargarPublicacionesMiMercado: mocks.cargarPublicaciones }));
-vi.mock("../../tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: mocks.suscribirActualizaciones }));
+vi.mock("../../tiempo-real/useActualizacionesPublicaciones", () => ({ useActualizacionesPublicaciones: mocks.suscribirActualizaciones }));
 
 vi.mock("../../operadores/componentes/DrawerEditarPublicacion", () => ({
   default: (props: DrawerMockProps) => {

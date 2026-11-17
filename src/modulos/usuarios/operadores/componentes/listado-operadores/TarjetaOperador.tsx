@@ -2,7 +2,7 @@ import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import Link from "next/link";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
-import type { OperadorListado } from "../../consultas-listado-publico";
+import type { OperadorListado } from "../../consultas/consultas-listado-publico";
 import styles from "./TarjetaOperador.module.css";
 
 type TarjetaOperadorProps = {

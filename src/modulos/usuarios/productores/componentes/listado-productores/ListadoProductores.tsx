@@ -1,14 +1,14 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
-import EncabezadoPagina from "../../../../../compartido/EncabezadoPagina";
+import EncabezadoPagina from "../../../../../compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import Paginacion from "@/compartido/componentes/Paginacion";
 import AgricultureOutlinedIcon from "@mui/icons-material/AgricultureOutlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import { useState } from "react";
-import type { ProductorListado } from "../../acciones/consultas-productores";
-import ControlesListadoProductores from "./controles-listado/ControlesListadoProductores";
-import TarjetaProductor from "./tarjetas-productores/TarjetaProductor";
+import type { ProductorListado } from "../../consultas/consultas-productores";
+import ControlesListadoProductores from "./ControlesListadoProductores";
+import TarjetaProductor from "./TarjetaProductor";
 import styles from "./ListadoProductores.module.css";
 
 type ListadoProductoresProps = {

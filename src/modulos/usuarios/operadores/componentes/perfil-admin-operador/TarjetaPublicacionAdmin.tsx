@@ -2,7 +2,7 @@ import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-public
 import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../../../../publicaciones/componentes/ImagenPublicacion";
 import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
-import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
+import type { PublicacionPerfilAdmin } from "../../consultas/consultas-perfil-admin";
 import styles from "./TarjetaPublicacionAdmin.module.css";
 
 type TarjetaPublicacionAdminProps = {

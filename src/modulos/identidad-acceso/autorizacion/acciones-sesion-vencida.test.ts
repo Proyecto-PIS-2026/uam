@@ -1,11 +1,11 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { altaAdministrador } from "@/modulos/usuarios/administradores/altaAdministrador";
-import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/modificar-mi-perfil";
-import { restablecerSegundoFactorAdministrador } from "@/modulos/usuarios/administradores/restablecerSegundoFactorAdministrador";
-import { modificarPerfilPropio } from "@/modulos/usuarios/operadores/acciones/modificarPerfilPropio";
-import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
-import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/acciones/foto-especie";
+import { altaAdministrador } from "@/modulos/usuarios/administradores/acciones/alta-administrador";
+import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/acciones/modificar-mi-perfil";
+import { restablecerSegundoFactorAdministrador } from "@/modulos/usuarios/administradores/acciones/restablecer-segundo-factor-administrador";
+import { modificarPerfilPropio } from "@/modulos/usuarios/operadores/acciones/modificar-perfil-propio";
+import { guardarConfiguraciones } from "@/modulos/administracion/configuracion/acciones/guardar-configuracion";
+import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/configuracion/fotos-especies/acciones";
 
 const mocks = vi.hoisted(() => ({ sesion: vi.fn(), cerrar: vi.fn(), redirigir: vi.fn(), transaction: vi.fn() }));
 vi.mock("../autenticacion/sesiones", () => ({ obtenerSesion: mocks.sesion, cerrarSesion: mocks.cerrar }));

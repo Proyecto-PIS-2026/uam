@@ -3,14 +3,14 @@ import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
+import type { PublicacionMiMercadoProductor } from "../../productores/tipos";
 import MiMercadoProductor from "./MiMercadoProductor";
 
 const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn(), refresh: vi.fn(), altaReal: false }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
-vi.mock("../../productores/AltaPublicacionProductor", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("../../productores/AltaPublicacionProductor")>();
+vi.mock("../../productores/componentes/AltaPublicacionProductor", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../productores/componentes/AltaPublicacionProductor")>();
     return { DrawerAltaPublicacionProductor: (props: { productorId: number; abierto: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void }) => mocks.altaReal ? <actual.DrawerAltaPublicacionProductor {...props} /> : props.abierto ? (
         <section role="dialog" aria-label="Nueva publicación de Productor">
             <button onClick={props.alCerrar}>Cancelar alta</button>
@@ -32,7 +32,7 @@ vi.mock("@/compartido/componentes/DrawerDeslizable", () => ({
 vi.mock("@mui/material/Dialog", () => ({
     default: ({ open, children, "aria-label": etiqueta }: DialogProps) => open ? <section role="dialog" aria-label={etiqueta}>{children}</section> : null,
 }));
-vi.mock("../../componentes/drawer-publicacion/TextoAjustable", () => ({
+vi.mock("../../../../compartido/componentes/TextoAjustable", () => ({
     default: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }));
 vi.mock("next/image", async () => {

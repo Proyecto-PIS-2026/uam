@@ -19,7 +19,7 @@ import { atributosPublicacionDemo } from "./atributos-publicacion-demo";
 import { fotoOperador } from "./fotos-operadores-demo";
 import { especiesPrioritarias } from "../../../compartido/prioridad-especies";
 import { claveImagen, urlImagen } from "../../imagenes/almacenamiento-imagenes";
-import { convertirFechaVigenciaAInstant } from "../../../modulos/publicaciones/vigencia-publicacion";
+import { convertirFechaVigenciaAInstant } from "../../../modulos/publicaciones/vigencia/vigencia-publicacion";
 
 const prisma = postgres<Contract>({
   contractJson,
@@ -547,6 +547,7 @@ async function crearUsuarioDemo(username: string, rol: "ADMINISTRADOR" | "OPERAD
 async function crearOperadores(archivos: Map<string, string>) {
   const todosLosOperadores = [...operadores, operadorInhabilitado, operadorAging, operadorVigencia];
   const nombresNave = new Set(todosLosOperadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
+  nombresNave.add("C - Polivalente");
   for (const nombreNave of nombresNave) {
     await prisma.orm.public.Nave.create({ nombreNave });
   }

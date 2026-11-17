@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   paisesAll: vi.fn(),
 }));
 
-vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado }));
+vi.mock("@/modulos/usuarios/operadores/consultas/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.obtenerOperadorAutorizado }));
 
 vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
   db: {

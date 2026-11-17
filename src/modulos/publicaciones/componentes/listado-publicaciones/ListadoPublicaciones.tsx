@@ -7,8 +7,8 @@ import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import Paginacion from "@/compartido/componentes/Paginacion";
 
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-productor";
 
 import TarjetaPublicacionConOperador from "../tarjetas-publicacion/TarjetaPublicacionConOperador";
 import TarjetaPublicacionSinOperador from "../tarjetas-publicacion/TarjetaPublicacionSinOperador";

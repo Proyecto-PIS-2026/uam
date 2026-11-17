@@ -1,12 +1,12 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
-import EncabezadoPagina from "../../../../../compartido/EncabezadoPagina";
+import EncabezadoPagina from "../../../../../compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import Paginacion from "@/compartido/componentes/Paginacion";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import { useState } from "react";
-import type { OperadorListado } from "../../consultas-listado-publico";
+import type { OperadorListado } from "../../consultas/consultas-listado-publico";
 import ControlesListadoOperadores from "./ControlesListadoOperadores";
 import TarjetaOperador from "./TarjetaOperador";
 import styles from "./ListadoOperadores.module.css";

@@ -1,7 +1,7 @@
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
 import { NextResponse } from "next/server";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/consultas/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {

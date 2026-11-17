@@ -3,8 +3,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
 import type { ReactNode } from "react";
 
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
-import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/tipos";
+import type { PublicacionPerfilAdmin } from "../../consultas/consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/catalogos/tipos";
 
 const mocks = vi.hoisted(() => ({
     propsDrawer: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
-vi.mock("@/modulos/publicaciones/tiempo-real/use-actualizaciones-publicaciones", () => ({
+vi.mock("@/modulos/publicaciones/tiempo-real/useActualizacionesPublicaciones", () => ({
     useActualizacionesPublicaciones: mocks.suscribir,
 }));
 

@@ -14,14 +14,14 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 }));
 
 vi.mock(
-    "@/modulos/usuarios/operadores/consultas-modificacion-operador",
+    "@/modulos/usuarios/operadores/consultas/consultas-modificacion-operador",
     () => ({
         obtenerOperadorParaModificar: mocks.obtenerOperadorParaModificar,
     }),
 );
 
 vi.mock(
-    "@/modulos/usuarios/operadores/consultas-naves",
+    "@/modulos/usuarios/operadores/consultas/consultas-naves",
     () => ({
         obtenerNaves: mocks.obtenerNaves,
     }),

@@ -1,0 +1,205 @@
+"use client";
+
+import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente-sesion";
+
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
+import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
+import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
+import MenuItem from "@mui/material/MenuItem";
+import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import Image from "next/image";
+import type { OpcionEdicion as Opcion, OpcionesEdicionPublicacion as Catalogos } from "../../catalogos/tipos";
+import { useCatalogosPublicacionProductor } from "../hooks/useCatalogosPublicacionProductor";
+import styles from "../../componentes/formulario-publicacion/formulario-publicacion.module.css";
+import UbicacionesEdicionProductor, { type UbicacionEdicionProductor } from "./UbicacionesEdicionProductor";
+import { validarUbicacionesProductor } from "../validaciones/ubicaciones-productor";
+import CampoComentario from "../../componentes/CampoComentario";
+
+type Formulario = {
+    productorId: number; especieId: number; variedadId: number; envaseId: number; kilosId: number; calibreId: number;
+    categoriaId: number; paisId: number; ubicaciones: UbicacionEdicionProductor[]; disponibilidad: boolean;
+    precio: string; cantidad: string; comentario: string; fotografia: string; fechaVigencia: string;
+};
+
+type PropsDrawer = {
+    productorId: number;
+    disponibilidadInicial?: boolean;
+    abierto: boolean;
+    alCerrar: () => void;
+    alCrear: (mensaje: string) => void;
+};
+
+function formularioInicial(productorId: number, disponibilidadInicial: boolean): Formulario {
+    return {
+        productorId,
+        especieId: 0,
+        variedadId: 0,
+        envaseId: 0,
+        kilosId: 0,
+        calibreId: 0,
+        categoriaId: 0,
+        paisId: 0,
+        ubicaciones: [],
+        disponibilidad: disponibilidadInicial,
+        precio: "",
+        cantidad: "",
+        comentario: "",
+        fotografia: "",
+        fechaVigencia: "",
+    };
+}
+
+function Campo({ nombre, valor, opciones: lista, cambiar, deshabilitado = false }: {
+    nombre: string; valor: number; opciones: Opcion[]; cambiar: (id: number) => void; deshabilitado?: boolean;
+}) {
+    return <TextField select label={nombre} value={valor || ""} onChange={(evento) => cambiar(Number(evento.target.value))}
+        size="small" fullWidth required={nombre === "Especie"} disabled={deshabilitado} className={styles.selectMui}
+        slotProps={{ select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } }}>
+        <MenuItem value="" disabled={nombre === "Especie"}>{nombre === "Especie" ? "Seleccioná especie" : "Sin especificar"}</MenuItem>
+        {lista.map((opcion) => <MenuItem key={opcion.id} value={opcion.id}>{opcion.nombre}</MenuItem>)}
+    </TextField>;
+}
+
+export function DrawerAltaPublicacionProductor({ productorId, disponibilidadInicial = true, abierto, alCerrar, alCrear }: PropsDrawer) {
+    const esWeb = useMediaQuery("(min-width: 768px)");
+    const { catalogos, error, cargando, reintentar } = useCatalogosPublicacionProductor();
+
+    return <DrawerProductor key={productorId} catalogos={catalogos} cargando={cargando} errorCarga={error} alReintentarCarga={reintentar} productorId={productorId} disponibilidadInicial={disponibilidadInicial} abierto={abierto} esWeb={esWeb} alCerrar={alCerrar} alCrear={alCrear} />;
+}
+
+function DrawerProductor({ catalogos, cargando, errorCarga = "", alReintentarCarga, productorId, disponibilidadInicial = true, abierto, esWeb, alCerrar, alCrear }: {
+    catalogos: Catalogos | null; cargando: boolean; errorCarga?: string; alReintentarCarga?: () => void; productorId: number; disponibilidadInicial?: boolean; abierto: boolean; esWeb: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void;
+}) {
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const [datos, setDatos] = useState<Formulario>(() => formularioInicial(productorId, disponibilidadInicial));
+    const [guardando, setGuardando] = useState(false);
+    const [leyendoFoto, setLeyendoFoto] = useState(false);
+    const fotoInput = useRef<HTMLInputElement>(null);
+    const galeriaInput = useRef<HTMLInputElement>(null);
+    const [reinicioUbicaciones, setReinicioUbicaciones] = useState(0);
+    const variedades = catalogos?.variedades.filter((item) => item.especieId === datos.especieId) ?? [];
+    const categorias = catalogos?.categorias ?? [];
+    const deshabilitado = cargando || guardando || !catalogos;
+
+    const cambiar = (cambio: Partial<Formulario>) => { setDatos((actual) => ({ ...actual, ...cambio })); cerrarNotificacion(); };
+    function limpiarFormulario() {
+        setDatos(formularioInicial(productorId, disponibilidadInicial));
+        setReinicioUbicaciones((actual) => actual + 1);
+        if (fotoInput.current) fotoInput.current.value = "";
+        if (galeriaInput.current) galeriaInput.current.value = "";
+    }
+    function cancelar() {
+        cerrarNotificacion();
+        limpiarFormulario();
+        alCerrar();
+    }
+    async function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
+        const archivo = evento.target.files?.[0]; if (!archivo) return;
+        if (!["image/png", "image/jpeg", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
+            notificar("La fotografía debe ser PNG, JPEG o WebP y pesar hasta 10 MB.", "error"); return;
+        }
+        setLeyendoFoto(true);
+        try {
+            const fotografia = await new Promise<string>((resolver, rechazar) => { const lector = new FileReader(); lector.onload = () => resolver(String(lector.result)); lector.onerror = () => rechazar(new Error("No se pudo leer la fotografía.")); lector.readAsDataURL(archivo); });
+            cambiar({ fotografia });
+        } catch { notificar("No se pudo leer la fotografía.", "error"); } finally { setLeyendoFoto(false); }
+    }
+    async function enviar(evento: FormEvent) {
+        evento.preventDefault(); if (deshabilitado || leyendoFoto) return;
+        if (!precioPublicacionValido(datos.precio)) {
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
+            return;
+        }
+        const validacionUbicaciones = validarUbicacionesProductor(datos.ubicaciones);
+        if (!validacionUbicaciones.esValido) {
+            notificar(validacionUbicaciones.error, "error");
+            return;
+        }
+        setGuardando(true);
+        try {
+            const { cantidad, ...datosSinCantidad } = datos;
+            const datosParaGuardar = {
+                ...datosSinCantidad,
+                variedadId: datos.variedadId || null,
+                envaseId: datos.envaseId || null,
+                kilosId: datos.kilosId || null,
+                categoriaId: datos.categoriaId || null,
+                calibreId: datos.calibreId || null,
+                paisId: datos.paisId || null,
+                ubicaciones: validacionUbicaciones.ubicaciones,
+                precio: normalizarPrecioPublicacion(datos.precio),
+                cantidadUnidades: cantidad === "" ? null : Number(cantidad),
+                fechaVigencia: datos.fechaVigencia || null, 
+            };
+            const respuesta = await fetchConSesion("/api/publicaciones/productor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datosParaGuardar) });
+            const resultado = await respuesta.json();
+            if (!respuesta.ok) {
+                const mensajes = resultado.errores?.length ? resultado.errores : ["No se pudo guardar la publicación."];
+                notificar(mensajes.join("\n"), "error");
+                return;
+            }
+            limpiarFormulario();
+            alCrear(resultado.mensaje ?? "Publicación creada correctamente.");
+        } catch { notificar("No se pudo conectar con el servidor.", "error"); } finally { setGuardando(false); }
+    }
+    return <><AvisoErrorToast mensaje={abierto && !cargando ? errorCarga : null} cerrarAlCorregir={!abierto} /><DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando}
+        slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-label": "Nueva publicación de Productor" } }}>
+        <header className={styles.encabezado}><h2 className={styles.titulo}>Nueva publicación</h2><button className={styles.cerrar} type="button" onClick={alCerrar} disabled={guardando} aria-label="Cerrar alta"><CloseIcon fontSize="small" /></button></header>
+        <form className={styles.formulario} onSubmit={enviar} aria-busy={cargando}><div className={styles.cuerpo}>
+            {errorCarga && alReintentarCarga && <button type="button" className={styles.cancelar} style={{ flex: "0 0 auto", gap: "var(--espacio-inline)" }} onClick={() => { alReintentarCarga(); }} disabled={cargando} aria-busy={cargando}><RefreshIcon fontSize="small" />Reintentar carga</button>}
+            <div className={styles.datosProducto}>
+                <Campo nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(id) => cambiar({ especieId: id, variedadId: 0 })} deshabilitado={deshabilitado} />
+                <Campo nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(id) => cambiar({ variedadId: id })} deshabilitado={deshabilitado || !datos.especieId} />
+                <Campo nombre="Empaquetado" valor={datos.envaseId} opciones={catalogos?.envases ?? []} cambiar={(id) => cambiar({ envaseId: id })} deshabilitado={deshabilitado} />
+                <Campo nombre="Kilos del empaquetado" valor={datos.kilosId} opciones={(catalogos?.kilos ?? []).map((opcion) => ({ ...opcion, nombre: `${opcion.nombre} kg` }))} cambiar={(id) => cambiar({ kilosId: id })} deshabilitado={deshabilitado} />
+                <Campo nombre="País de origen" valor={datos.paisId} opciones={catalogos?.paises ?? []} cambiar={(id) => cambiar({ paisId: id })} deshabilitado={deshabilitado} />
+                <Campo nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(id) => cambiar({ categoriaId: id })} deshabilitado={deshabilitado} />
+                <Campo nombre="Calibre" valor={datos.calibreId} opciones={catalogos?.calibres ?? []} cambiar={(id) => cambiar({ calibreId: id })} deshabilitado={deshabilitado} />
+            </div>
+            {abierto && <UbicacionesEdicionProductor key={reinicioUbicaciones} ubicaciones={datos.ubicaciones} deshabilitado={deshabilitado} alCambiar={(ubicaciones) => cambiar({ ubicaciones })} />}
+            <div className="grid grid-cols-1 gap-[var(--espacio-controles)]">
+                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-precio">Precio en pesos</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-precio" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder="Ingrese precio aquí" value={datos.precio} onChange={(evento) => esEntradaPrecioPublicacion(evento.target.value) && cambiar({ precio: evento.target.value })} disabled={deshabilitado} /><small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small></div>
+                <div className={styles.campo}><label className={styles.etiqueta} htmlFor="productor-cantidad">Unidades{datos.envaseId ? ` (${catalogos?.envases.find((opcion) => opcion.id === datos.envaseId)?.nombre ?? "-"})` : ""}</label><OutlinedInput color="secondary" className={styles.entrada} size="small" id="productor-cantidad" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder="Ingrese cantidad aquí" value={datos.cantidad} onChange={(evento) => /^\d{0,10}$/.test(evento.target.value) && cambiar({ cantidad: evento.target.value })} disabled={deshabilitado} /></div>
+                <div className={styles.campo}>
+                    <label className={styles.etiqueta} htmlFor="productor-fechaVigencia">
+                        Fecha de vigencia
+                    </label>
+                    <SelectorFecha
+                        className={styles.entrada}
+                        id="productor-fechaVigencia"
+                        labelAccesible="Fecha de vigencia"
+                        value={datos.fechaVigencia}
+                        onChange={(fechaVigencia) => cambiar({ fechaVigencia })}
+                        disabled={deshabilitado}
+                    />
+                </div>
+                <CampoComentario
+                    id="productor-comentario"
+                    valor={datos.comentario}
+                    alCambiar={(comentario) => cambiar({ comentario })}
+                    deshabilitado={deshabilitado}
+                    clases={{ campo: styles.campo, etiqueta: styles.etiqueta, entrada: styles.entrada, ayuda: styles.ayuda }}
+                />
+            </div>
+            <label className={styles.disponibilidad} htmlFor="productor-disponibilidad" data-disponible={datos.disponibilidad}><span className={styles.textoDisponibilidad}><span className={styles.etiqueta}>Disponibilidad</span><span className={styles.estadoDisponibilidad}>{datos.disponibilidad ? "Disponible" : "No disponible"}</span></span><Switch checked={datos.disponibilidad} onChange={(_, valor) => cambiar({ disponibilidad: valor })} disabled={deshabilitado} slotProps={{ input: { id: "productor-disponibilidad", role: "switch", "aria-label": "Publicación disponible" } }} /></label>
+            <div className={styles.seccionFoto}><div className={styles.marcoFoto}>{datos.fotografia ? <Image className={styles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill unoptimized /> : <div className={styles.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>}{datos.fotografia && <button type="button" className={`${styles.botonFoto} ${styles.borrarFoto}`} onClick={() => cambiar({ fotografia: "" })} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
+                <button type="button" className={styles.botonFoto} onClick={() => fotoInput.current?.click()} disabled={deshabilitado}><PhotoCameraOutlinedIcon fontSize="small" aria-hidden="true" /> {esWeb ? "Editar foto" : "Cámara"}</button>
+                {!esWeb && <button type="button" className={`${styles.botonFoto} ${styles.botonGaleria}`} onClick={() => galeriaInput.current?.click()} disabled={deshabilitado}><PhotoLibraryOutlinedIcon fontSize="small" aria-hidden="true" /> Galería</button>}
+                <input ref={fotoInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={deshabilitado} aria-label="Fotografía" />
+                {!esWeb && <input ref={galeriaInput} className={styles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFoto} disabled={deshabilitado} aria-label="Fotografía desde galería" />}
+            </div></div>
+        </div><div className={styles.pie} data-acciones-modal><button className={styles.cancelar} type="button" onClick={cancelar} disabled={guardando}>Cancelar</button><button className={styles.guardar} type="submit" disabled={deshabilitado || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button></div></form>
+    </DrawerDeslizable></>;
+}

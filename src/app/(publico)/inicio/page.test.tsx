@@ -2,9 +2,9 @@ import type { ComponentProps } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaInicio, { dynamic, metadata } from "./page";
-import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
+import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/consultas/configuracion-ordenamiento";
 
-type PropsInicio = ComponentProps<typeof import("@/modulos/consulta-mercado/inicio/inicio").default>;
+type PropsInicio = ComponentProps<typeof import("@/modulos/consulta-mercado/inicio/Inicio").default>;
 
 const mocks = vi.hoisted(() => ({
     sesion: vi.fn(),
@@ -25,11 +25,11 @@ vi.mock("@/modulos/consulta-mercado/inicio/consultas-inicio", () => ({
     obtenerUrlListaInteligente: mocks.obtenerUrlLista,
 }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/configuracion-ordenamiento", () => ({
+vi.mock("@/modulos/consulta-mercado/consultas/configuracion-ordenamiento", () => ({
     obtenerConfiguracionOrdenamiento: mocks.obtenerConfiguracion,
 }));
 
-vi.mock("@/modulos/consulta-mercado/inicio/inicio", () => ({
+vi.mock("@/modulos/consulta-mercado/inicio/Inicio", () => ({
     default: mocks.inicio,
 }));
 

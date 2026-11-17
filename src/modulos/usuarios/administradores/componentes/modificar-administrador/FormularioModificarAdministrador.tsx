@@ -1,18 +1,18 @@
 "use client";
 
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
 
 import { useRef, useState, type FormEvent } from "react";
 import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 
-import { modificarAdministrador } from "./modificarAdministrador";
-import { modificarMiPerfilAdministrador } from "../../perfil-propio/modificarMiPerfilAdministrador";
-import type { AdministradorParaModificar } from "./obtenerAdministradorParaModificar";
+import { modificarAdministrador } from "../../acciones/modificar-administrador";
+import { modificarMiPerfilAdministrador } from "../../acciones/modificar-perfil-propio-administrador";
+import type { AdministradorParaModificar } from "../../consultas/obtener-administrador-para-modificar";
 
-import styles from "./FormularioModificarAdministrador.module.css";
+import styles from "../../../componentes/formulario-usuario.module.css";
 
 const RUTA_MI_PERFIL = "/mi-perfil";
 

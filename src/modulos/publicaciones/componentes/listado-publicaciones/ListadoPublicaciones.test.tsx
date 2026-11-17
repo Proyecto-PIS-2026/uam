@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
 import ListadoPublicaciones from "./ListadoPublicaciones";
 
 

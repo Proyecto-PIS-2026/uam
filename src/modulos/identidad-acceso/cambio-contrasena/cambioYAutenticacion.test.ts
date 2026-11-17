@@ -1,14 +1,14 @@
 // @vitest-environment node
 import { expect, it, vi } from "vitest";
 import argon2 from "argon2";
-import { cambiarMiContrasena } from "./cambiarMiContrasena";
-import { autenticarUsuario } from "../autenticacion/autenticarUsuario";
+import { cambiarMiContrasena } from "./cambiar-mi-contrasena";
+import { autenticarUsuario } from "../autenticacion/autenticar-usuario";
 
 const m = vi.hoisted(() => ({ hash: "", where: vi.fn(), first: vi.fn(), update: vi.fn() }));
 vi.mock("../autorizacion/control-acciones", () => ({ exigirSesionEnAccion: async () => ({ usuarioId: 7, rol: "PRODUCTOR" }) }));
 vi.mock("./configuracion", () => ({ estaHabilitadoCambioContrasena: async () => true }));
-vi.mock("@/compartido/vigenciaContrato", () => ({ operadorTieneContratoVigente: vi.fn() }));
-vi.mock("../autenticacion/consultasAutenticacion", () => ({
+vi.mock("@/modulos/usuarios/operadores/consultas/consultas-contrato", () => ({ operadorTieneContratoVigente: vi.fn() }));
+vi.mock("../autenticacion/consultas-autenticacion", () => ({
     obtenerUsuarioAdministradorPorCorreo: async () => null,
     obtenerUsuarioOperadorPorNombre: async () => null,
     obtenerUsuarioProductorPorNombre: async () => ({ id: 7, rol: "PRODUCTOR", passwordHash: m.hash, habilitado: true }),

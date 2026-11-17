@@ -1,7 +1,7 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { obtenerVersionSegundoFactor } from "./segundo-factor-criptografia";
+import { obtenerVersionSegundoFactor } from "./segundo-factor/segundo-factor-criptografia";
 
 const nombreCookieSesion = "uam_sesion";
 const duracionSesionEnSegundos = 60 * 60 * 8;

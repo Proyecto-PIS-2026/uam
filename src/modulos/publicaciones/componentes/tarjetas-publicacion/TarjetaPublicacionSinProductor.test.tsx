@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionProductorListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-productor";
 import TarjetaPublicacionSinProductor from "./TarjetaPublicacionSinProductor";
 
 vi.mock("../ImagenPublicacion", () => ({

@@ -4,7 +4,7 @@ import type { DatosSesion } from "../autenticacion/sesiones";
 import { POST } from "../../../app/api/publicaciones/route";
 import { DELETE, PATCH } from "../../../app/api/publicaciones/[id]/route";
 import { actualizarPrecio, cargarPublicacionesMiMercado } from "../../publicaciones/mi-mercado/acciones";
-import { obtenerOperadorActual } from "../../usuarios/operadores/operador-actual";
+import { obtenerOperadorActual } from "../../usuarios/operadores/consultas/operador-actual";
 
 const sesionMock = vi.hoisted(() => vi.fn());
 vi.mock("../autenticacion/sesiones", () => ({ obtenerSesion: sesionMock }));

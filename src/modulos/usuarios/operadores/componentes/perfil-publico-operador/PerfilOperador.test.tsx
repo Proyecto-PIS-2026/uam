@@ -1,7 +1,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@/test-utils";
-import type { PerfilPublicoOperador } from "../../consultas-perfil-publico";
+import type { PerfilPublicoOperador } from "../../consultas/consultas-perfil-publico";
 import PerfilOperador from "./PerfilOperador";
 
 // Reemplazar Image de next por un img común.

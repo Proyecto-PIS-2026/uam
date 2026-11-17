@@ -4,10 +4,10 @@ import sharp from "sharp";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { AlmacenamientoImagenesPostgres } from "@/infraestructura/imagenes/almacenamiento-postgres";
 import { claveDesdeUrlImagen } from "@/infraestructura/imagenes/almacenamiento-imagenes";
-import { altaOperador } from "./operadores/altaOperador";
-import { altaProductor } from "./productores/altaProductor";
-import { modificarOperador } from "./operadores/acciones/modificarOperador";
-import { modificarProductor } from "./productores/componentes/modificar-productor-por-admin/modificarProductor";
+import { altaOperador } from "./operadores/acciones/alta-operador";
+import { altaProductor } from "./productores/acciones/alta-productor";
+import { modificarOperador } from "./operadores/acciones/modificar-operador";
+import { modificarProductor } from "./productores/acciones/modificar-productor";
 
 const autorizacion = vi.hoisted(() => ({ exigirAdministrador: vi.fn() }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", async (importOriginal) => ({

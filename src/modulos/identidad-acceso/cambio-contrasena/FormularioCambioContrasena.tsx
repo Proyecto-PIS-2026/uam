@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import { cambiarMiContrasena } from "./cambiarMiContrasena";
-import { validarCambioContrasena } from "./validarCambioContrasena";
+import { cambiarMiContrasena } from "./cambiar-mi-contrasena";
+import { validarCambioContrasena } from "./validar-cambio-contrasena";
 import styles from "./FormularioCambioContrasena.module.css";
 
 export default function FormularioCambioContrasena({ volver }: { volver: string }) {

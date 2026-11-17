@@ -13,11 +13,11 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import PasswordOutlinedIcon from "@mui/icons-material/PasswordOutlined";
 
-import HojasDecorativas from "@/compartido/HojasDecorativas";
-import BotonVolver from "@/compartido/BotonVolver";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import { restablecerSegundoFactorAdministrador } from "../../restablecerSegundoFactorAdministrador";
-import type { PerfilAdministrador as DatosPerfilAdministrador } from "../../acciones/consultas-perfil-administrador";
+import { restablecerSegundoFactorAdministrador } from "../../acciones/restablecer-segundo-factor-administrador";
+import type { PerfilAdministrador as DatosPerfilAdministrador } from "../../consultas/consultas-perfil-administrador";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import styles from "./PerfilAdministrador.module.css";
 

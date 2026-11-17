@@ -2,7 +2,7 @@
 
 import OutlinedInput from "@mui/material/OutlinedInput";
 
-import { LARGO_MAXIMO_COMENTARIO } from "../validarComentario";
+import { LARGO_MAXIMO_COMENTARIO } from "../validar-comentario";
 
 type ClasesCampoComentario = {
     campo?: string;

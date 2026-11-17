@@ -1,0 +1,252 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import ShoppingBasketOutlinedIcon from "@mui/icons-material/ShoppingBasketOutlined";
+import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
+import YardOutlinedIcon from "@mui/icons-material/YardOutlined";
+import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
+import type { ResultadoPublicaciones } from "../consultas/consultas-publicaciones-operador";
+import type { FiltrosConsulta } from "../filtros/filtros-consulta";
+import obtenerPublicaciones from "../acciones/consultar-publicaciones-operador";
+import ListadoPublicaciones from "../../publicaciones/componentes/listado-publicaciones/ListadoPublicaciones";
+import IndicadorCargaPublicaciones from "../../publicaciones/componentes/IndicadorCargaPublicaciones";
+import { useActualizacionesPublicaciones } from "../../publicaciones/tiempo-real/useActualizacionesPublicaciones";
+import type { OrdenConsulta } from "@/modulos/consulta-mercado/filtros/filtros-consulta";
+import FiltrosPublicaciones from "../../publicaciones/filtros/FiltrosPublicaciones";
+import { compararPublicacionesAlfabeticamente, compararPublicacionesPorPrioridad, compararPublicacionesOperador } from "../../publicaciones/filtros/ordenar-publicaciones";
+import type { PublicacionListado } from "../consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "../consultas/consultas-publicaciones-productor";
+
+type Publicacion = PublicacionListado | PublicacionProductorListado;
+const obtenerNombreFantasia = (publicacion: Publicacion) => publicacion.tipoPublicacion === "OPERADOR" ? publicacion.operador.nombreFantasia : publicacion.productor.nombreFantasia;
+
+function ordenarPublicaciones(publicaciones: Publicacion[], orden: OrdenConsulta): Publicacion[] {
+    const resultado = [...publicaciones];
+    if (resultado.every((publicacion): publicacion is PublicacionListado => publicacion.tipoPublicacion === "OPERADOR")) {
+        return resultado.sort((a, b) => compararPublicacionesOperador(a, b, orden));
+    }
+    switch (orden) {
+        case "prioridad":
+            return resultado.sort(compararPublicacionesPorPrioridad);
+        case "alfabeticoAsc":
+            return resultado.sort(compararPublicacionesAlfabeticamente);
+        case "alfabeticoDesc":
+            return resultado.sort((a, b) => compararPublicacionesAlfabeticamente(b, a));
+        case "precioAsc":
+        case "precioDesc":
+            return resultado.sort((a, b) => {
+                if (a.precio == null && b.precio == null) {
+                    return 0;
+                }
+                if (a.precio == null) {
+                    return 1;
+                }
+                if (b.precio == null) {
+                    return -1;
+                }
+                return orden === "precioAsc" ? a.precio - b.precio : b.precio - a.precio;
+            });
+        case "fechaDesc":
+            return resultado.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+        default:
+            return resultado;
+    }
+}
+
+type PropiedadesLocales = {
+    publicaciones: Publicacion[];
+    especie?: string;
+    esAdmin?: boolean;
+    ordenInicial?: OrdenConsulta;
+    ordenamientoHabilitado?: boolean;
+    conservarFiltrosAlActualizar?: boolean;
+};
+
+export default function ContenedorPublicaciones(props: PropiedadesRemotas | PropiedadesLocales) {
+    if ("resultado" in props) return <ContenidoRemoto {...props} />;
+    return <ContenidoLocal key={props.especie ?? ""} {...props} />;
+}
+
+type PropiedadesRemotas = {
+    resultado: ResultadoPublicaciones;
+    especie?: string;
+    esAdmin?: boolean;
+    ordenInicial?: OrdenConsulta;
+    ordenamientoHabilitado?: boolean;
+};
+
+const publicacionesParaFiltros: [] = [];
+
+function ContenidoRemoto({ resultado, especie = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true }: PropiedadesRemotas) {
+    const [datos, setDatos] = useState(resultado);
+    const [claveConsulta, setClaveConsulta] = useState("");
+    const [cargando, setCargando] = useState(false);
+    const [error, setError] = useState("");
+    const consulta = useRef<FiltrosConsulta>({especie, orden: ordenInicial});
+    const ultimoPedido = useRef(0);
+    const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const montado = useRef(true);
+    const filtrosInicializados = useRef(false);
+    const cargaEnCurso = useRef(false);
+    const recargaPendiente = useRef(false);
+    const esperasDeCarga = useRef<Array<(actualizado: boolean) => void>>([]);
+    const origen = useRef(resultado);
+    const invalidarPeticiones = useCallback(() => { ultimoPedido.current++ }, []);
+
+    const cargar = useCallback(async function cargarActual(): Promise<void> {
+        if (!montado.current) return;
+        if (cargaEnCurso.current) {
+            recargaPendiente.current = true;
+            return;
+        }
+        cargaEnCurso.current = true;
+        if (temporizador.current) {
+            clearTimeout(temporizador.current);
+            temporizador.current = null;
+        }
+        const esperas = esperasDeCarga.current;
+        esperasDeCarga.current = [];
+        let actualizado = false;
+        const pedido = ++ultimoPedido.current;
+        setCargando(true);
+        setError("");
+        try {
+            const filtros = { ...consulta.current };
+            const respuesta = await obtenerPublicaciones(filtros);
+            if (!respuesta) throw new Error("No se pudieron cargar las publicaciones.");
+            if (montado.current && pedido === ultimoPedido.current) {
+                setDatos(respuesta);
+                setClaveConsulta(JSON.stringify(filtros));
+                actualizado = true;
+            }
+        } catch {
+            if (montado.current && pedido === ultimoPedido.current) setError("No se pudieron actualizar las publicaciones. Intentá nuevamente.");
+        } finally {
+            cargaEnCurso.current = false;
+            if (montado.current && pedido === ultimoPedido.current) setCargando(false);
+            if (montado.current && pedido !== ultimoPedido.current && (recargaPendiente.current || temporizador.current)) {
+                esperasDeCarga.current.push(...esperas);
+            } else {
+                for (const resolver of esperas) resolver(actualizado);
+            }
+            if (recargaPendiente.current && montado.current) {
+                recargaPendiente.current = false;
+                void cargarActual();
+            }
+        }
+    }, []);
+
+    const programarCarga = useCallback(() => {
+        if (!montado.current) return Promise.resolve(false);
+        const finalizacion = new Promise<boolean>((resolver) => esperasDeCarga.current.push(resolver));
+        if (!temporizador.current) {
+            temporizador.current = setTimeout(() => { temporizador.current = null; void cargar() }, 250);
+        }
+        return finalizacion;
+    }, [cargar]);
+
+    useActualizacionesPublicaciones(programarCarga);
+
+    useEffect(() => {
+        if (origen.current !== resultado) {
+            origen.current = resultado;
+            programarCarga();
+        }
+    }, [resultado, programarCarga]);
+
+    useEffect(() => {
+        montado.current = true;
+        return () => {
+            montado.current = false;
+            invalidarPeticiones();
+            if (temporizador.current) clearTimeout(temporizador.current);
+            temporizador.current = null;
+            for (const resolver of esperasDeCarga.current) resolver(false);
+            esperasDeCarga.current = [];
+        };
+    }, [invalidarPeticiones]);
+
+    const cambiarConsulta = useCallback((nuevaConsulta: FiltrosConsulta) => {
+        consulta.current = { ...nuevaConsulta };
+        if (!filtrosInicializados.current) {
+            filtrosInicializados.current = true;
+            setClaveConsulta(JSON.stringify(nuevaConsulta));
+            return;
+        }
+        ultimoPedido.current++;
+        setCargando(true);
+        setError("");
+        programarCarga();
+    }, [programarCarga]);
+
+    function actualizarEspecieEnUrl(nuevaEspecie: string) {
+        const url = new URL(window.location.href);
+        if (nuevaEspecie === "Todas") url.searchParams.delete("especie");
+        else url.searchParams.set("especie", nuevaEspecie);
+        window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+
+    return (
+        <div className="secciones-pagina" aria-busy={cargando}>
+            <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicacionesParaFiltros} opcionesRemotas={datos.opciones} navesDisponibles={datos.naves} totalRemoto={datos.total} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")} />
+            {cargando && <IndicadorCargaPublicaciones />}
+            <AvisoErrorToast mensaje={error} cerrarAlCorregir={false} />
+            {error && <button type="button" className="boton-secundario" onClick={() => void cargar()}>Reintentar</button>}
+            <ListadoPublicaciones
+                publicaciones={datos.publicaciones}
+                claveConsulta={claveConsulta}
+                esAdmin={esAdmin}
+                estadoVacio={
+                    <EstadoVacio
+                        titulo={datos.totalCatalogo === 0 ? "Todavía no hay publicaciones disponibles" : "No hay publicaciones que coincidan con la búsqueda."}
+                        descripcion={datos.totalCatalogo === 0 ? "Los productos de los operadores aparecerán aquí cuando estén disponibles." : "Probá cambiando o limpiando los filtros para ver otros productos."}
+                        icono={datos.totalCatalogo === 0 ? <ShoppingBasketOutlinedIcon /> : <SearchOffOutlinedIcon />}
+                    />
+                }
+            />
+        </div>
+    );
+}
+
+function ContenidoLocal({publicaciones, especie: especieInicial = "", esAdmin = false, ordenInicial = "prioridad", ordenamientoHabilitado = true, conservarFiltrosAlActualizar = false }: PropiedadesLocales) {
+    const [especie] = useState(() => conservarFiltrosAlActualizar || publicaciones.some((publicacion) => publicacion.especie === especieInicial) ? especieInicial : "");
+    const [claveConsulta, setClaveConsulta] = useState("");
+    const cambiarConsulta = useCallback((consulta: FiltrosConsulta) => {
+        setClaveConsulta(JSON.stringify(consulta));
+    }, []);
+	const [publicacionesFiltradas, setPublicacionesFiltradas] = useState(() => {
+        const iniciales = especie
+            ? publicaciones.filter(
+                  (publicacion) => publicacion.especie === especie,
+              )
+            : publicaciones;
+
+        return ordenarPublicaciones(iniciales, ordenInicial);
+    });
+
+	function actualizarEspecieEnUrl(nuevaEspecie: string) {
+		const url = new URL(window.location.href);
+		if (nuevaEspecie === "Todas") url.searchParams.delete("especie");
+		else url.searchParams.set("especie", nuevaEspecie);
+		window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+	}
+
+	return (
+		<div className="secciones-pagina">
+			<FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreFantasia} publicaciones={publicaciones} especieFiltro={especie} ordenInicial={ordenInicial} ordenamientoHabilitado={ordenamientoHabilitado} conservarSeleccionAlActualizar={conservarFiltrosAlActualizar} alFiltrar={setPublicacionesFiltradas} alConsultar={cambiarConsulta} alCambiarEspecie={actualizarEspecieEnUrl} alLimpiar={() => actualizarEspecieEnUrl("Todas")}/>
+			<ListadoPublicaciones
+				esAdmin={esAdmin}
+				publicaciones={publicacionesFiltradas}
+                claveConsulta={claveConsulta}
+				estadoVacio={
+					<EstadoVacio
+						titulo={publicaciones.length === 0 ? "Todavía no hay publicaciones disponibles" : "No hay publicaciones que coincidan con la búsqueda."}
+						descripcion={publicaciones.length === 0 ? "Los productos de los productores aparecerán aquí cuando estén disponibles." : "Probá cambiando o limpiando los filtros para ver otros productos."}
+						icono={publicaciones.length === 0 ? <YardOutlinedIcon /> : <SearchOffOutlinedIcon />}
+					/>
+				}
+			/>
+		</div>
+	);
+}

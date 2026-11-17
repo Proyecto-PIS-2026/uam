@@ -33,7 +33,7 @@ const estadisticaPublicacionMock = vi.hoisted(() => ({
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({
+vi.mock("@/modulos/usuarios/operadores/consultas/operador-actual", () => ({
 	obtenerOperadorAutorizado: obtenerOperadorAutorizadoMock,
 	obtenerOperadorPorId: obtenerOperadorPorIdMock,
 }));
@@ -48,7 +48,7 @@ vi.mock("@/infraestructura/persistencia/prisma/db", () => ({
 		},
 	},
 }));
-vi.mock("@/modulos/publicaciones/operadores/modificar-publicacion", () => ({
+vi.mock("@/modulos/publicaciones/operadores/operaciones/modificar-publicacion", () => ({
 	modificarPublicacionOperador: vi.fn(),
 	ErrorEdicionPublicacion: class extends Error {
 		constructor(public readonly codigo: "DATOS_INVALIDOS" | "NO_ENCONTRADA" | "CONFLICTO", mensaje: string) {
@@ -57,14 +57,14 @@ vi.mock("@/modulos/publicaciones/operadores/modificar-publicacion", () => ({
 	},
 }));
 
-vi.mock("@/modulos/publicaciones/bajaPublicacionOperador", () => ({
+vi.mock("@/modulos/publicaciones/operadores/operaciones/baja-publicacion", () => ({
 	bajaPublicacionOperador: bajaPublicacionOperadorMock,
 }));
 
 import { revalidatePath } from "next/cache";
-import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/consultas/operador-actual";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { ErrorEdicionPublicacion, modificarPublicacionOperador } from "@/modulos/publicaciones/operadores/modificar-publicacion";
+import { ErrorEdicionPublicacion, modificarPublicacionOperador } from "@/modulos/publicaciones/operadores/operaciones/modificar-publicacion";
 import { DELETE, PATCH } from "./route";
 
 function configurarMocksBase() {

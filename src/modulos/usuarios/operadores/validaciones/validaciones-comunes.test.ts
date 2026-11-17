@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validarAltaOperador } from "../validarAltaOperador";
-import { validarModificacionOperador } from "./validarModificacionOperador";
+import { validarAltaOperador } from "./validar-alta-operador";
+import { validarModificacionOperador } from "./validar-modificacion-operador";
 
 function validarAmbos(cambios: Record<string, unknown>, numeroLocal: unknown = " 12 ") {
     const comunes = {

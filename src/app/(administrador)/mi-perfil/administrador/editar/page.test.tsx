@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ requerirAdministrador: mocks.requerirAdministrador }));
-vi.mock("@/modulos/usuarios/administradores/acciones/consultas-perfil-administrador", () => ({
+vi.mock("@/modulos/usuarios/administradores/consultas/consultas-perfil-administrador", () => ({
     obtenerPerfilAdministradorPorUsuario: mocks.obtenerPerfil,
 }));
 vi.mock("@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador", () => ({ default: () => null }));

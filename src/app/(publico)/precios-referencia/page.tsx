@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import PreciosReferencia from "@/modulos/informacion-uam/precios-referencia/PreciosReferencia";
 import { obtenerPreciosReferencia, type ResultadoPreciosReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";

@@ -2,7 +2,7 @@ import { escuchaPublicaciones } from "@/infraestructura/tiempo-real/escuchar-pub
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { ErrorAutorizacion, exigirConsultaProductores } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { autorizado } from "@/modulos/identidad-acceso/autorizacion/permisos";
-import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/operador-actual";
+import { obtenerOperadorAutorizado } from "@/modulos/usuarios/operadores/consultas/operador-actual";
 import { Temporal } from "temporal-polyfill";
 
 export const runtime = "nodejs";

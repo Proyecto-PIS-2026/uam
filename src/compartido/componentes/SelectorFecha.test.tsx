@@ -1,7 +1,7 @@
 import { useState, type ComponentProps, type FormEvent } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import TemaAplicacion from "@/compartido/TemaAplicacion";
+import TemaAplicacion from "@/aplicacion/TemaAplicacion";
 import SelectorFecha from "./SelectorFecha";
 
 type PropsFormulario = Omit<ComponentProps<typeof SelectorFecha>, "value" | "onChange"> & {

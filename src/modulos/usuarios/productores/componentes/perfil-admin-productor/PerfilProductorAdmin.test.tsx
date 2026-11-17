@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilProductorAdmin from "./PerfilProductorAdmin";
-import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
+import type { PerfilAdminProductor } from "../../consultas/consultas-perfil-productor-admin";
 
 const mocks = vi.hoisted(() => ({
     propsCatalogo: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
-vi.mock("@/modulos/publicaciones/productores/AltaPublicacionProductor", () => ({
+vi.mock("@/modulos/publicaciones/productores/componentes/AltaPublicacionProductor", () => ({
     DrawerAltaPublicacionProductor: (props: { productorId: number; abierto: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void }) => {
         mocks.propsDrawerAlta(props);
         return (

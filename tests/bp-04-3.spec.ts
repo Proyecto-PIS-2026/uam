@@ -6,7 +6,7 @@ import postgres from "@prisma/orm-postgres/runtime";
 import { test as base, expect as baseExpect, type Page } from "@playwright/test";
 import type { Contract } from "../src/infraestructura/persistencia/prisma/contract";
 import contractJson from "../src/infraestructura/persistencia/prisma/contract.json" with { type: "json" };
-import { cifrarSecreto, generarSecreto } from "../src/modulos/identidad-acceso/autenticacion/segundo-factor-criptografia";
+import { cifrarSecreto, generarSecreto } from "../src/modulos/identidad-acceso/autenticacion/segundo-factor/segundo-factor-criptografia";
 import { iniciarSesionAdministrador } from "./autenticacion";
 import { esperarYCerrarNotificacion } from "./soporte/notificaciones";
 

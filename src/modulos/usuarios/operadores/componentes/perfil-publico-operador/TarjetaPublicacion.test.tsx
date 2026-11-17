@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { PublicacionPerfil } from "../../consultas-perfil-publico";
+import type { PublicacionPerfil } from "../../consultas/consultas-perfil-publico";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 
 // Reemplaza Image de Next por un img comun durante los tests

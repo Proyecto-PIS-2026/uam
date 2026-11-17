@@ -5,15 +5,16 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { obtenerDatabaseUrlTest } from "@/infraestructura/persistencia/configuracion-db-test";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
-import { consultarPublicaciones } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
-import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import { consultarPublicaciones } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-operador";
+import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
 import { obtenerEspeciesConPublicacionesActivas } from "@/modulos/consulta-mercado/inicio/consultas-inicio";
-import { obtenerPerfilPublicoOperador } from "@/modulos/usuarios/operadores/consultas-perfil-publico";
-import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
+import { obtenerPerfilPublicoOperador } from "@/modulos/usuarios/operadores/consultas/consultas-perfil-publico";
+import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/consultas/consultas-perfil-por-operador";
 import { obtenerPublicacionesMiMercadoProductor } from "./mi-mercado/consultas-mi-mercado-productor";
 import { mapearPublicacionesMiMercado } from "./mi-mercado/mapear-publicaciones";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador, ConflictoPublicacionError, incrementarPrecioPublicacion } from "./mi-mercado/consultas-mi-mercado";
+import { obtenerPublicacionesDeOperador } from "./mi-mercado/consultas-mi-mercado";
+import { actualizarPrecioPublicacion, ConflictoPublicacionError, incrementarPrecioPublicacion } from "./operadores/operaciones/actualizar-precio-publicacion";
 
 const sesionActual = vi.hoisted(() => vi.fn());
 

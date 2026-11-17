@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';  
 import TarjetaPublicacionAdmin from './TarjetaPublicacionAdmin';
-import type { PublicacionPerfilAdmin } from '../../consultas-perfil-admin';
+import type { PublicacionPerfilAdmin } from '../../consultas/consultas-perfil-admin';
 
 const publicacionBase: PublicacionPerfilAdmin = {
     id: 101,

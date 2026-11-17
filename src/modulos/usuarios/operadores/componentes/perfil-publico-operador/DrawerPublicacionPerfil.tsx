@@ -8,9 +8,9 @@ import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublica
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
-import TextoAjustable from "./TextoAjustable";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
+import TextoAjustable from "../../../../../compartido/componentes/TextoAjustable";
 import styles from "./DrawerPublicacionPerfil.module.css";
 import ComentarioPublicacion from "@/modulos/publicaciones/componentes/drawer-publicacion/ComentarioPublicacion";
 import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";

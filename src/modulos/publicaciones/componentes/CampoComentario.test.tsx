@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 import CampoComentario from "./CampoComentario";
-import { LARGO_MAXIMO_COMENTARIO } from "../validarComentario";
+import { LARGO_MAXIMO_COMENTARIO } from "../validar-comentario";
 
 afterEach(() => {
     cleanup();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
 import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import Paginacion from "@/compartido/componentes/Paginacion";
@@ -10,7 +10,7 @@ import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlin
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useRouter } from "next/navigation";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import FuentePrecios from "../FuentePrecios";

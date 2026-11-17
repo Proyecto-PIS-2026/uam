@@ -1,4 +1,4 @@
-import FormularioInicioSesion from "./formularioInicioSesion";
+import FormularioInicioSesion from "../../../modulos/identidad-acceso/autenticacion/componentes/FormularioInicioSesion";
 import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { requerirSinSesion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import styles from "./page.module.css";

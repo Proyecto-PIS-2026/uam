@@ -76,12 +76,12 @@ afterEach(() => {
 });
 
 describe("período inicial", () => {
-    it("consulta nueve años cuando la especie todavía no tiene histórico", () => {
-        expect(fechaInicioImportacion(hoy)).toBe("2017-10-09");
+    it("consulta seis años cuando la especie todavía no tiene histórico", () => {
+        expect(fechaInicioImportacion(hoy)).toBe("2020-10-09");
     });
 
     it("ajusta el 29 de febrero cuando el año inicial no es bisiesto", () => {
-        expect(fechaInicioImportacion("2024-02-29")).toBe("2015-02-28");
+        expect(fechaInicioImportacion("2024-02-29")).toBe("2018-02-28");
     });
 });
 
@@ -105,12 +105,12 @@ describe("actualizarHistoricoEspecie", () => {
         expect(estados.get(20)).toBe(otra);
     });
 
-    it("crea el histórico inicial de nueve años con tres consultas de hasta tres años y una sola escritura", async () => {
-        const anterior = respuesta({ speciesId: 10, desde: "2017-10-09", hasta: "2020-10-09" });
-        const intermedio = respuesta({ speciesId: 10, desde: "2020-10-10", hasta: "2023-10-09" });
-        const reciente = respuesta({ speciesId: 10, desde: "2023-10-10", hasta: hoy });
-        anterior.series = [{ date: "2017-10-09", volume_kg: 125, presentations: [] }];
-        intermedio.series = [{ date: "2020-10-10", volume_kg: 200, presentations: [] }];
+    it("crea el histórico inicial de seis años con tres consultas de hasta dos años y una sola escritura", async () => {
+        const anterior = respuesta({ speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" });
+        const intermedio = respuesta({ speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" });
+        const reciente = respuesta({ speciesId: 10, desde: "2024-10-10", hasta: hoy });
+        anterior.series = [{ date: "2020-10-09", volume_kg: 125, presentations: [] }];
+        intermedio.series = [{ date: "2022-10-10", volume_kg: 200, presentations: [] }];
         reciente.series = [{ date: hoy, volume_kg: 250, presentations: [] }];
         const originales = structuredClone([anterior, intermedio, reciente]);
         mocks.consultar.mockResolvedValueOnce(anterior).mockResolvedValueOnce(intermedio).mockResolvedValueOnce(reciente);
@@ -118,9 +118,9 @@ describe("actualizarHistoricoEspecie", () => {
         await actualizarHistoricoEspecie(10);
 
         expect(mocks.consultar.mock.calls).toEqual([
-            [{ baseUrl, token: "token-de-prueba" }, { speciesId: 10, desde: "2017-10-09", hasta: "2020-10-09" }],
-            [{ baseUrl, token: "token-de-prueba" }, { speciesId: 10, desde: "2020-10-10", hasta: "2023-10-09" }],
-            [{ baseUrl, token: "token-de-prueba" }, { speciesId: 10, desde: "2023-10-10", hasta: hoy }],
+            [{ baseUrl, token: "token-de-prueba" }, { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" }],
+            [{ baseUrl, token: "token-de-prueba" }, { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" }],
+            [{ baseUrl, token: "token-de-prueba" }, { speciesId: 10, desde: "2024-10-10", hasta: hoy }],
         ]);
         expect(mocks.guardar).toHaveBeenCalledExactlyOnceWith({
             fechaUltimaActualizacion: hoy,
@@ -131,19 +131,19 @@ describe("actualizarHistoricoEspecie", () => {
         expect(estados.size).toBe(1);
     });
 
-    it("cubre el 29 de febrero sin dejar huecos ni pedir más de tres años en un tramo", async () => {
+    it("cubre el 29 de febrero sin dejar huecos ni pedir más de dos años en un tramo", async () => {
         vi.setSystemTime(new Date("2024-02-29T15:00:00Z"));
 
         await actualizarHistoricoEspecie(10);
 
         expect(mocks.consultar.mock.calls.map(([, consulta]) => consulta)).toEqual([
-            { speciesId: 10, desde: "2015-02-28", hasta: "2018-02-28" },
-            { speciesId: 10, desde: "2018-03-01", hasta: "2021-02-28" },
-            { speciesId: 10, desde: "2021-03-01", hasta: "2024-02-29" },
+            { speciesId: 10, desde: "2018-02-28", hasta: "2020-02-28" },
+            { speciesId: 10, desde: "2020-02-29", hasta: "2022-02-28" },
+            { speciesId: 10, desde: "2022-03-01", hasta: "2024-02-29" },
         ]);
         expect(mocks.guardar).toHaveBeenCalledExactlyOnceWith({
             fechaUltimaActualizacion: "2024-02-29",
-            historico: respuesta({ speciesId: 10, desde: "2015-02-28", hasta: "2024-02-29" }),
+            historico: respuesta({ speciesId: 10, desde: "2018-02-28", hasta: "2024-02-29" }),
         });
     });
 
@@ -156,9 +156,9 @@ describe("actualizarHistoricoEspecie", () => {
         const pendienteReciente = new Promise<HistoricoProducto>((resolve) => { entregarReciente = resolve; });
         mocks.consultar.mockReturnValueOnce(pendienteAnterior).mockReturnValueOnce(pendienteIntermedio).mockReturnValueOnce(pendienteReciente);
         const solicitudes = Array.from({ length: 10 }, () => actualizarHistoricoEspecie(10));
-        const anterior = respuesta({ speciesId: 10, desde: "2017-10-09", hasta: "2020-10-09" });
-        const intermedio = respuesta({ speciesId: 10, desde: "2020-10-10", hasta: "2023-10-09" });
-        const reciente = respuesta({ speciesId: 10, desde: "2023-10-10", hasta: hoy });
+        const anterior = respuesta({ speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" });
+        const intermedio = respuesta({ speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" });
+        const reciente = respuesta({ speciesId: 10, desde: "2024-10-10", hasta: hoy });
 
         try {
             expect(new Set(solicitudes).size).toBe(1);
@@ -187,7 +187,7 @@ describe("actualizarHistoricoEspecie", () => {
 
         expect(mocks.guardar).toHaveBeenCalledOnce();
         expect(mocks.bloquear).toHaveBeenCalledOnce();
-        expect(estados.get(10)?.historico.from).toBe("2017-10-09");
+        expect(estados.get(10)?.historico.from).toBe("2020-10-09");
         expect(estados.get(10)?.historico.to).toBe(hoy);
     });
 
@@ -198,12 +198,12 @@ describe("actualizarHistoricoEspecie", () => {
         const pendienteAnterior = new Promise<HistoricoProducto>((_resolve, reject) => { rechazarAnterior = reject; });
         const pendienteReciente = new Promise<HistoricoProducto>((resolve) => { entregarReciente = resolve; });
         mocks.consultar.mockReturnValueOnce(pendienteAnterior)
-            .mockResolvedValueOnce(respuesta({ speciesId: 10, desde: "2020-10-10", hasta: "2023-10-09" }))
+            .mockResolvedValueOnce(respuesta({ speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" }))
             .mockReturnValueOnce(pendienteReciente);
         const primera = actualizarHistoricoEspecie(10);
         const resultado = primera.then(() => undefined, (error: unknown) => error);
         let segunda: Promise<void> | undefined;
-        const reciente = respuesta({ speciesId: 10, desde: "2023-10-10", hasta: hoy });
+        const reciente = respuesta({ speciesId: 10, desde: "2024-10-10", hasta: hoy });
 
         try {
             await vi.advanceTimersByTimeAsync(0);
@@ -401,7 +401,7 @@ describe("actualizarHistoricoEspecie", () => {
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 
-    it("propaga el fallo de reserva cuando todavía no hay un histórico guardado", async () => {
+    it("propaga el fallo de reserva inicial y permite reintentar en el mismo día", async () => {
         const fallo = new Error("Otra solicitud sigue actualizando el histórico.");
         mocks.bloquear.mockRejectedValueOnce(fallo);
 
@@ -409,6 +409,17 @@ describe("actualizarHistoricoEspecie", () => {
 
         expect(mocks.consultar).not.toHaveBeenCalled();
         expect(mocks.guardar).not.toHaveBeenCalled();
+        expect(estados.has(10)).toBe(false);
+
+        await expect(actualizarHistoricoEspecie(10)).resolves.toBeUndefined();
+
+        expect(mocks.bloquear).toHaveBeenCalledTimes(2);
+        expect(mocks.consultar).toHaveBeenCalledTimes(3);
+        expect(mocks.guardar).toHaveBeenCalledOnce();
+        expect(estados.get(10)).toEqual({
+            fechaUltimaActualizacion: hoy,
+            historico: respuesta({ speciesId: 10, desde: "2020-10-09", hasta: hoy }),
+        });
     });
 
     it.each([0, 1, 2])("un fallo del tramo inicial %i se propaga sin guardar información incompleta", async (tramoFallido) => {
@@ -426,7 +437,7 @@ describe("actualizarHistoricoEspecie", () => {
         expect(mocks.guardar).not.toHaveBeenCalled();
     });
 
-    it.each([0, 1, 2])("una cobertura incompleta del tramo inicial %i impide guardar los nueve años", async (tramoIncompleto) => {
+    it.each([0, 1, 2])("una cobertura incompleta del tramo inicial %i impide guardar los seis años y permite reintentar", async (tramoIncompleto) => {
         let tramo = 0;
         mocks.consultar.mockImplementation(async (_opciones: unknown, consulta: ConsultaHistorica) => {
             return respuesta(tramo++ === tramoIncompleto ? { ...consulta, desde: consulta.hasta } : consulta);
@@ -437,6 +448,15 @@ describe("actualizarHistoricoEspecie", () => {
         expect(mocks.consultar).toHaveBeenCalledTimes(3);
         expect(estados.has(10)).toBe(false);
         expect(mocks.guardar).not.toHaveBeenCalled();
+
+        await expect(actualizarHistoricoEspecie(10)).resolves.toBeUndefined();
+
+        expect(mocks.consultar).toHaveBeenCalledTimes(6);
+        expect(mocks.guardar).toHaveBeenCalledOnce();
+        expect(estados.get(10)).toEqual({
+            fechaUltimaActualizacion: hoy,
+            historico: respuesta({ speciesId: 10, desde: "2020-10-09", hasta: hoy }),
+        });
     });
 
     it("un fallo al guardar mantiene el histórico anterior disponible y su fecha pendiente", async () => {
@@ -476,23 +496,56 @@ describe("actualizarHistoricoEspecie", () => {
         expect(estados.get(10)?.fechaUltimaActualizacion).toBe(hoy);
     });
 
-    it("reintenta los tres tramos de la carga inicial después de un fallo y conserva el período de nueve años", async () => {
-        mocks.consultar.mockRejectedValueOnce(new Error("El webservice no está disponible."));
+    it.each([0, 1, 2])("reintenta los tres tramos en el mismo día después de fallar el tramo inicial %i", async (tramoFallido) => {
+        let tramo = 0;
+        mocks.consultar.mockImplementation(async (_opciones: unknown, consulta: ConsultaHistorica) => {
+            if (tramo++ === tramoFallido) throw new Error("El webservice no está disponible.");
+            return respuesta(consulta);
+        });
         await expect(actualizarHistoricoEspecie(10)).rejects.toThrow("no está disponible");
+        expect(estados.has(10)).toBe(false);
+        expect(mocks.guardar).not.toHaveBeenCalled();
 
         await actualizarHistoricoEspecie(10);
 
         expect(mocks.consultar.mock.calls.map(([, consulta]) => consulta)).toEqual([
-            { speciesId: 10, desde: "2017-10-09", hasta: "2020-10-09" },
-            { speciesId: 10, desde: "2020-10-10", hasta: "2023-10-09" },
-            { speciesId: 10, desde: "2023-10-10", hasta: hoy },
-            { speciesId: 10, desde: "2017-10-09", hasta: "2020-10-09" },
-            { speciesId: 10, desde: "2020-10-10", hasta: "2023-10-09" },
-            { speciesId: 10, desde: "2023-10-10", hasta: hoy },
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
         ]);
         expect(mocks.guardar).toHaveBeenCalledOnce();
-        expect(estados.get(10)?.historico.from).toBe("2017-10-09");
+        expect(estados.get(10)?.historico.from).toBe("2020-10-09");
         expect(estados.get(10)?.fechaUltimaActualizacion).toBe(hoy);
+    });
+
+    it("no da por finalizada la carga inicial si falla al guardar y permite volver a consultar", async () => {
+        const fallo = new Error("No se pudo guardar el histórico.");
+        mocks.guardar.mockRejectedValueOnce(fallo);
+
+        await expect(actualizarHistoricoEspecie(10)).rejects.toBe(fallo);
+
+        expect(estados.has(10)).toBe(false);
+        expect(mocks.consultar).toHaveBeenCalledTimes(3);
+        expect(mocks.guardar).toHaveBeenCalledOnce();
+
+        await expect(actualizarHistoricoEspecie(10)).resolves.toBeUndefined();
+
+        expect(mocks.consultar.mock.calls.map(([, consulta]) => consulta)).toEqual([
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
+        ]);
+        expect(mocks.guardar).toHaveBeenCalledTimes(2);
+        expect(estados.get(10)).toEqual({
+            fechaUltimaActualizacion: hoy,
+            historico: respuesta({ speciesId: 10, desde: "2020-10-09", hasta: hoy }),
+        });
     });
 
     it("usa la fecha de Montevideo aunque UTC ya esté en el día siguiente", async () => {
@@ -506,15 +559,16 @@ describe("actualizarHistoricoEspecie", () => {
 });
 
 describe("ampliación de la cobertura histórica", () => {
-    it("divide una actualización atrasada más de tres años y conserva la cobertura anterior", async () => {
+    it("divide una actualización atrasada más de dos años y conserva la cobertura anterior", async () => {
         const guardado = sembrar(10, "2020-10-09");
         guardado.historico.from = "2017-10-09";
 
         await actualizarHistoricoEspecie(10);
 
         expect(mocks.consultar.mock.calls.map(([, consulta]) => consulta)).toEqual([
-            { speciesId: 10, desde: "2020-10-09", hasta: "2023-10-09" },
-            { speciesId: 10, desde: "2023-10-10", hasta: hoy },
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
         ]);
         expect(mocks.guardar).toHaveBeenCalledOnce();
         expect(estados.get(10)?.historico.from).toBe("2017-10-09");
@@ -533,19 +587,28 @@ describe("ampliación de la cobertura histórica", () => {
 
         await expect(actualizarHistoricoEspecie(10)).resolves.toBeUndefined();
 
-        expect(mocks.consultar).toHaveBeenCalledTimes(4);
+        expect(mocks.consultar.mock.calls.map(([, consulta]) => consulta)).toEqual([
+            { speciesId: 10, desde: "2014-10-09", hasta: "2016-10-09" },
+            { speciesId: 10, desde: "2016-10-10", hasta: "2018-10-09" },
+            { speciesId: 10, desde: "2018-10-10", hasta: "2020-10-09" },
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
+        ]);
         expect(mocks.bloquear).toHaveBeenCalledTimes(2);
         expect(mocks.guardar).toHaveBeenCalledOnce();
-        expect(estados.get(10)?.fechaUltimaActualizacion).toBe("2023-10-09");
-        expect(estados.get(10)?.historico.to).toBe("2023-10-09");
+        expect(estados.get(10)?.fechaUltimaActualizacion).toBe("2020-10-09");
+        expect(estados.get(10)?.historico.to).toBe("2020-10-09");
         expect(estados.get(10)?.historico.from).toBe("2011-10-09");
         mocks.consultar.mockClear();
 
         await actualizarHistoricoEspecie(10);
 
-        expect(mocks.consultar).toHaveBeenCalledExactlyOnceWith(expect.anything(), {
-            speciesId: 10, desde: "2023-10-09", hasta: hoy,
-        });
+        expect(mocks.consultar.mock.calls.map(([, consulta]) => consulta)).toEqual([
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
+        ]);
         expect(estados.get(10)?.fechaUltimaActualizacion).toBe(hoy);
         expect(estados.get(10)?.historico.from).toBe("2011-10-09");
     });
@@ -630,18 +693,18 @@ describe("ampliación de la cobertura histórica", () => {
         expect(estados.get(10)?.historico.to).toBe(hoy);
     });
 
-    it("completa la carga inicial de nueve años y luego amplía hasta el inicio solicitado", async () => {
-        await actualizarHistoricoEspecie(10, "2016-10-09");
+    it("completa la carga inicial de seis años y luego amplía hasta el inicio solicitado", async () => {
+        await actualizarHistoricoEspecie(10, "2019-10-09");
 
         expect(mocks.consultar).toHaveBeenCalledTimes(4);
         expect(mocks.consultar.mock.calls.slice(0, 3).map(([, consulta]) => consulta)).toEqual([
-            { speciesId: 10, desde: "2017-10-09", hasta: "2020-10-09" },
-            { speciesId: 10, desde: "2020-10-10", hasta: "2023-10-09" },
-            { speciesId: 10, desde: "2023-10-10", hasta: hoy },
+            { speciesId: 10, desde: "2020-10-09", hasta: "2022-10-09" },
+            { speciesId: 10, desde: "2022-10-10", hasta: "2024-10-09" },
+            { speciesId: 10, desde: "2024-10-10", hasta: hoy },
         ]);
-        expect(mocks.consultar.mock.calls[3][1]).toEqual({ speciesId: 10, desde: "2016-10-09", hasta: "2017-10-09" });
+        expect(mocks.consultar.mock.calls[3][1]).toEqual({ speciesId: 10, desde: "2019-10-09", hasta: "2020-10-09" });
         expect(mocks.guardar).toHaveBeenCalledTimes(2);
-        expect(estados.get(10)?.historico.from).toBe("2016-10-09");
+        expect(estados.get(10)?.historico.from).toBe("2019-10-09");
         expect(estados.get(10)?.historico.to).toBe(hoy);
         expect(estados.get(10)?.fechaUltimaActualizacion).toBe(hoy);
     });
@@ -653,10 +716,10 @@ describe("ampliación de la cobertura histórica", () => {
             return respuesta(consulta);
         });
 
-        await expect(actualizarHistoricoEspecie(10, "2016-10-09")).resolves.toBeUndefined();
+        await expect(actualizarHistoricoEspecie(10, "2019-10-09")).resolves.toBeUndefined();
 
         expect(mocks.guardar).toHaveBeenCalledOnce();
-        expect(estados.get(10)?.historico.from).toBe("2017-10-09");
+        expect(estados.get(10)?.historico.from).toBe("2020-10-09");
         expect(estados.get(10)?.historico.to).toBe(hoy);
         expect(estados.get(10)?.fechaUltimaActualizacion).toBe(hoy);
     });
@@ -675,6 +738,7 @@ describe("ampliación de la cobertura histórica", () => {
         const ampliado = estados.get(10)!;
         expect(mocks.guardar).toHaveBeenCalledOnce();
         expect(ampliado.historico.from < inicioAnterior).toBe(true);
+        expect(ampliado.historico.from).toBe("2017-10-10");
         expect(ampliado.historico.from > "2010-10-09").toBe(true);
         expect(ampliado.historico.to).toBe(hoy);
         expect(ampliado.fechaUltimaActualizacion).toBe(hoy);
@@ -683,7 +747,13 @@ describe("ampliación de la cobertura histórica", () => {
         await actualizarHistoricoEspecie(10, "2010-10-09");
 
         expect(mocks.consultar.mock.calls.every(([, consulta]) => consulta.hasta <= ampliado.historico.from)).toBe(true);
-        expect(mocks.guardar).toHaveBeenCalledTimes(2);
+        expect(mocks.consultar.mock.calls.map(([, consulta]) => consulta)).toEqual([
+            { speciesId: 10, desde: "2011-10-11", hasta: "2013-10-10" },
+            { speciesId: 10, desde: "2013-10-11", hasta: "2015-10-10" },
+            { speciesId: 10, desde: "2015-10-11", hasta: "2017-10-10" },
+            { speciesId: 10, desde: "2010-10-09", hasta: "2011-10-11" },
+        ]);
+        expect(mocks.guardar).toHaveBeenCalledTimes(3);
         expect(estados.get(10)?.historico.from).toBe("2010-10-09");
         expect(estados.get(10)?.fechaUltimaActualizacion).toBe(hoy);
     });

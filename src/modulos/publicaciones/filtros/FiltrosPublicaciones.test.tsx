@@ -1,8 +1,8 @@
 import { cleanup, render, screen, fireEvent, waitFor } from "@/test-utils";
 import styles from "./FiltrosPublicaciones.module.css";
 import FiltrosPublicaciones from "./FiltrosPublicaciones";
-import type { PublicacionListado } from "../../consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "../../consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "../../consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "../../consulta-mercado/consultas/consultas-publicaciones-productor";
 import { MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OrdenPublicaciones } from "./FiltrosPublicaciones";

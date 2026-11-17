@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilOperadorAdmin from "./PerfilOperadorAdmin";
-import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/tipos";
+import type { PerfilAdminOperador } from "../../consultas/consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/catalogos/tipos";
 
 const mocks = vi.hoisted(() => ({
     propsCatalogo: vi.fn(),

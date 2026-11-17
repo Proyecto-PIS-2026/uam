@@ -1,5 +1,6 @@
 import type { SeleccionPublicacion } from "../seleccion-publicacion";
-import type { EstadoFotoPublicacion } from "../estado-foto-publicacion";
+import type { EstadoFotoPublicacion } from "../imagenes/vigencia/estado-foto-publicacion";
+import type { EstadoVigenciaPublicacion } from "../vigencia/estado-vigencia-publicacion";
 
 export type CambiosPublicacionOperador = SeleccionPublicacion & {
     version: number;
@@ -11,23 +12,11 @@ export type CambiosPublicacionOperador = SeleccionPublicacion & {
     fechaVigencia?: string | null;
 };
 
-export type OpcionEdicion = {
-    id: number;
-    nombre: string;
-};
-
-export type OpcionVariedad = OpcionEdicion & {
-    especieId: number;
-};
-
-export type OpcionCategoria = OpcionEdicion & {
-    especieId: number | null;
-};
-
 export type PublicacionParaEditar = Omit<CambiosPublicacionOperador, "version"> & {
     version?: number;
     foto: string | null;
     estadoFoto?: EstadoFotoPublicacion;
+    estadoVigencia?: EstadoVigenciaPublicacion;
     fecha: string;
     publicacionOperadorId: number;
     publicacionId: number;
@@ -40,14 +29,4 @@ export type PublicacionParaEditar = Omit<CambiosPublicacionOperador, "version"> 
     cantidadUnidades?: number | null;
     categoria?: string;
     calibre?: string;
-};
-
-export type OpcionesEdicionPublicacion = {
-    especies: OpcionEdicion[];
-    variedades: OpcionVariedad[];
-    envases: OpcionEdicion[];
-    kilos: OpcionEdicion[];
-    categorias: OpcionCategoria[];
-    calibres: OpcionEdicion[];
-    paises: OpcionEdicion[];
 };

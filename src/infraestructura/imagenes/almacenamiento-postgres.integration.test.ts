@@ -13,7 +13,7 @@ import {
 
 type Cliente = ReturnType<typeof postgres<Contract>>;
 type Adaptador = typeof import("./almacenamiento-postgres").AlmacenamientoImagenesPostgres;
-type GuardarPublicacion = typeof import("@/modulos/publicaciones/operadores/imagenes-publicacion").guardarImagenPublicacion;
+type GuardarPublicacion = typeof import("@/modulos/publicaciones/imagenes/imagenes-publicacion").guardarImagenPublicacion;
 type CrearServicio = typeof import("./imagenes").crearServicioImagenes;
 
 let clientes: [Cliente, Cliente];
@@ -48,7 +48,7 @@ describe.sequential("almacenamiento compartido de imágenes en PostgreSQL", { ti
             throw new Error("La integración de imágenes requiere DATABASE_URL_TEST como base activa.");
         }
         ({ AlmacenamientoImagenesPostgres: Almacenamiento } = await import("./almacenamiento-postgres"));
-        ({ guardarImagenPublicacion: guardarPublicacion } = await import("@/modulos/publicaciones/operadores/imagenes-publicacion"));
+        ({ guardarImagenPublicacion: guardarPublicacion } = await import("@/modulos/publicaciones/imagenes/imagenes-publicacion"));
         ({ crearServicioImagenes: crearServicio } = await import("./imagenes"));
         clientes = [postgres<Contract>({ contractJson, url }), postgres<Contract>({ contractJson, url })];
     });

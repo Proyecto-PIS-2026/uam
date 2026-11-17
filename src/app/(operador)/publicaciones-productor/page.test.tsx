@@ -2,10 +2,10 @@ import type { ComponentProps, ReactNode } from "react";
 import { cleanup, render, screen } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaPublicacionesProductor, { dynamic } from "./page";
-import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
-import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import type { ConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/consultas/configuracion-ordenamiento";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
 
-type PropsContenedor = ComponentProps<typeof import("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones").default>;
+type PropsContenedor = ComponentProps<typeof import("@/modulos/consulta-mercado/componentes/ContenedorPublicaciones").default>;
 type PropsEncabezado = { titulo: string; cantidad: number; subtitulo: string };
 
 const mocks = vi.hoisted(() => ({
@@ -20,22 +20,22 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
     requerirConsultaProductores: mocks.requerirConsultaProductores,
 }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/PublicacionesProductor", () => ({
+vi.mock("@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor", () => ({
     consultarPublicacionesProductores: mocks.consultarPublicacionesProductores,
 }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/configuracion-ordenamiento", () => ({
+vi.mock("@/modulos/consulta-mercado/consultas/configuracion-ordenamiento", () => ({
     obtenerConfiguracionOrdenamiento: mocks.obtenerConfiguracion,
 }));
 
-vi.mock("@/modulos/consulta-mercado/acciones/ConsultarPublicacionProductor.action", () => ({ default: vi.fn() }));
-vi.mock("@/modulos/publicaciones/tiempo-real/use-actualizaciones-publicaciones", () => ({ useActualizacionesPublicaciones: vi.fn() }));
+vi.mock("@/modulos/consulta-mercado/acciones/consultar-publicaciones-productor", () => ({ default: vi.fn() }));
+vi.mock("@/modulos/publicaciones/tiempo-real/useActualizacionesPublicaciones", () => ({ useActualizacionesPublicaciones: vi.fn() }));
 
-vi.mock("@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones", () => ({
+vi.mock("@/modulos/consulta-mercado/componentes/ContenedorPublicaciones", () => ({
     default: mocks.contenedor,
 }));
 
-vi.mock("@/compartido/EncabezadoPagina", () => ({
+vi.mock("@/compartido/componentes/EncabezadoPagina", () => ({
     default: mocks.encabezado,
 }));
 
