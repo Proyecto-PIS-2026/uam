@@ -235,3 +235,11 @@ test.describe("BP-17.1 histórico de precios", () => {
     });
   }
 });
+
+test("BP-17.1 @new informa el error cuando la consulta del histórico falla", async ({ page }) => {
+  test.setTimeout(90_000);
+  // El servicio simulado responde 400 para una especie ausente de su relevamiento.
+  await page.goto("/precios-historicos?species_id=999999");
+  await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert"))
+    .toHaveText("No pudimos cargar los precios históricos. Intentá nuevamente en unos minutos.", { timeout: 60_000 });
+});
