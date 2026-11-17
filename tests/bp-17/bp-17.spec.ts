@@ -75,6 +75,9 @@ test.describe("BP-17.1 histórico de precios", () => {
     await expect(celdas.nth(5)).toHaveText("");
     await expect(celdas.nth(6)).toHaveText("$23,33 - $26,67");
     await expect(celdas.nth(7)).toHaveText("1 200 kg");
+    const fechas = (await filas.locator("td:first-child").allInnerTexts())
+      .map((texto) => texto.trim().split("/").reverse().join("-"));
+    expect(fechas, "Los registros deben ir de la fecha más reciente a la más antigua").toEqual([...fechas].sort().reverse());
   });
 
   test("@new aplica variedad y limpieza inmediatamente y permite ampliar los resultados después de recargar", async ({ page }) => {
