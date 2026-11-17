@@ -74,6 +74,7 @@ describe("obtenerPerfilAdminOperador", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.useRealTimers();
     });
 
     beforeEach(() => {
@@ -215,6 +216,26 @@ describe("obtenerPerfilAdminOperador", () => {
             { calibre: "Grande", codigoCalibre: "A" },
         ]);
         expect(mockDb.publicaciones.select.mock.calls.some((campos) => campos.includes("version"))).toBe(true);
+    });
+
+    it.each([
+        { ahora: "2026-11-18T02:59:58Z", disponible: true },
+        { ahora: "2026-11-18T03:00:00Z", disponible: false },
+    ])("calcula la disponibilidad a las $ahora aunque el proceso diario aún no haya actualizado la base", async ({ ahora, disponible }) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(ahora));
+        mockDb.operador.first.mockResolvedValue(operadorBase);
+        mockDb.publicaciones.all.mockResolvedValue([{
+            publicacion: { ...publicacionBase, fechaVigencia: Temporal.Instant.from("2026-11-18T02:59:59Z") },
+            pais: { nombrePais: "URUGUAY" },
+        }]);
+
+        const resultado = await obtenerPerfilAdminOperador(13);
+
+        expect(resultado?.publicaciones).toHaveLength(1);
+        expect(resultado?.publicaciones[0]).toMatchObject({
+            id: 101, precio: "120.00", fechaVigencia: "2026-11-17", disponible,
+        });
     });
 
     // Los locales se ordenan por nave y, dentro de cada nave, por número de local

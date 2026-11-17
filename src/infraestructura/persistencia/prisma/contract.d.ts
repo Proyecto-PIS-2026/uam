@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5'>;
+  StorageHashBase<'edeac76a0d9be78234b0d4f4371956c15f0f63231ea957ff73b635da6a2b766d'>;
 export type ExecutionHash =
   ExecutionHashBase<'b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a'>;
 export type ProfileHash =
@@ -374,15 +374,6 @@ export type FieldOutputTypes = {
       readonly codigoPais: CodecTypes['pg/text@1']['output'];
       readonly nombrePais: CodecTypes['pg/text@1']['output'];
     };
-    readonly Presentacion: {
-      readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly uamId: CodecTypes['pg/int4@1']['output'] | null;
-      readonly nombrePresentacion: CodecTypes['pg/text@1']['output'];
-      readonly kgPorUnidad: Numeric<10, 2> | null;
-      readonly presentacionActiva: CodecTypes['pg/bool@1']['output'];
-      readonly presentacionDefault: CodecTypes['pg/bool@1']['output'];
-      readonly variedadId: CodecTypes['pg/int4@1']['output'];
-    };
     readonly Productor: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly usuarioId: CodecTypes['pg/int4@1']['output'];
@@ -595,15 +586,6 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly codigoPais: CodecTypes['pg/text@1']['input'];
       readonly nombrePais: CodecTypes['pg/text@1']['input'];
-    };
-    readonly Presentacion: {
-      readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly uamId: CodecTypes['pg/int4@1']['input'] | null;
-      readonly nombrePresentacion: CodecTypes['pg/text@1']['input'];
-      readonly kgPorUnidad: CodecTypes['pg/numeric@1']['input'] | null;
-      readonly presentacionActiva: CodecTypes['pg/bool@1']['input'];
-      readonly presentacionDefault: CodecTypes['pg/bool@1']['input'];
-      readonly variedadId: CodecTypes['pg/int4@1']['input'];
     };
     readonly Productor: {
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -818,15 +800,6 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly nombrePais: CodecTypes['pg/text@1']['output'];
     };
-    readonly presentacion: {
-      readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly kgPorUnidad: Numeric<10, 2> | null;
-      readonly nombrePresentacion: CodecTypes['pg/text@1']['output'];
-      readonly presentacionActiva: CodecTypes['pg/bool@1']['output'];
-      readonly presentacionDefault: CodecTypes['pg/bool@1']['output'];
-      readonly uamId: CodecTypes['pg/int4@1']['output'] | null;
-      readonly variedadId: CodecTypes['pg/int4@1']['output'];
-    };
     readonly productor: {
       readonly fotoPerfil: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -1039,15 +1012,6 @@ export type StorageColumnInputTypes = {
       readonly codigoPais: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly nombrePais: CodecTypes['pg/text@1']['input'];
-    };
-    readonly presentacion: {
-      readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly kgPorUnidad: CodecTypes['pg/numeric@1']['input'] | null;
-      readonly nombrePresentacion: CodecTypes['pg/text@1']['input'];
-      readonly presentacionActiva: CodecTypes['pg/bool@1']['input'];
-      readonly presentacionDefault: CodecTypes['pg/bool@1']['input'];
-      readonly uamId: CodecTypes['pg/int4@1']['input'] | null;
-      readonly variedadId: CodecTypes['pg/int4@1']['input'];
     };
     readonly productor: {
       readonly fotoPerfil: CodecTypes['pg/text@1']['input'] | null;
@@ -2047,82 +2011,6 @@ type ContractBase = Omit<
               indexes: readonly [];
               foreignKeys: readonly [];
             };
-            readonly presentacion: {
-              columns: {
-                readonly id: {
-                  readonly nativeType: 'int4';
-                  readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'function';
-                    readonly expression: 'autoincrement()';
-                  };
-                };
-                readonly uamId: {
-                  readonly nativeType: 'int4';
-                  readonly codecId: 'pg/int4@1';
-                  readonly nullable: true;
-                };
-                readonly nombrePresentacion: {
-                  readonly nativeType: 'text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                };
-                readonly kgPorUnidad: {
-                  readonly nativeType: 'numeric';
-                  readonly codecId: 'pg/numeric@1';
-                  readonly nullable: true;
-                  readonly typeParams: { readonly precision: 10; readonly scale: 2 };
-                };
-                readonly presentacionActiva: {
-                  readonly nativeType: 'bool';
-                  readonly codecId: 'pg/bool@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
-                  };
-                };
-                readonly presentacionDefault: {
-                  readonly nativeType: 'bool';
-                  readonly codecId: 'pg/bool@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
-                  };
-                };
-                readonly variedadId: {
-                  readonly nativeType: 'int4';
-                  readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
-                };
-              };
-              primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['uamId'] }];
-              indexes: readonly [
-                {
-                  readonly name: 'presentacion_variedadId_idx_33d5d76b';
-                  readonly prefix: 'presentacion_variedadId_idx';
-                  readonly columns: readonly ['variedadId'];
-                  readonly unique: false;
-                },
-              ];
-              foreignKeys: readonly [
-                {
-                  readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
-                    readonly tableName: 'presentacion';
-                    readonly columns: readonly ['variedadId'];
-                  };
-                  readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
-                    readonly tableName: 'variedad';
-                    readonly columns: readonly ['id'];
-                  };
-                },
-              ];
-            };
             readonly productor: {
               columns: {
                 readonly id: {
@@ -2860,10 +2748,6 @@ type ContractBase = Omit<
     };
     readonly especie: { readonly namespace: 'public' & NamespaceId; readonly model: 'Especie' };
     readonly variedad: { readonly namespace: 'public' & NamespaceId; readonly model: 'Variedad' };
-    readonly presentacion: {
-      readonly namespace: 'public' & NamespaceId;
-      readonly model: 'Presentacion';
-    };
     readonly envase: { readonly namespace: 'public' & NamespaceId; readonly model: 'Envase' };
     readonly kilosEmpaquetado: {
       readonly namespace: 'public' & NamespaceId;
@@ -3905,68 +3789,6 @@ type ContractBase = Omit<
               };
             };
           };
-          readonly Presentacion: {
-            readonly fields: {
-              readonly id: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly uamId: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly nombrePresentacion: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-              readonly kgPorUnidad: {
-                readonly nullable: true;
-                readonly type: {
-                  readonly kind: 'scalar';
-                  readonly codecId: 'pg/numeric@1';
-                  readonly typeParams: { readonly precision: 10; readonly scale: 2 };
-                };
-              };
-              readonly presentacionActiva: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
-              };
-              readonly presentacionDefault: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
-              };
-              readonly variedadId: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-            };
-            readonly relations: {
-              readonly variedad: {
-                readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'Variedad';
-                };
-                readonly cardinality: 'N:1';
-                readonly on: {
-                  readonly localFields: readonly ['variedadId'];
-                  readonly targetFields: readonly ['id'];
-                };
-              };
-            };
-            readonly storage: {
-              readonly table: 'presentacion';
-              readonly namespaceId: 'public';
-              readonly fields: {
-                readonly id: { readonly column: 'id' };
-                readonly uamId: { readonly column: 'uamId' };
-                readonly nombrePresentacion: { readonly column: 'nombrePresentacion' };
-                readonly kgPorUnidad: { readonly column: 'kgPorUnidad' };
-                readonly presentacionActiva: { readonly column: 'presentacionActiva' };
-                readonly presentacionDefault: { readonly column: 'presentacionDefault' };
-                readonly variedadId: { readonly column: 'variedadId' };
-              };
-            };
-          };
           readonly Productor: {
             readonly fields: {
               readonly id: {
@@ -4561,17 +4383,6 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['especieId'];
                   readonly targetFields: readonly ['id'];
-                };
-              };
-              readonly presentaciones: {
-                readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'Presentacion';
-                };
-                readonly cardinality: '1:N';
-                readonly on: {
-                  readonly localFields: readonly ['id'];
-                  readonly targetFields: readonly ['variedadId'];
                 };
               };
               readonly publicaciones: {

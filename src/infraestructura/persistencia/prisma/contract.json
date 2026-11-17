@@ -92,10 +92,6 @@
       "model": "Pais",
       "namespace": "public"
     },
-    "presentacion": {
-      "model": "Presentacion",
-      "namespace": "public"
-    },
     "productor": {
       "model": "Productor",
       "namespace": "public"
@@ -1646,107 +1642,6 @@
               "table": "pais"
             }
           },
-          "Presentacion": {
-            "fields": {
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "kgPorUnidad": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/numeric@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 10,
-                    "scale": 2
-                  }
-                }
-              },
-              "nombrePresentacion": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "presentacionActiva": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/bool@1",
-                  "kind": "scalar"
-                }
-              },
-              "presentacionDefault": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/bool@1",
-                  "kind": "scalar"
-                }
-              },
-              "uamId": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "variedadId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {
-              "variedad": {
-                "cardinality": "N:1",
-                "on": {
-                  "localFields": [
-                    "variedadId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "Variedad",
-                  "namespace": "public"
-                }
-              }
-            },
-            "storage": {
-              "fields": {
-                "id": {
-                  "column": "id"
-                },
-                "kgPorUnidad": {
-                  "column": "kgPorUnidad"
-                },
-                "nombrePresentacion": {
-                  "column": "nombrePresentacion"
-                },
-                "presentacionActiva": {
-                  "column": "presentacionActiva"
-                },
-                "presentacionDefault": {
-                  "column": "presentacionDefault"
-                },
-                "uamId": {
-                  "column": "uamId"
-                },
-                "variedadId": {
-                  "column": "variedadId"
-                }
-              },
-              "namespaceId": "public",
-              "table": "presentacion"
-            }
-          },
           "Productor": {
             "fields": {
               "fotoPerfil": {
@@ -2695,21 +2590,6 @@
                 },
                 "to": {
                   "model": "Especie",
-                  "namespace": "public"
-                }
-              },
-              "presentaciones": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "variedadId"
-                  ]
-                },
-                "to": {
-                  "model": "Presentacion",
                   "namespace": "public"
                 }
               },
@@ -3922,101 +3802,6 @@
                 }
               ]
             },
-            "presentacion": {
-              "columns": {
-                "id": {
-                  "codecId": "pg/int4@1",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "kgPorUnidad": {
-                  "codecId": "pg/numeric@1",
-                  "nativeType": "numeric",
-                  "nullable": true,
-                  "typeParams": {
-                    "precision": 10,
-                    "scale": 2
-                  }
-                },
-                "nombrePresentacion": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
-                "presentacionActiva": {
-                  "codecId": "pg/bool@1",
-                  "default": {
-                    "kind": "literal",
-                    "value": true
-                  },
-                  "nativeType": "bool",
-                  "nullable": false
-                },
-                "presentacionDefault": {
-                  "codecId": "pg/bool@1",
-                  "default": {
-                    "kind": "literal",
-                    "value": false
-                  },
-                  "nativeType": "bool",
-                  "nullable": false
-                },
-                "uamId": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": true
-                },
-                "variedadId": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": false
-                }
-              },
-              "foreignKeys": [
-                {
-                  "source": {
-                    "columns": [
-                      "variedadId"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "presentacion"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "variedad"
-                  }
-                }
-              ],
-              "indexes": [
-                {
-                  "columns": [
-                    "variedadId"
-                  ],
-                  "name": "presentacion_variedadId_idx_33d5d76b",
-                  "prefix": "presentacion_variedadId_idx",
-                  "unique": false
-                }
-              ],
-              "primaryKey": {
-                "columns": [
-                  "id"
-                ]
-              },
-              "uniques": [
-                {
-                  "columns": [
-                    "uamId"
-                  ]
-                }
-              ]
-            },
             "productor": {
               "columns": {
                 "fotoPerfil": {
@@ -4924,7 +4709,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5"
+    "storageHash": "edeac76a0d9be78234b0d4f4371956c15f0f63231ea957ff73b635da6a2b766d"
   },
   "execution": {
     "executionHash": "b87fedc20ec691f085005e43b64fcd7488c500eb1615e5c8719799823bee506a",

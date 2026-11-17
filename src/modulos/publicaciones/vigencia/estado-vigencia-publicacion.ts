@@ -22,6 +22,7 @@ export function obtenerEstadoVigenciaPublicacion(
     if (!vencimiento) return null;
     if (Temporal.Instant.compare(vencimiento, ahora) < 0) return "vencida";
     if (!configuracion.avisosHabilitados) return null;
-    const limite = ahora.add({ hours: configuracion.diasAnticipacion * 24 });
-    return Temporal.Instant.compare(vencimiento, limite) <= 0 ? "por-vencer" : null;
+    const limite = ahora.toZonedDateTimeISO("America/Montevideo").toPlainDate().add({ days: configuracion.diasAnticipacion });
+    const diaVencimiento = vencimiento.toZonedDateTimeISO("America/Montevideo").toPlainDate();
+    return Temporal.PlainDate.compare(diaVencimiento, limite) <= 0 ? "por-vencer" : null;
 }

@@ -1,5 +1,5 @@
 import { db } from "../../../../infraestructura/persistencia/prisma/db";
-import { convertirInstantAFechaVigencia } from "../../../publicaciones/vigencia/vigencia-publicacion";
+import { convertirInstantAFechaVigencia, esPublicacionVencida } from "../../../publicaciones/vigencia/vigencia-publicacion";
 // Datos de una publicación tal como los ve el administrador
 export type PublicacionPerfilAdmin = {
     id: number;
@@ -139,7 +139,7 @@ export async function obtenerPerfilAdminOperador(id: number): Promise<PerfilAdmi
                 comentario: publicacion.comentario,
                 fecha: publicacion.fecha.toString(),
                 fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
-                disponible: publicacion.publicacionDisponible,
+                disponible: publicacion.publicacionDisponible && !esPublicacionVencida(publicacion.fechaVigencia),
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
                 envase: publicacion.envase?.nombreEnvase ?? "",

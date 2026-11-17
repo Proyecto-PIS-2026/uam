@@ -13,6 +13,8 @@ vi.mock("../../modulos/usuarios/operadores/configuracion-avisos-locales", () => 
     obtenerConfiguracionAvisosLocales: locales.configurar,
 }));
 vi.mock("../../modulos/usuarios/operadores/procesar-vencimientos-locales", () => ({ procesarVencimientosLocales: locales.procesar }));
+const vigencia = vi.hoisted(() => ({ procesar: vi.fn() }));
+vi.mock("../../modulos/publicaciones/vigencia/procesar-vencimientos", () => ({ procesarVencimientosPublicaciones: vigencia.procesar }));
 
 const contexto = {
     tx: {} as ContextoTareaDiaria["tx"],
@@ -26,6 +28,7 @@ beforeEach(() => {
     mocksConfiguracion.obtener.mockResolvedValue({ habilitado: false });
     locales.configurar.mockResolvedValue({ habilitado: true, diasAnticipacionAviso: 3 });
     locales.procesar.mockResolvedValue(2);
+    vigencia.procesar.mockResolvedValue(3);
 });
 
 afterEach(() => {
@@ -33,6 +36,18 @@ afterEach(() => {
 });
 
 describe("registro de tareas con aging opcional", () => {
+    it.each(["OPERADOR", "PRODUCTOR"] as const)("procesa la vigencia de %s sin depender de sesiones ni del aging habilitado", async (tipo) => {
+        const nombre = tipo === "OPERADOR" ? "publicaciones.procesar-vencimientos" : "publicaciones.productores.procesar-vencimientos";
+        const tarea = obtenerTareasDiarias().find((tarea) => tarea.nombre === nombre)!;
+
+        expect(tarea).toBeDefined();
+        expect(tarea.habilitada).toBeUndefined();
+        await expect(tarea.ejecutar(contexto)).resolves.toBe(3);
+        expect(vigencia.procesar).toHaveBeenCalledExactlyOnceWith(contexto, tipo);
+        expect(mocksConfiguracion.obtener).not.toHaveBeenCalled();
+        expect(locales.configurar).not.toHaveBeenCalled();
+    });
+
     it("revisa los locales aunque el aging de fotos esté deshabilitado", async () => {
         const tareas = obtenerTareasDiarias();
         expect(new Set(tareas.map((tarea) => tarea.nombre)).size).toBe(tareas.length);

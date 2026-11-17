@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Temporal } from "@js-temporal/polyfill";
 import { GET } from "@/app/api/publicaciones/imagenes/[publicacionId]/[archivo]/route";
 import { GET as obtenerOtraImagen } from "@/app/api/imagenes/[categoria]/[id]/[archivo]/route";
@@ -42,6 +42,11 @@ beforeEach(() => {
     mocks.leer.mockResolvedValue(Buffer.from("imagen"));
 });
 
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+});
+
 describe("acceso a imágenes", () => {
     it("sirve la foto pública con protección frente a cachés y tipos incorrectos", async () => {
         const respuesta = await pedir();
@@ -51,6 +56,46 @@ describe("acceso a imágenes", () => {
         expect(respuesta.headers.get("Vary")).toBe("Cookie");
         expect(respuesta.headers.get("X-Content-Type-Options")).toBe("nosniff");
         expect(await respuesta.text()).toBe("imagen");
+    });
+
+    it.each([
+        { tipoPublicacion: "OPERADOR", sesion: null, ahora: "2026-11-18T02:59:58Z", estado: 200 },
+        { tipoPublicacion: "OPERADOR", sesion: null, ahora: "2026-11-18T03:00:00Z", estado: 404 },
+        { tipoPublicacion: "PRODUCTOR", sesion: { rol: "OPERADOR", usuarioId: 88 }, ahora: "2026-11-18T02:59:58Z", estado: 200 },
+        { tipoPublicacion: "PRODUCTOR", sesion: { rol: "OPERADOR", usuarioId: 88 }, ahora: "2026-11-18T03:00:00Z", estado: 404 },
+    ])("aplica la vigencia de $tipoPublicacion a terceros a las $ahora", async ({ tipoPublicacion, sesion, ahora, estado }) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(ahora));
+        mocks.publicacion.mockResolvedValue({
+            foto: URL, tipoPublicacion, publicacionActiva: true, publicacionDisponible: true,
+            fechaVigencia: Temporal.Instant.from("2026-11-18T02:59:59Z"),
+        });
+        mocks.sesion.mockResolvedValue(sesion);
+
+        expect((await pedir()).status).toBe(estado);
+        if (estado === 404) expect(mocks.leer).not.toHaveBeenCalled();
+        else expect(mocks.leer).toHaveBeenCalledExactlyOnceWith("publicaciones", 42, ARCHIVO);
+    });
+
+    it.each([
+        { tipoPublicacion: "OPERADOR", rol: "OPERADOR" },
+        { tipoPublicacion: "PRODUCTOR", rol: "PRODUCTOR" },
+        { tipoPublicacion: "OPERADOR", rol: "ADMINISTRADOR" },
+        { tipoPublicacion: "PRODUCTOR", rol: "ADMINISTRADOR" },
+    ])("conserva el acceso de $rol a la foto vencida de $tipoPublicacion que puede administrar", async ({ tipoPublicacion, rol }) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-18T03:00:00Z"));
+        mocks.publicacion.mockResolvedValue({
+            foto: URL, tipoPublicacion, publicacionActiva: true, publicacionDisponible: true,
+            fechaVigencia: Temporal.Instant.from("2026-11-18T02:59:59Z"),
+        });
+        mocks.sesion.mockResolvedValue({ rol, usuarioId: 20 });
+        mocks.operador.mockResolvedValue({ id: 5 });
+        mocks.productor.mockResolvedValue({ id: 9 });
+        mocks.relacionProductor.mockResolvedValue({ id: 1 });
+
+        expect((await pedir()).status).toBe(200);
+        expect(mocks.leer).toHaveBeenCalledExactlyOnceWith("publicaciones", 42, ARCHIVO);
     });
 
     it.each([null, { rol: "ADMINISTRADOR", usuarioId: 1 }])("entrega una foto antigua hasta que la limpieza la elimine: %o", async (sesion) => {

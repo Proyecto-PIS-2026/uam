@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { obtenerPerfilAdminProductor} from "./consultas-perfil-productor-admin";
 
 // Sirve para construir una base de datos falsa, metodos falsos y simular las consultas
@@ -68,6 +68,11 @@ const relacionBase = {
 };
 
 describe("obtenerPerfilAdminProductor", () => {
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -193,6 +198,26 @@ describe("obtenerPerfilAdminProductor", () => {
             { id: 202, disponible: false },
         ]);
         expect(resultado?.departamentos).toEqual(["Salto"]);
+    });
+
+    it.each([
+        { ahora: "2026-11-18T02:59:58Z", disponible: true },
+        { ahora: "2026-11-18T03:00:00Z", disponible: false },
+    ])("calcula la disponibilidad a las $ahora aunque el proceso diario aún no haya actualizado la base", async ({ ahora, disponible }) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(ahora));
+        mockDb.productor.first.mockResolvedValue(productorBase);
+        mockDb.publicaciones.all.mockResolvedValue([{
+            ...relacionBase,
+            publicacion: { ...publicacionBase, fechaVigencia: Temporal.Instant.from("2026-11-18T02:59:59Z") },
+        }]);
+
+        const resultado = await obtenerPerfilAdminProductor(2);
+
+        expect(resultado?.publicaciones).toHaveLength(1);
+        expect(resultado?.publicaciones[0]).toMatchObject({
+            id: 201, precio: "90.00", fechaVigencia: "2026-11-17", disponible,
+        });
     });
 
     it("incluye departamentos de publicaciones no disponibles para el admin y excluye bajas", async () => {

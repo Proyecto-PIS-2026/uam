@@ -3,7 +3,7 @@ import { db } from "@/infraestructura/persistencia/prisma/db";
 import { ejecutarConsultaExclusiva } from "@/infraestructura/persistencia/consulta-exclusiva";
 import type { ConsultaPreciosReferencia } from "./consultas-precios-referencia";
 import { consultarUltimoRelevamiento } from "./cliente-webservice";
-import { leerEstadoCacheDiaria, resolverCacheDiaria } from "./politica-cache-diaria";
+import { leerEstadoCacheDiaria, puedeConsultarWebservice, resolverCacheDiaria } from "./politica-cache-diaria";
 
 const PREFIJO_CACHE = "precios-referencia:latest:";
 type RelevamientoGuardado = { consulta: ConsultaPreciosReferencia; ultimoExito: string };
@@ -88,8 +88,8 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
 
     const registroInicial = await db.orm.public.CachePreciosReferencia.where({ claveCache }).first();
     const estadoInicial = leerEstadoCacheDiaria(registroInicial?.estadoCache ?? null);
-    if (estadoInicial?.ultimoIntento === fechaActualMontevideo()) {
-        if (estadoInicial.consulta) return estadoInicial.consulta;
+    if (!puedeConsultarWebservice(estadoInicial, fechaActualMontevideo())) {
+        if (estadoInicial?.consulta) return estadoInicial.consulta;
         const respaldo = ultimoRelevamientoGuardado(await db.orm.public.CachePreciosReferencia
             .where((cache) => cache.claveCache.like(`${PREFIJO_CACHE}%`)).all());
         if (!respaldo) throw new Error("Todavía no hay un relevamiento de precios disponible en la caché.");
@@ -108,6 +108,8 @@ export async function obtenerConsultaDiariaWebservice(): Promise<ConsultaPrecios
             estadoConRespaldo = {
                 version: 1,
                 ultimoIntento: estado?.ultimoIntento ?? "",
+                intentosDelDia: estado?.intentosDelDia ?? 0,
+                ultimoIntentoExitoso: estado?.ultimoIntentoExitoso ?? false,
                 ultimoExito: ultimoGuardado.ultimoExito,
                 consulta: ultimoGuardado.consulta,
             };

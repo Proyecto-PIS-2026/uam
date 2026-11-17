@@ -6,6 +6,7 @@ import type { TareaDiaria } from "./tipos";
 import { obtenerConfiguracionAvisosLocales } from "../../modulos/usuarios/operadores/configuracion-avisos-locales";
 import { procesarVencimientosLocales } from "../../modulos/usuarios/operadores/procesar-vencimientos-locales";
 import { db } from "../persistencia/prisma/db";
+import { procesarVencimientosPublicaciones } from "../../modulos/publicaciones/vigencia/procesar-vencimientos";
 
 function crearTareaAgingFotos(tipo: TipoPropietarioFoto): TareaDiaria {
     return {
@@ -35,5 +36,11 @@ export function obtenerTareasDiarias(): readonly TareaDiaria[] {
             if (!configuracion.habilitado) return "deshabilitada";
             return procesarVencimientosLocales(contexto, configuracion);
         },
+    }, {
+        nombre: "publicaciones.procesar-vencimientos",
+        ejecutar: (contexto) => procesarVencimientosPublicaciones(contexto, "OPERADOR"),
+    }, {
+        nombre: "publicaciones.productores.procesar-vencimientos",
+        ejecutar: (contexto) => procesarVencimientosPublicaciones(contexto, "PRODUCTOR"),
     }];
 }

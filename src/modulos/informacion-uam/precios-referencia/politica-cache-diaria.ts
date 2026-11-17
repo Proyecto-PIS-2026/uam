@@ -4,11 +4,15 @@ import { validarConsultaPreciosReferencia } from "./validar-consulta-webservice"
 export type EstadoCacheDiaria = {
     version: 1;
     ultimoIntento: string;
+    intentosDelDia: number;
+    ultimoIntentoExitoso: boolean;
     ultimoExito: string | null;
     consulta: ConsultaPreciosReferencia | null;
 };
 
 export type ResultadoCacheDiaria = { consulta: ConsultaPreciosReferencia | null; nuevoEstado: EstadoCacheDiaria | null };
+
+const MAX_INTENTOS_DIARIOS = 5;
 
 export function leerEstadoCacheDiaria(serializado: string | null): EstadoCacheDiaria | null {
     if (!serializado) return null;
@@ -25,10 +29,21 @@ export function leerEstadoCacheDiaria(serializado: string | null): EstadoCacheDi
 
         if ((estado.ultimoExito === null) !== (consulta === null)) return null;
 
-        return { version: 1, ultimoIntento: estado.ultimoIntento, ultimoExito: estado.ultimoExito, consulta };
+        const intentosDelDia = estado.intentosDelDia === undefined ? (estado.ultimoIntento ? 1 : 0) : estado.intentosDelDia;
+        const ultimoIntentoExitoso = estado.ultimoIntentoExitoso === undefined
+            ? estado.ultimoIntento !== "" && estado.ultimoExito === estado.ultimoIntento : estado.ultimoIntentoExitoso;
+        if (typeof intentosDelDia !== "number" || !Number.isSafeInteger(intentosDelDia) || intentosDelDia < 0) return null;
+        if (typeof ultimoIntentoExitoso !== "boolean" || ultimoIntentoExitoso && (!consulta || intentosDelDia === 0)) return null;
+
+        return { version: 1, ultimoIntento: estado.ultimoIntento, intentosDelDia, ultimoIntentoExitoso, ultimoExito: estado.ultimoExito, consulta };
     } catch {
         return null;
     }
+}
+
+export function puedeConsultarWebservice(estado: EstadoCacheDiaria | null, hoy: string): boolean {
+    return !estado || estado.ultimoIntento !== hoy
+        || !estado.ultimoIntentoExitoso && estado.intentosDelDia < MAX_INTENTOS_DIARIOS;
 }
 
 export async function resolverCacheDiaria(
@@ -36,17 +51,18 @@ export async function resolverCacheDiaria(
     hoy: string,
     consultar: () => Promise<ConsultaPreciosReferencia>,
 ): Promise<ResultadoCacheDiaria> {
-    if (estado?.ultimoIntento === hoy) {
-        return { consulta: estado.consulta, nuevoEstado: null };
+    if (!puedeConsultarWebservice(estado, hoy)) {
+        return { consulta: estado?.consulta ?? null, nuevoEstado: null };
     }
 
+    const intentosDelDia = (estado?.ultimoIntento === hoy ? estado.intentosDelDia : 0) + 1;
     try {
         const consulta = await consultar();
-        return { consulta, nuevoEstado: { version: 1, ultimoIntento: hoy, ultimoExito: hoy, consulta } };
+        return { consulta, nuevoEstado: { version: 1, ultimoIntento: hoy, intentosDelDia, ultimoIntentoExitoso: true, ultimoExito: hoy, consulta } };
     } catch {
         return {
             consulta: estado?.consulta ?? null,
-            nuevoEstado: { version: 1, ultimoIntento: hoy, ultimoExito: estado?.ultimoExito ?? null, consulta: estado?.consulta ?? null },
+            nuevoEstado: { version: 1, ultimoIntento: hoy, intentosDelDia, ultimoIntentoExitoso: false, ultimoExito: estado?.ultimoExito ?? null, consulta: estado?.consulta ?? null },
         };
     }
 }

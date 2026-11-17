@@ -1,6 +1,6 @@
 import { db } from "../../../../infraestructura/persistencia/prisma/db";
 import { normalizarDepartamento, obtenerDepartamentos } from "@/compartido/departamentos-uruguay";
-import { convertirInstantAFechaVigencia } from "@/modulos/publicaciones/vigencia/vigencia-publicacion";
+import { convertirInstantAFechaVigencia, esPublicacionVencida } from "@/modulos/publicaciones/vigencia/vigencia-publicacion";
 
 // Una ubicación donde está el producto, con su enlace a Google Maps
 export type UbicacionPublicacionProductor = {
@@ -114,7 +114,7 @@ export async function obtenerPerfilAdminProductor(id: number): Promise<PerfilAdm
                 comentario: publicacion.comentario,
                 fecha: publicacion.fecha.toString(),
                 fechaVigencia: publicacion.fechaVigencia? convertirInstantAFechaVigencia(publicacion.fechaVigencia): null,
-                disponible: publicacion.publicacionDisponible,
+                disponible: publicacion.publicacionDisponible && !esPublicacionVencida(publicacion.fechaVigencia),
                 especie: publicacion.especie.nombreEspecie,
                 variedad: publicacion.variedad?.nombreVariedad ?? "",
                 envase: publicacion.envase?.nombreEnvase ?? "",

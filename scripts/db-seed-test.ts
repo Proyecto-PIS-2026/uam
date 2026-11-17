@@ -8,7 +8,7 @@ const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 
 const resultado = spawnSync(
   npmCommand,
-  ['run', 'db:seed'],
+  ['run', 'db:seed:demo'],
   {
     stdio: 'inherit',
     shell: process.platform === 'win32',

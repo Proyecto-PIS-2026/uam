@@ -23,7 +23,7 @@ try {
   const nave = await db.orm.public.Nave.select("id").first();
   if (!nave) throw new Error("La base local no tiene naves. Ejecutá npm run db:setup:test primero.");
 
-  for (let numero = 1; numero <= 30; numero++) {
+  for (let numero = 1; numero <= 15; numero++) {
     const sufijo = String(numero).padStart(2, "0");
     const username = `carga_e03_${sufijo}`;
     const nombreFantasia = `Prueba Carga E03 ${sufijo}`;
@@ -64,7 +64,7 @@ try {
     }
   }
 
-  for (let numero = 1; numero <= 10; numero++) {
+  for (let numero = 1; numero <= 5; numero++) {
     const sufijo = String(numero).padStart(2, "0");
     const username = `carga_e03_productor_${sufijo}`;
     const nombreFantasia = `Prueba Concurrencia E03 Productor ${sufijo}`;
@@ -90,7 +90,7 @@ try {
     }
   }
 
-  console.log("Precargadas 30 cuentas de operadores y 10 de productores BP-E03 en localhost/uam_test.");
+  console.log("Precargadas 15 cuentas de operadores y 5 de productores BP-E03 en localhost/uam_test.");
 } finally {
   await db.close();
 }

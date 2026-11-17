@@ -2,275 +2,179 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { parse } from "dotenv";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { obtenerDatabaseUrlTest } from "@/infraestructura/persistencia/configuracion-db-test";
-import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
+import type { ContextoTareaDiaria, TransaccionTarea } from "@/infraestructura/tareas-programadas/tipos";
 
 type BaseDatos = typeof import("@/infraestructura/persistencia/prisma/db").db;
-type Servicio = typeof import("@/modulos/notificaciones/notificaciones");
+type Procesar = typeof import("./procesar-vencimientos").procesarVencimientosPublicaciones;
 type Rol = "OPERADOR" | "PRODUCTOR";
-type Propietario = { id: number; sesion: DatosSesion };
-
-const AHORA = Temporal.Instant.from("2030-01-15T15:00:00Z");
-const CONFIGURACIONES = [
-    ["aviso_vencimiento_publicaciones_operador_habilitado", "true"],
-    ["anticipacion_aviso_publicaciones_operador", "7"],
-    ["aviso_vencimiento_publicaciones_productor_habilitado", "true"],
-    ["anticipacion_aviso_publicaciones_productor", "7"],
-] as const;
-const configuracionesPrevias = new Map<string, string | null>();
-const usuariosCreados: number[] = [];
-const publicacionesCreadas: number[] = [];
-const propietarios = new Map<Rol, Propietario>();
-let especieId: number | undefined;
+type Cliente = Pick<BaseDatos, "orm">;
 let db: BaseDatos;
-let servicio: Servicio;
-let procesar: typeof import("./procesar-vencimientos").procesarVencimientosUsuario;
+let procesar: Procesar;
 
-function propietario(rol: Rol): Propietario {
-    const encontrado = propietarios.get(rol);
-    if (!encontrado) throw new Error("Falta el propietario creado para esta prueba.");
-    return encontrado;
+function finDelDia(fecha: string) {
+    return Temporal.PlainDate.from(fecha).toPlainDateTime({ hour: 23, minute: 59, second: 59 })
+        .toZonedDateTime("America/Montevideo").toInstant();
 }
-
-async function crearPublicacion(rol: Rol, fechaVigencia: Temporal.Instant) {
-    if (!especieId) throw new Error("Falta la especie creada para esta prueba.");
-    const publicacion = await db.orm.public.Publicacion.create({
-        especieId,
-        tipoPublicacion: rol,
-        fechaVigencia,
-        publicacionDisponible: true,
+function contexto(tx: TransaccionTarea, fecha = "2030-01-15"): ContextoTareaDiaria {
+    return { tx, fecha, limite: Temporal.PlainDate.from(fecha).toZonedDateTime("America/Montevideo").toInstant().toString() };
+}
+async function configurar(cliente: Cliente, rol: Rol, dias = 7, habilitados = true) {
+    for (const [nombreConfiguracion, valorConfiguracion] of [
+        [`aviso_vencimiento_publicaciones_${rol.toLowerCase()}_habilitado`, String(habilitados)],
+        [`anticipacion_aviso_publicaciones_${rol.toLowerCase()}`, String(dias)],
+        [`vigencia_publicaciones_${rol.toLowerCase()}_habilitada`, "false"],
+    ]) {
+        const existente = await cliente.orm.public.Configuracion.where({ nombreConfiguracion }).first();
+        if (existente) await cliente.orm.public.Configuracion.where({ id: existente.id }).update({ valorConfiguracion });
+        else await cliente.orm.public.Configuracion.create({ nombreConfiguracion, valorConfiguracion });
+    }
+}
+async function crearPropietario(cliente: Cliente, rol: Rol) {
+    const usuario = await cliente.orm.public.Usuario.create({
+        username: `vigencia-diaria-${randomUUID()}`, passwordHash: "hash-no-utilizable-de-integracion", rol,
     });
-    publicacionesCreadas.push(publicacion.id);
-    const { id } = propietario(rol);
-    if (rol === "OPERADOR") {
-        await db.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId: id });
+    const datos = { usuarioId: usuario.id, nombreFantasia: `Vigencia diaria ${randomUUID()}`, whatsApp: "+59899123456" };
+    const propietario = rol === "OPERADOR" ? await cliente.orm.public.Operador.create(datos) : await cliente.orm.public.Productor.create(datos);
+    const especie = await cliente.orm.public.Especie.create({ nombreEspecie: `Tomate ${randomUUID()}` });
+    return { id: propietario.id, usuarioId: usuario.id, especieId: especie.id, rol };
+}
+async function crearPublicacion(cliente: Cliente, propietario: Awaited<ReturnType<typeof crearPropietario>>, fecha: string | null) {
+    const publicacion = await cliente.orm.public.Publicacion.create({
+        especieId: propietario.especieId, tipoPublicacion: propietario.rol,
+        fechaVigencia: fecha ? finDelDia(fecha) : null, publicacionDisponible: true,
+    });
+    if (propietario.rol === "OPERADOR") {
+        await cliente.orm.public.PublicacionOperador.create({ publicacionId: publicacion.id, operadorId: propietario.id });
     } else {
-        await db.orm.public.PublicacionProductor.create({ publicacionId: publicacion.id, productorId: id });
+        await cliente.orm.public.PublicacionProductor.create({ publicacionId: publicacion.id, productorId: propietario.id });
     }
     return publicacion;
 }
+async function conRollback(prueba: (tx: TransaccionTarea) => Promise<void>) {
+    const rollback = new Error("Revertir únicamente la prueba de vigencia diaria");
+    await expect(db.transaction(async (tx) => { await prueba(tx); throw rollback; })).rejects.toBe(rollback);
+}
 
-describe.sequential("publicaciones conservan sus avisos enviados al borrar notificaciones", { timeout: 15000 }, () => {
+describe.sequential("vigencia diaria de publicaciones sin sesiones conectadas", { timeout: 30000 }, () => {
     beforeAll(async () => {
         const urlTest = process.env.DATABASE_URL_TEST;
-        if (!urlTest || process.env.DATABASE_URL !== urlTest) {
-            throw new Error("Estas pruebas requieren DATABASE_URL_TEST como base activa.");
-        }
+        if (!urlTest || process.env.DATABASE_URL !== urlTest) throw new Error("Estas pruebas requieren DATABASE_URL_TEST como base activa.");
         for (const archivo of [".env", ".env.local"]) {
-            if (!existsSync(archivo)) continue;
-            obtenerDatabaseUrlTest({ DATABASE_URL: parse(readFileSync(archivo)).DATABASE_URL, DATABASE_URL_TEST: urlTest });
+            if (existsSync(archivo)) obtenerDatabaseUrlTest({ DATABASE_URL: parse(readFileSync(archivo)).DATABASE_URL, DATABASE_URL_TEST: urlTest });
         }
         ({ db } = await import("@/infraestructura/persistencia/prisma/db"));
-        servicio = await import("@/modulos/notificaciones/notificaciones");
-        ({ procesarVencimientosUsuario: procesar } = await import("./procesar-vencimientos"));
-
-        for (const [nombreConfiguracion, valorConfiguracion] of CONFIGURACIONES) {
-            const anterior = await db.orm.public.Configuracion.where({ nombreConfiguracion }).first();
-            configuracionesPrevias.set(nombreConfiguracion, anterior?.valorConfiguracion ?? null);
-            if (anterior) {
-                await db.orm.public.Configuracion.where({ id: anterior.id }).update({ valorConfiguracion });
-            } else {
-                await db.orm.public.Configuracion.create({ nombreConfiguracion, valorConfiguracion });
-            }
-        }
-        for (const rol of ["OPERADOR", "PRODUCTOR"] as const) {
-            const usuario = await db.orm.public.Usuario.create({
-                username: `avisos-vigencia-${randomUUID()}`,
-                passwordHash: "hash-no-utilizable-de-integracion",
-                rol,
-            });
-            usuariosCreados.push(usuario.id);
-            const datos = {
-                usuarioId: usuario.id,
-                nombreFantasia: `Avisos de publicaciones ${randomUUID()}`,
-                whatsApp: "+59899123456",
-            };
-            const perfil = rol === "OPERADOR"
-                ? await db.orm.public.Operador.create(datos)
-                : await db.orm.public.Productor.create(datos);
-            propietarios.set(rol, {
-                id: perfil.id,
-                sesion: { usuarioId: usuario.id, rol, expiraEn: 2147483647 },
-            });
-        }
+        ({ procesarVencimientosPublicaciones: procesar } = await import("./procesar-vencimientos"));
     });
 
-    beforeEach(async () => {
-        vi.spyOn(Temporal.Now, "instant").mockReturnValue(AHORA);
-        especieId = (await db.orm.public.Especie.create({ nombreEspecie: `Especie avisos ${randomUUID()}` })).id;
-        for (const [nombreConfiguracion, valorConfiguracion] of CONFIGURACIONES) {
-            await db.orm.public.Configuracion.where({ nombreConfiguracion }).update({ valorConfiguracion });
-        }
-    });
-
-    afterEach(async () => {
-        vi.restoreAllMocks();
-        if (!db) return;
-        for (const id of publicacionesCreadas.splice(0)) {
-            await db.orm.public.Publicacion.where({ id }).deleteAll();
-        }
-        if (especieId) {
-            await db.orm.public.Especie.where({ id: especieId }).deleteAll();
-            especieId = undefined;
-        }
-        for (const usuarioId of usuariosCreados) {
-            await db.orm.public.Notificacion.where({ usuarioId }).deleteAll();
-        }
-    });
-
-    afterAll(async () => {
-        if (!db) return;
-        for (const id of usuariosCreados) await db.orm.public.Usuario.where({ id }).deleteAll();
-        for (const [nombreConfiguracion, valorConfiguracion] of configuracionesPrevias) {
-            if (valorConfiguracion === null) {
-                await db.orm.public.Configuracion.where({ nombreConfiguracion }).deleteAll();
-            } else {
-                await db.orm.public.Configuracion.where({ nombreConfiguracion }).update({ valorConfiguracion });
-            }
-        }
-    });
-
-    it("aplica anticipaciones diferentes a operadores y productores sin mezclar sus avisos", async () => {
-        await db.orm.public.Configuracion.where({ nombreConfiguracion: "anticipacion_aviso_publicaciones_operador" }).update({ valorConfiguracion: "1" });
-        const fecha = AHORA.add({ hours: 48 });
-        await crearPublicacion("OPERADOR", fecha);
-        await crearPublicacion("PRODUCTOR", fecha);
-
-        const operador = await servicio.consultarNotificaciones(propietario("OPERADOR").sesion);
-        const productor = await servicio.consultarNotificaciones(propietario("PRODUCTOR").sesion);
-
-        expect(operador.notificaciones).toEqual([]);
-        expect(productor.notificaciones).toHaveLength(1);
-        expect(productor.notificaciones[0].texto).toContain("está próxima a vencer");
-    });
-
-    it("apagar avisos del operador no apaga los del productor ni impide vencer la publicación", async () => {
-        await db.orm.public.Configuracion.where({ nombreConfiguracion: "aviso_vencimiento_publicaciones_operador_habilitado" }).update({ valorConfiguracion: "false" });
-        await crearPublicacion("OPERADOR", AHORA.add({ hours: 48 }));
-        await crearPublicacion("PRODUCTOR", AHORA.add({ hours: 48 }));
-        const vencida = await crearPublicacion("OPERADOR", AHORA.subtract({ hours: 48 }));
-
-        const operador = await servicio.consultarNotificaciones(propietario("OPERADOR").sesion);
-        const productor = await servicio.consultarNotificaciones(propietario("PRODUCTOR").sesion);
-
-        expect(operador.notificaciones).toHaveLength(1);
-        expect(operador.notificaciones[0].texto).toContain("ha vencido");
-        expect(productor.notificaciones).toHaveLength(1);
-        expect(productor.notificaciones[0].texto).toContain("está próxima a vencer");
-        expect((await db.orm.public.Publicacion.where({ id: vencida.id }).first())?.publicacionDisponible).toBe(false);
-    });
-
+    // El procesador puede encontrar publicaciones preexistentes; se revierte toda
+    // la transacción de cada prueba, incluidos los avisos de otros propietarios.
     describe.each(["OPERADOR", "PRODUCTOR"] as const)("%s", (rol) => {
-        it.each([
-            { tipo: "proximo", horas: 48, borrado: "individual" },
-            { tipo: "proximo", horas: 48, borrado: "todas" },
-            { tipo: "vencido", horas: -48, borrado: "individual" },
-            { tipo: "vencido", horas: -48, borrado: "todas" },
-        ])("no recrea el aviso $tipo tras el borrado $borrado al listar o contar", async ({ tipo, horas, borrado }) => {
-            const publicacion = await crearPublicacion(rol, AHORA.add({ hours: horas }));
-            const { sesion } = propietario(rol);
-            const inicial = await servicio.consultarNotificaciones(sesion);
-            expect(inicial.notificaciones).toHaveLength(1);
-            expect(await servicio.contarNotificacionesNoLeidas(sesion)).toBe(1);
+        it("avisa a las 00 de Uruguay con siete días calendario y conserva el último día de vigencia", async () => {
+            await conRollback(async (tx) => {
+                await configurar(tx, rol);
+                const propietario = await crearPropietario(tx, rol);
+                const fechas = ["2030-01-14", "2030-01-15", "2030-01-22", "2030-01-23", null];
+                const publicaciones = [];
+                for (const fecha of fechas) publicaciones.push(await crearPublicacion(tx, propietario, fecha));
 
-            const noLeidas = borrado === "individual"
-                ? await servicio.eliminarNotificacion(sesion, inicial.notificaciones[0].id)
-                : await servicio.eliminarTodasNotificaciones(sesion);
-            expect(noLeidas).toBe(0);
-            const [listado, contador] = await Promise.all([
-                servicio.consultarNotificaciones(sesion),
-                servicio.contarNotificacionesNoLeidas(sesion),
-            ]);
-            expect(listado).toEqual({ notificaciones: [], noLeidas: 0 });
-            expect(contador).toBe(0);
-            const actual = await db.orm.public.Publicacion.where({ id: publicacion.id }).first();
-            const enviada = tipo === "proximo" ? actual?.avisoProximoVencimientoEn : actual?.avisoVencimientoEn;
-            expect(enviada?.equals(AHORA)).toBe(true);
-            expect(tipo === "proximo" ? actual?.avisoVencimientoEn : actual?.avisoProximoVencimientoEn).toBeNull();
-            if (tipo === "proximo") {
-                expect(actual?.fecha.equals(publicacion.fecha)).toBe(true);
-                expect(actual?.version).toBe(publicacion.version);
-            }
-        });
+                await procesar(contexto(tx), rol);
 
-        it("envía un aviso nuevo cuando la renovación reinició los campos de aviso", async () => {
-            const publicacion = await crearPublicacion(rol, AHORA.subtract({ hours: 48 }));
-            const { sesion } = propietario(rol);
-            await servicio.consultarNotificaciones(sesion);
-            await servicio.eliminarTodasNotificaciones(sesion);
-            const renovada = AHORA.add({ hours: 72 });
-            await db.orm.public.Publicacion.where({ id: publicacion.id }).update({
-                fechaVigencia: renovada,
-                publicacionDisponible: true,
-                avisoProximoVencimientoEn: null,
-                avisoVencimientoEn: null,
+                const avisos = await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).all();
+                expect(avisos).toHaveLength(3);
+                for (const [indice, publicacion] of publicaciones.entries()) {
+                    const actual = await tx.orm.public.Publicacion.where({ id: publicacion.id }).first();
+                    expect(actual?.publicacionDisponible).toBe(indice !== 0);
+                    expect(actual?.fecha.equals(publicacion.fecha)).toBe(true);
+                    expect(actual?.version).toBe(publicacion.version);
+                    expect(actual?.avisoVencimientoEn?.toString() ?? null).toBe(indice === 0 ? contexto(tx).limite : null);
+                    expect(actual?.avisoProximoVencimientoEn?.toString() ?? null).toBe(indice === 1 || indice === 2 ? contexto(tx).limite : null);
+                    const aviso = avisos.find(a => a.url?.endsWith(`publicacion=${publicacion.id}`));
+                    expect(Boolean(aviso)).toBe(indice < 3);
+                    if (aviso) {
+                        expect(aviso.url).toBe(`${rol === "OPERADOR" ? "/mi-mercado" : "/mi-mercado/productor"}?publicacion=${publicacion.id}`);
+                        expect(aviso.descripcion).toContain(indice === 0 ? "ha vencido" : "está próxima a vencer");
+                    }
+                }
             });
-
-            const nuevo = await servicio.consultarNotificaciones(sesion);
-
-            expect(nuevo.notificaciones).toHaveLength(1);
-            expect(nuevo.notificaciones[0].texto).toContain("está próxima a vencer");
-            const actual = await db.orm.public.Publicacion.where({ id: publicacion.id }).first();
-            expect(actual?.fechaVigencia?.equals(renovada)).toBe(true);
-            expect(actual?.avisoProximoVencimientoEn?.equals(AHORA)).toBe(true);
-            expect(actual?.avisoVencimientoEn).toBeNull();
-            await servicio.eliminarTodasNotificaciones(sesion);
-            expect(await servicio.contarNotificacionesNoLeidas(sesion)).toBe(0);
         });
 
-        it("envía el aviso de vencida aunque se haya borrado el aviso previo de esa misma vigencia", async () => {
-            const vigencia = AHORA.add({ hours: 48 });
-            const publicacion = await crearPublicacion(rol, vigencia);
-            const { sesion } = propietario(rol);
-            expect((await servicio.consultarNotificaciones(sesion)).notificaciones).toHaveLength(1);
-            await servicio.eliminarTodasNotificaciones(sesion);
-            vi.mocked(Temporal.Now.instant).mockReturnValue(vigencia.add({ hours: 1 }));
+        it("vence y avisa aunque los avisos previos y la vigencia administrativa estén desactivados", async () => {
+            await conRollback(async (tx) => {
+                await configurar(tx, rol, 7, false);
+                const propietario = await crearPropietario(tx, rol);
+                const vencida = await crearPublicacion(tx, propietario, "2030-01-14");
+                const proxima = await crearPublicacion(tx, propietario, "2030-01-16");
 
-            const vencida = await servicio.consultarNotificaciones(sesion);
+                await procesar(contexto(tx), rol);
 
-            expect(vencida.notificaciones).toHaveLength(1);
-            expect(vencida.notificaciones[0].texto).toContain("ha vencido");
-            expect(await db.orm.public.Publicacion.where({ id: publicacion.id }).first())
-                .toMatchObject({ publicacionDisponible: false });
-            const actual = await db.orm.public.Publicacion.where({ id: publicacion.id }).first();
-            expect(actual?.avisoProximoVencimientoEn?.equals(AHORA)).toBe(true);
-            expect(actual?.avisoVencimientoEn?.equals(vigencia.add({ hours: 1 }))).toBe(true);
-            await servicio.eliminarTodasNotificaciones(sesion);
-            expect(await servicio.contarNotificacionesNoLeidas(sesion)).toBe(0);
+                const avisos = await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).all();
+                expect(avisos).toHaveLength(1);
+                expect(avisos[0].descripcion).toContain("ha vencido");
+                expect((await tx.orm.public.Publicacion.where({ id: vencida.id }).first())?.publicacionDisponible).toBe(false);
+                expect((await tx.orm.public.Publicacion.where({ id: proxima.id }).first())?.avisoProximoVencimientoEn).toBeNull();
+            });
         });
 
-        it("no duplica el aviso cuando se consultan simultáneamente listado y contador", async () => {
-            const publicacion = await crearPublicacion(rol, AHORA.subtract({ hours: 48 }));
-            const { sesion } = propietario(rol);
+        it.each(["2030-01-14", "2030-01-16"])("no recrea notificaciones eliminadas para la vigencia %s", async (fecha) => {
+            await conRollback(async (tx) => {
+                await configurar(tx, rol);
+                const propietario = await crearPropietario(tx, rol);
+                const publicacion = await crearPublicacion(tx, propietario, fecha);
+                await procesar(contexto(tx), rol);
+                expect(await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).all()).toHaveLength(1);
+                const guardada = await tx.orm.public.Publicacion.where({ id: publicacion.id }).first();
+                await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).deleteAll();
 
-            await Promise.all([
-                servicio.consultarNotificaciones(sesion),
-                servicio.contarNotificacionesNoLeidas(sesion),
-                procesar(sesion.usuarioId),
-            ]);
+                await procesar(contexto(tx), rol);
 
-            expect(await db.orm.public.Notificacion.where({ usuarioId: sesion.usuarioId }).all()).toHaveLength(1);
-            const actual = await db.orm.public.Publicacion.where({ id: publicacion.id }).first();
-            expect(actual?.avisoVencimientoEn?.equals(AHORA)).toBe(true);
-            expect(actual?.avisoProximoVencimientoEn).toBeNull();
+                expect(await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).all()).toEqual([]);
+                expect(await tx.orm.public.Publicacion.where({ id: publicacion.id }).first()).toEqual(guardada);
+            });
         });
 
-        it("revierte la marca si falla el envío y permite reintentarlo después", async () => {
-            const publicacion = await crearPublicacion(rol, AHORA.subtract({ hours: 48 }));
-            const { sesion } = propietario(rol);
-            await db.orm.public.Especie.where({ id: publicacion.especieId }).update({ nombreEspecie: "A".repeat(2050) });
+        it("permite avisar una nueva vigencia y después su vencimiento sin repetir el aviso previo", async () => {
+            await conRollback(async (tx) => {
+                await configurar(tx, rol);
+                const propietario = await crearPropietario(tx, rol);
+                const publicacion = await crearPublicacion(tx, propietario, "2030-01-14");
+                await procesar(contexto(tx), rol);
+                await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).deleteAll();
+                await tx.orm.public.Publicacion.where({ id: publicacion.id }).update({
+                    fechaVigencia: finDelDia("2030-01-17"), publicacionDisponible: true,
+                    avisoProximoVencimientoEn: null, avisoVencimientoEn: null,
+                });
 
-            await expect(procesar(sesion.usuarioId)).rejects.toMatchObject({ name: "ErrorNotificaciones", status: 400 });
+                await procesar(contexto(tx), rol);
+                const previos = await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).all();
+                expect(previos).toHaveLength(1);
+                expect(previos[0].descripcion).toContain("está próxima a vencer el 2030-01-17");
+                await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).deleteAll();
+                await procesar(contexto(tx, "2030-01-18"), rol);
 
-            expect(await db.orm.public.Notificacion.where({ usuarioId: sesion.usuarioId }).all()).toEqual([]);
-            expect(await db.orm.public.Publicacion.where({ id: publicacion.id }).first())
-                .toMatchObject({ publicacionDisponible: true, avisoProximoVencimientoEn: null, avisoVencimientoEn: null });
-            await db.orm.public.Especie.where({ id: publicacion.especieId }).update({ nombreEspecie: "Tomate de integración" });
-            await procesar(sesion.usuarioId);
-            const actual = await db.orm.public.Publicacion.where({ id: publicacion.id }).first();
-            expect(actual?.avisoVencimientoEn?.equals(AHORA)).toBe(true);
-            expect(await db.orm.public.Notificacion.where({ usuarioId: sesion.usuarioId }).all()).toHaveLength(1);
+                const vencidos = await tx.orm.public.Notificacion.where({ usuarioId: propietario.usuarioId }).all();
+                expect(vencidos).toHaveLength(1);
+                expect(vencidos[0].descripcion).toContain("ha vencido el 2030-01-17");
+                expect(await tx.orm.public.Publicacion.where({ id: publicacion.id }).first()).toMatchObject({ publicacionDisponible: false });
+            });
+        });
+    });
+
+    it("respeta la anticipación propia de cada rol en la misma fecha de ejecución", async () => {
+        await conRollback(async (tx) => {
+            await configurar(tx, "OPERADOR", 1);
+            await configurar(tx, "PRODUCTOR", 7);
+            const operador = await crearPropietario(tx, "OPERADOR");
+            const productor = await crearPropietario(tx, "PRODUCTOR");
+            await crearPublicacion(tx, operador, "2030-01-17");
+            await crearPublicacion(tx, productor, "2030-01-17");
+
+            await procesar(contexto(tx), "OPERADOR");
+            await procesar(contexto(tx), "PRODUCTOR");
+
+            expect(await tx.orm.public.Notificacion.where({ usuarioId: operador.usuarioId }).all()).toEqual([]);
+            expect(await tx.orm.public.Notificacion.where({ usuarioId: productor.usuarioId }).all()).toHaveLength(1);
         });
     });
 });
