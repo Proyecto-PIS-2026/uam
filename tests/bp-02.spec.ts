@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, type BrowserContext, type Page, type TestInfo } from "@playwright/test";
 import { test } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionProductor } from "./autenticacion";
+import { esperarYCerrarNotificacion } from "./soporte/notificaciones";
 
 /**
  * E2E de BP-02 (alta, consulta, modificación y baja de Productor).
@@ -145,7 +146,7 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
       // La confirmación distinta debe rechazarse, sin crear el usuario.
       await page.locator("#confirmacionContraseña").fill("OtraClave123!");
       await page.getByRole("button", { name: "Registrar usuario" }).click();
-      await expect(page.getByText("Las contraseñas no coinciden.")).toBeVisible();
+      await esperarYCerrarNotificacion(page, "Las contraseñas no coinciden.");
       await page.locator("#confirmacionContraseña").fill(CLAVE);
 
       // Número inválido: debe informar el error.
@@ -154,6 +155,7 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
       await expect(page.getByText("El teléfono no es válido.")).toBeVisible();
       await page.locator("#numero").fill("99123456");
       await evidencia(page, info, "BP-02.1-validaciones");
+      await esperarYCerrarNotificacion(page, "El teléfono no es válido.");
     });
 
     await test.step("BP-02.1: alta exitosa y opción de precarga", async () => {
@@ -198,12 +200,12 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
 
       await page.getByRole("textbox", { name: "Teléfono" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toContainText("El teléfono no es válido.");
+      await esperarYCerrarNotificacion(page, "El teléfono no es válido.");
       await page.getByRole("textbox", { name: "Teléfono" }).fill("99234567");
 
       await page.getByRole("textbox", { name: "Nombre", exact: true }).fill("");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.getByRole("alert").filter({ hasText: "Faltan completar campos obligatorios." })).toBeVisible();
+      await esperarYCerrarNotificacion(page, "Faltan completar campos obligatorios.");
       await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).toHaveAttribute("aria-invalid", "true");
       await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(nombreModificado);
       await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).not.toHaveAttribute("aria-invalid", "true");
@@ -211,7 +213,7 @@ test("BP-02.1 a 02.4: alta, consulta, modificación, permisos y baja del mismo P
       await page.getByLabel("Nueva contraseña").fill(CLAVE);
       await page.getByLabel("Confirmar contraseña").fill("OtraClave123!");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.getByRole("alert").filter({ hasText: "Las contraseñas no coinciden." })).toBeVisible();
+      await esperarYCerrarNotificacion(page, "Las contraseñas no coinciden.");
       // No cambiar realmente la contraseña: la necesitamos para comprobar la sesión activa.
       await page.getByLabel("Nueva contraseña").fill("");
       await page.getByLabel("Confirmar contraseña").fill("");
