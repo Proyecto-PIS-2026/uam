@@ -35,9 +35,9 @@ try {
         throw new Error(`${username} ya existe con rol ${existente.rol}; no se modificó.`);
       }
       usuarioId = existente.id;
-      await db.orm.public.Usuario.where({ id: usuarioId }).update({ passwordHash: hash, twoFactorEnabled: false });
+      await db.orm.public.Usuario.where({ id: usuarioId }).update({ passwordHash: hash, habilitado: true, twoFactorEnabled: false });
     } else {
-      const usuario = await db.orm.public.Usuario.create({ username, passwordHash: hash, rol: "OPERADOR", twoFactorEnabled: false });
+      const usuario = await db.orm.public.Usuario.create({ username, passwordHash: hash, rol: "OPERADOR", habilitado: true, twoFactorEnabled: false });
       usuarioId = usuario.id;
     }
 
@@ -64,7 +64,33 @@ try {
     }
   }
 
-  console.log("Precargadas 30 cuentas carga_e03_* en localhost/uam_test.");
+  for (let numero = 1; numero <= 10; numero++) {
+    const sufijo = String(numero).padStart(2, "0");
+    const username = `carga_e03_productor_${sufijo}`;
+    const nombreFantasia = `Prueba Concurrencia E03 Productor ${sufijo}`;
+    const existente = await db.orm.public.Usuario.where({ username }).first();
+
+    let usuarioId: number;
+    if (existente) {
+      if (existente.rol !== "PRODUCTOR") {
+        throw new Error(`${username} ya existe con rol ${existente.rol}; no se modificó.`);
+      }
+      usuarioId = existente.id;
+      await db.orm.public.Usuario.where({ id: usuarioId }).update({ passwordHash: hash, habilitado: true, twoFactorEnabled: false });
+    } else {
+      const usuario = await db.orm.public.Usuario.create({ username, passwordHash: hash, rol: "PRODUCTOR", habilitado: true, twoFactorEnabled: false });
+      usuarioId = usuario.id;
+    }
+
+    const productor = await db.orm.public.Productor.where({ usuarioId }).first();
+    if (productor) {
+      await db.orm.public.Productor.where({ id: productor.id }).update({ nombreFantasia, whatsApp: "+59899123456" });
+    } else {
+      await db.orm.public.Productor.create({ usuarioId, nombreFantasia, whatsApp: "+59899123456" });
+    }
+  }
+
+  console.log("Precargadas 30 cuentas de operadores y 10 de productores BP-E03 en localhost/uam_test.");
 } finally {
   await db.close();
 }
