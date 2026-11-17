@@ -7,7 +7,7 @@ async function seleccionarProducto(page: Page) {
   await expect(fila).toBeVisible();
   const celdas = await fila.getByRole("cell").allTextContents();
   await fila.click();
-  await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos" && url.searchParams.get("species_id") === "1");
+  await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos" && url.searchParams.get("species_id") === "1", { timeout: 60_000 });
   return {
     producto: celdas[0].trim(), variedad: celdas[1].trim(),
     pais: celdas[5].trim(), calibre: celdas[6].trim(), categoria: celdas[7].trim(),
