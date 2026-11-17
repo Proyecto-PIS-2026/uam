@@ -67,3 +67,18 @@ test("BP-20 y BP-20.2 muestra el perfil público y el detalle de sus productos",
   await expect(detalle.getByText("País")).toBeVisible();
   await expect(detalle.getByRole("link", { name: `Contactar a ${nombreOperador} por WhatsApp`, exact: true })).toBeVisible();
 });
+
+test("BP-20.2 permite regresar al listado de operadores desde el perfil", async ({ page }) => {
+  test.slow();
+
+  await page.goto(rutaListado);
+
+  const tarjetasOperador = page.locator('a[href^="/operadores/"]');
+  await expect(tarjetasOperador.first()).toBeVisible();
+  await tarjetasOperador.first().click();
+  await expect(page).toHaveURL(/\/operadores\/[^/?]+/);
+
+  await page.getByRole("link", { name: "Volver al listado de operadores" }).click();
+  await expect(page).toHaveURL((url) => url.pathname === rutaListado);
+  await expect(page.getByRole("searchbox", { name: "Buscar operadores" })).toBeVisible();
+});
