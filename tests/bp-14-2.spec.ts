@@ -96,7 +96,12 @@ async function continuarPrecarga(page: Page, productor: ProductorAlta) {
 
 async function seleccionar(page: Page, formulario: Locator, campo: string, opcion: string) {
   await formulario.getByRole("combobox", { name: campo, exact: true }).click();
-  await page.getByRole("option", { name: opcion, exact: true }).click();
+  const opcionEsperada = page.getByRole("option", { name: opcion, exact: true });
+  await expect(
+    opcionEsperada,
+    `No se encontró "${opcion}" en "${campo}". Revisar los catálogos de la base E2E.`,
+  ).toBeVisible({ timeout: 15000 });
+  await opcionEsperada.click();
 }
 
 async function prepararMapa(page: Page) {
