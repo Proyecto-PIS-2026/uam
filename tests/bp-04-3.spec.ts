@@ -8,6 +8,7 @@ import type { Contract } from "../src/infraestructura/persistencia/prisma/contra
 import contractJson from "../src/infraestructura/persistencia/prisma/contract.json" with { type: "json" };
 import { cifrarSecreto, generarSecreto } from "../src/modulos/identidad-acceso/autenticacion/segundo-factor-criptografia";
 import { iniciarSesionAdministrador } from "./autenticacion";
+import { esperarYCerrarNotificacion } from "./soporte/notificaciones";
 
 // Las acciones del servidor hacen argon2 y TOTP: bajo carga superan los 5 s por defecto
 // (el proyecto de BP-16 usa el mismo margen).
@@ -103,10 +104,8 @@ async function enviarCodigo(page: Page, valor: string) {
 }
 
 const notificaciones = (page: Page) => page.getByRole("region", { name: "Notificaciones", exact: true });
-const alertaCodigo = (page: Page) => notificaciones(page).getByRole("alert").filter({ hasText: mensajeCodigoInvalido });
-
-async function esperarRechazo(page: Page) {
-  await expect(alertaCodigo(page)).toBeVisible();
+async function esperarRechazo(page: Page, intentosRestantes = 4) {
+  await esperarYCerrarNotificacion(page, `${mensajeCodigoInvalido} Te quedan ${intentosRestantes} intentos.`, { timeout: 15_000 });
   await expect(page).toHaveURL(urlSegundoFactor);
 }
 
@@ -227,12 +226,10 @@ test.describe("BP-04.3: Autenticación con 2FA para los Administradores", () => 
     await ingresarCredenciales(page, admin);
 
     await enviarCodigo(page, codigoIncorrecto(admin.secreto!));
-    await esperarRechazo(page);
-    await expect(alertaCodigo(page)).toContainText("Te quedan 4 intentos.");
+    await esperarRechazo(page, 4);
 
     await enviarCodigo(page, codigoVencido(admin.secreto!));
-    await esperarRechazo(page);
-    await expect(alertaCodigo(page)).toContainText("Te quedan 3 intentos.");
+    await esperarRechazo(page, 3);
 
     const usuario = await db.orm.public.Usuario.where({ id: admin.usuarioId }).first();
     expect(usuario?.twoFactorFailedAttempts).toBe(2);

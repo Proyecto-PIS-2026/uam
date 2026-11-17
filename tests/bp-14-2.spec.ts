@@ -5,6 +5,7 @@ import type { Contract } from "../src/infraestructura/persistencia/prisma/contra
 import contractJson from "../src/infraestructura/persistencia/prisma/contract.json" with { type: "json" };
 import { test as base } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionProductor, type Credenciales } from "./autenticacion";
+import { esperarYCerrarNotificacion } from "./soporte/notificaciones";
 
 type ProductorAlta = { usuario: string; nombre: string; contrasena: string };
 type Precarga = { rutaPerfil: string; productorId: number; publicacionId: number; publicacionProductorId: number };
@@ -440,9 +441,11 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       alta.getByRole("button", { name: "Confirmar", exact: true }).click(),
     ]);
     expect(respuesta.status()).toBe(400);
-    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
+    const mensaje = "Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.";
+    await esperarYCerrarNotificacion(page, mensaje);
     await expect(alta.getByLabel("Precio en pesos")).toHaveValue("9999");
     await alta.getByRole("button", { name: "Cancelar", exact: true }).click();
+    await expect(alta).not.toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { name: "Publicaciones (1)", exact: true })).toBeVisible();
     const relaciones = await leerPrecargas(precarga.productorId);

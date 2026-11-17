@@ -7,6 +7,7 @@ import type { Contract } from "../src/infraestructura/persistencia/prisma/contra
 import contractJson from "../src/infraestructura/persistencia/prisma/contract.json" with { type: "json" };
 import { iniciarSesionAdministrador, iniciarSesionProductor } from "./autenticacion";
 import { conRestablecimientoHabilitado } from "./restablecimiento-contrasena-db";
+import { esperarYCerrarNotificacion } from "./soporte/notificaciones";
 
 // BP-11 es la historia integradora del perfil propio. Aquí se prueban los criterios comunes
 // a los tres roles y el perfil del Administrador (BP-11.1 y BP-11.2). La edición de
@@ -128,7 +129,6 @@ async function abrirEdicion(page: Page, cuenta: Cuenta) {
 const datosCuenta = (page: Page) => page.getByRole("region", { name: "Datos de mi cuenta" });
 const formularioAdmin = (page: Page) => page.getByRole("form", { name: "Editar mi perfil" });
 const campoNombreAdmin = (page: Page) => formularioAdmin(page).getByLabel("Nombre de usuario");
-const errorNotificado = (page: Page) => page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert");
 const exito = (page: Page) => page.getByRole("region", { name: "Notificaciones", exact: true }).getByText(MENSAJE_EXITO);
 
 async function username(db: Fixtures["db"], id: number) {
@@ -204,7 +204,7 @@ test.describe("BP-11: Panel de administración de mi perfil", () => {
     // La sesión sigue siendo válida, pero ya no hay datos de Administrador para mostrar.
     await db.orm.public.Administrador.where({ usuarioId: administrador.id }).delete();
     await page.goto("/mi-perfil");
-    await expect(errorNotificado(page)).toHaveText("No se pudieron encontrar los datos de tu perfil. Volvé a intentarlo más tarde.");
+    await esperarYCerrarNotificacion(page, "No se pudieron encontrar los datos de tu perfil. Volvé a intentarlo más tarde.", { timeout: 15_000 });
     await expect(datosCuenta(page)).toHaveCount(0);
   });
 
@@ -260,7 +260,7 @@ test.describe("BP-11: Panel de administración de mi perfil", () => {
       await test.step(caso.titulo, async () => {
         await campoNombreAdmin(page).fill(caso.nombre);
         await formularioAdmin(page).getByRole("button", { name: "Guardar cambios", exact: true }).click();
-        await expect(errorNotificado(page)).toContainText(caso.error);
+        await esperarYCerrarNotificacion(page, caso.error, { timeout: 15_000 });
         await expect(exito(page)).toHaveCount(0);
         await expect(page).toHaveURL(/\/mi-perfil\/editar$/);
       });
@@ -273,7 +273,7 @@ test.describe("BP-11: Panel de administración de mi perfil", () => {
         route.request().method() === "POST" && route.request().headers()["next-action"] ? route.abort() : route.continue());
       await campoNombreAdmin(page).fill(`${administrador.nombre}_falla`);
       await formularioAdmin(page).getByRole("button", { name: "Guardar cambios", exact: true }).click();
-      await expect(errorNotificado(page)).toHaveText("No se pudieron guardar los cambios. Intentá nuevamente.");
+      await esperarYCerrarNotificacion(page, "No se pudieron guardar los cambios. Intentá nuevamente.", { timeout: 15_000 });
       await expect(exito(page)).toHaveCount(0);
       await expect(page).toHaveURL(/\/mi-perfil\/editar$/);
       await page.unroute("**/mi-perfil/editar");

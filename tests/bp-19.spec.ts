@@ -35,13 +35,15 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   });
 
   test("abre el histórico del registro con teclado conservando sus filtros", async ({ page }) => {
+    test.setTimeout(90_000);
     const enlace = page.getByRole("table").getByRole("link", { name: /^Ver histórico de / }).first();
     const destino = await enlace.getAttribute("href");
     expect(destino).toContain("/precios-historicos?");
     await enlace.focus();
     await expect(enlace).toBeFocused();
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(new URL(destino!, "http://127.0.0.1:3100").href);
+    // El servidor de pruebas compila el histórico al acceder por primera vez.
+    await expect(page).toHaveURL(new URL(destino!, "http://127.0.0.1:3100").href, { timeout: 60_000 });
     await expect(page.getByRole("heading", { name: /^Histórico de /, level: 1 })).toBeVisible();
   });
 
