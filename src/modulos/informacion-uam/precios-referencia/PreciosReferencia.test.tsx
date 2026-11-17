@@ -143,7 +143,7 @@ describe("PreciosReferencia", () => {
         );
     });
 
-    it("muestra solo referencias por defecto y permite consultar todos los registros", async () => {
+    it("muestra solo referencias por defecto y al limpiar, y permite consultar todos los registros", async () => {
         const datos = convertirConsultaEnPreciosReferencia(relevamiento);
         render(<PreciosReferencia {...datos} />);
 
@@ -159,6 +159,10 @@ describe("PreciosReferencia", () => {
         }
         fireEvent.click(screen.getByRole("checkbox", { name: "Solo registros de referencia" }));
         expect(screen.getByText("89 resultados")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+        expect(screen.getByRole("checkbox", { name: "Solo registros de referencia" })).toBeChecked();
+        expect(screen.getByText("44 resultados")).toBeInTheDocument();
     });
 
     it("encuentra una especie con tilde aunque se busque sin ella", async () => {
@@ -213,16 +217,19 @@ describe("PreciosReferencia", () => {
         expect(within(screen.getByRole("table")).queryByRole("cell", { name: "Fuji" })).not.toBeInTheDocument();
     });
 
-    it("habilita Variedad y Presentación en orden y ofrece solo opciones de la jerarquía elegida", () => {
+    it("permite usar los filtros adicionales desde el inicio y acota sus opciones al elegir especie y variedad", () => {
         renderizarFiltros();
 
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
+        for (const nombre of ["País", "Presentación", "Categoría", "Calibre"]) {
+            expect(screen.getByRole("combobox", { name: nombre })).not.toHaveAttribute("aria-disabled", "true");
+        }
+        expect(opcionesDe("Presentación")).toEqual(["Todas las presentaciones", "Atado", "Bolsa", "Caja", "Cajón"]);
         expect(opcionesDe("Especie")).toEqual(["Todas las especies", "Manzana", "Acelga", "Pera"]);
 
         seleccionar("Especie", "Manzana");
         expect(screen.getByRole("combobox", { name: "Variedad" })).not.toHaveAttribute("aria-disabled");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
+        expect(opcionesDe("Presentación")).toEqual(["Todas las presentaciones", "Bolsa", "Caja"]);
         expect(opcionesDe("Variedad")).toEqual(["Todas las variedades", "Fuji", "Gala"]);
         expect(opcionesDe("País")).toEqual(["Todos los países", "URUGUAY", "BRASIL"]);
 
@@ -262,7 +269,7 @@ describe("PreciosReferencia", () => {
         expect(opcionesDe("Presentación")).toEqual(["Todas las presentaciones", "Bolsa"]);
     }, 15000);
 
-    it("conserva facetas compatibles al cambiar de especie y reinicia Variedad y Presentación", () => {
+    it("conserva facetas compatibles al cambiar de especie y limpia la presentación incompatible", () => {
         renderizarFiltros();
         seleccionar("Especie", "Manzana");
         seleccionar("Variedad", "Gala");
@@ -275,11 +282,11 @@ describe("PreciosReferencia", () => {
 
         esperarSelectVacio("Variedad");
         esperarSelectVacio("Presentación");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByRole("combobox", { name: "Presentación" })).not.toHaveAttribute("aria-disabled");
         expect(screen.getByRole("combobox", { name: "País" })).toHaveTextContent("URUGUAY");
         expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("I");
         expect(screen.getByRole("combobox", { name: "Calibre" })).toHaveTextContent("G");
-        expect(opcionesDe("Variedad")).toEqual(["Todas las variedades", "Williams"]);
+        expect(opcionesDe("Variedad")).toEqual(["Todas las variedades", "Conferencia", "Williams"]);
         expect(screen.getByText("1 resultados")).toBeInTheDocument();
         esperarEspeciesEnTabla("Pera");
     });
@@ -304,17 +311,51 @@ describe("PreciosReferencia", () => {
         expect(opcionesDe("Variedad")).toEqual(["Todas las variedades", "Fuji", "Gala"]);
     });
 
-    it("reinicia Presentación al cambiar de variedad y selecciona la variedad única '-'", () => {
+    it("conserva los cuatro filtros libres compatibles y los limpia al elegir una variedad incompatible", () => {
+        const filas = [
+            filaFiltro("gala", "Manzana", "Gala", "Caja", "URUGUAY", "I", "G"),
+            filaFiltro("fuji", "Manzana", "Fuji", "Caja", "URUGUAY", "I", "G"),
+            filaFiltro("granny", "Manzana", "Granny", "Bolsa", "BRASIL", "II", "M"),
+            filaFiltro("williams", "Pera", "Williams", "Caja", "URUGUAY", "I", "G"),
+        ];
+        render(<PreciosReferencia fechaRelevamiento="2026-08-27" filas={filas} />);
+        const filtros = [["País", "URUGUAY"], ["Presentación", "Caja"], ["Categoría", "I"], ["Calibre", "G"]] as const;
+        for (const [nombre, valor] of filtros) seleccionar(nombre, valor);
+        expect(screen.getByText("3 resultados")).toBeInTheDocument();
+
+        seleccionar("Especie", "Manzana");
+        seleccionar("Variedad", "Gala");
+        seleccionar("Variedad", "Fuji");
+        for (const [nombre, valor] of filtros) {
+            expect(screen.getByRole("combobox", { name: nombre })).toHaveTextContent(valor);
+        }
+        expect(screen.getByText("1 resultados")).toBeInTheDocument();
+
+        seleccionar("Especie", "Pera");
+        for (const [nombre, valor] of filtros) {
+            expect(screen.getByRole("combobox", { name: nombre })).toHaveTextContent(valor);
+        }
+        esperarEspeciesEnTabla("Pera");
+
+        seleccionar("Especie", "Manzana");
+        seleccionar("Variedad", "Granny");
+        for (const [nombre] of filtros) esperarSelectVacio(nombre);
+        expect(screen.getByText("1 resultados")).toBeInTheDocument();
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: "Granny" })).toBeInTheDocument();
+    });
+
+    it("conserva la presentación compatible al cambiar de variedad y la limpia al elegir una especie incompatible", () => {
         renderizarFiltros();
         seleccionar("Especie", "Manzana");
         seleccionar("Variedad", "Gala");
         seleccionar("Presentación", "Caja");
 
         seleccionar("Variedad", "Fuji");
-        esperarSelectVacio("Presentación");
+        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveTextContent("Caja");
         expect(opcionesDe("Presentación")).toEqual(["Todas las presentaciones", "Bolsa", "Caja"]);
 
         seleccionar("Especie", "Acelga");
+        esperarSelectVacio("Presentación");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("-");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
         expect(screen.getByRole("combobox", { name: "Presentación" })).not.toHaveAttribute("aria-disabled");
@@ -322,7 +363,7 @@ describe("PreciosReferencia", () => {
         expect(screen.getByText("2 resultados")).toBeInTheDocument();
     });
 
-    it("selecciona la variedad '-' si otra faceta la deja como única opción", () => {
+    it("selecciona la variedad '-' compatible y permite elegir otra variedad limpiando el país incompatible", () => {
         const filas = [
             filaFiltro("ajo-uruguay", "Ajo", "-", "Caja", "URUGUAY", "I", "M"),
             filaFiltro("ajo-brasil", "Ajo", "Morado", "Bolsa", "BRASIL", "I", "M"),
@@ -330,13 +371,18 @@ describe("PreciosReferencia", () => {
         render(<PreciosReferencia fechaRelevamiento="2026-08-27" filas={filas} />);
 
         seleccionar("Especie", "Ajo");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByRole("combobox", { name: "Presentación" })).not.toHaveAttribute("aria-disabled");
 
         seleccionar("País", "URUGUAY");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveTextContent("-");
-        expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByRole("combobox", { name: "Variedad" })).not.toHaveAttribute("aria-disabled");
         expect(screen.getByRole("combobox", { name: "Presentación" })).not.toHaveAttribute("aria-disabled");
         expect(opcionesDe("Presentación")).toEqual(["Todas las presentaciones", "Caja"]);
+
+        seleccionar("Variedad", "Morado");
+        esperarSelectVacio("País");
+        expect(screen.getByText("1 resultados")).toBeInTheDocument();
+        expect(within(screen.getByRole("table")).getByRole("cell", { name: "BRASIL" })).toBeInTheDocument();
     });
 
     it("Limpiar filtros restituye los selects y todas sus opciones", () => {
@@ -351,7 +397,8 @@ describe("PreciosReferencia", () => {
         fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
         esperarSelectVacio("Especie");
         expect(screen.getByRole("combobox", { name: "Variedad" })).toHaveAttribute("aria-disabled", "true");
-        expect(screen.getByRole("combobox", { name: "Presentación" })).toHaveAttribute("aria-disabled", "true");
+        expect(screen.getByRole("combobox", { name: "Presentación" })).not.toHaveAttribute("aria-disabled");
+        expect(opcionesDe("Presentación")).toEqual(["Todas las presentaciones", "Atado", "Bolsa", "Caja", "Cajón"]);
         expect(opcionesDe("País")).toEqual(["Todos los países", "URUGUAY", "ARGENTINA", "BRASIL"]);
         expect(opcionesDe("Categoría")).toEqual(["Todas las categorías", "Extra", "I", "II"]);
         expect(opcionesDe("Calibre")).toEqual(["Todos los calibres", "G", "M", "P"]);

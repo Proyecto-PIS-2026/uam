@@ -117,12 +117,12 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
 
     const disponibles = useMemo(() => ({
         especies: opciones(filas.map((fila) => fila.especie)).sort(compararEspeciesPorPrioridad),
-        variedades: especie ? opciones(filasCompatibles(filas, seleccion, ["variedad", "unidad"]).map((fila) => fila.variedad)) : [],
-        unidades: variedad ? opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)) : [],
+        variedades: especie ? opciones(filas.filter((fila) => fila.especie === especie).map((fila) => fila.variedad)) : [],
+        unidades: opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)),
         paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)).sort(compararPaisesPorPrioridad),
         categorias: opciones(filasCompatibles(filas, seleccion, ["categoria"]).map((fila) => fila.categoria)),
         calibres: opciones(filasCompatibles(filas, seleccion, ["calibre"]).map((fila) => fila.calibre)),
-    }), [filas, seleccion, especie, variedad]);
+    }), [filas, seleccion, especie]);
     const cantidadReferencias = useMemo(() => filas.filter((fila) => fila.esReferencia).length, [filas]);
     const minimo = leerPrecio(precioMinimo);
     const maximo = leerPrecio(precioMaximo);
@@ -188,11 +188,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     function cambiarFiltro(campo: CampoFiltro, valor: string) {
         cambiar(() => setSeleccion((actual) => {
             const siguiente = { ...actual, [campo]: valor };
-            if (campo === "especie") {
-                siguiente.variedad = "";
-                siguiente.unidad = "";
-            }
-            if (campo === "variedad") siguiente.unidad = "";
+            if (campo === "especie") siguiente.variedad = "";
             return ajustarSeleccion(filas, siguiente, campo);
         }));
     }
@@ -207,7 +203,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
         setPrecioPor("unidad");
         setPrecioMinimo("");
         setPrecioMaximo("");
-        setSoloReferencias(false);
+        setSoloReferencias(true);
         setPagina(1);
     }
 
@@ -291,7 +287,6 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 label="Presentación"
                                 size="small"
                                 value={unidad}
-                                disabled={!variedad}
                                 onChange={(e) => cambiarFiltro("unidad", e.target.value)}
                                 slotProps={menu}
                             >
