@@ -1,5 +1,6 @@
 import type { SeleccionPublicacion } from "../seleccion-publicacion";
 import type { EstadoFotoPublicacion } from "../estado-foto-publicacion";
+import type { EstadoVigenciaPublicacion } from "../estado-vigencia-publicacion";
 
 export type CambiosPublicacionOperador = SeleccionPublicacion & {
     version: number;
@@ -28,6 +29,7 @@ export type PublicacionParaEditar = Omit<CambiosPublicacionOperador, "version"> 
     version?: number;
     foto: string | null;
     estadoFoto?: EstadoFotoPublicacion;
+    estadoVigencia?: EstadoVigenciaPublicacion;
     fecha: string;
     publicacionOperadorId: number;
     publicacionId: number;

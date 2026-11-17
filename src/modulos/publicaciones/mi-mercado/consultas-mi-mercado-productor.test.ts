@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
     todasPublicaciones: vi.fn(),
     seleccionarImagenes: vi.fn(),
     listarImagenes: vi.fn(),
+    filtrarConfiguracion: vi.fn(),
+    primeraConfiguracion: vi.fn(),
 }));
 
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
@@ -27,6 +29,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
                 Productor: { select: mocks.seleccionarProductor },
                 PublicacionProductor: { where: mocks.filtrarPublicaciones },
                 Imagen: { select: mocks.seleccionarImagenes },
+                Configuracion: { where: mocks.filtrarConfiguracion },
             },
         },
     },
@@ -79,6 +82,8 @@ describe("lectura privada de Mi Mercado del productor", () => {
         mocks.todasPublicaciones.mockResolvedValue([]);
         mocks.seleccionarImagenes.mockReturnValue({ where: () => ({ all: mocks.listarImagenes }) });
         mocks.listarImagenes.mockResolvedValue([]);
+        mocks.filtrarConfiguracion.mockReturnValue({ select: () => ({ first: mocks.primeraConfiguracion }) });
+        mocks.primeraConfiguracion.mockReset().mockResolvedValue(null);
     });
 
     afterEach(() => {
@@ -95,6 +100,41 @@ describe("lectura privada de Mi Mercado del productor", () => {
         const resultado = await obtenerPublicacionesMiMercadoProductor();
 
         expect(resultado.publicaciones[0].publicacionDisponible).toBe(false);
+        expect(resultado.publicaciones[0].estadoVigencia).toBe("vencida");
+        expect(mocks.filtrarConfiguracion).not.toHaveBeenCalled();
+    });
+
+    it("devuelve el aviso de vigencia calculado con la configuración del productor", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-04T15:00:00Z"));
+        const relacion = relacionPublicacion(23, 31);
+        mocks.todasPublicaciones.mockResolvedValue([{
+            ...relacion,
+            publicacion: { ...relacion.publicacion, fechaVigencia: Temporal.Instant.from("2026-11-06T02:59:59Z") },
+        }]);
+        mocks.primeraConfiguracion.mockResolvedValueOnce({ valorConfiguracion: "true" })
+            .mockResolvedValueOnce({ valorConfiguracion: "2" });
+
+        const resultado = await obtenerPublicacionesMiMercadoProductor();
+
+        expect(resultado.publicaciones[0]).toMatchObject({ fechaVigencia: "2026-11-05", estadoVigencia: "por-vencer", publicacionDisponible: true });
+        expect(mocks.filtrarConfiguracion).toHaveBeenCalledWith({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado" });
+        expect(mocks.filtrarConfiguracion).toHaveBeenCalledWith({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor" });
+    });
+
+    it("mantiene el estado vencida cuando el instante de vencimiento fue hoy aunque la fecha visible sea hoy", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-04T15:00:00Z"));
+        const relacion = relacionPublicacion(23, 31);
+        mocks.todasPublicaciones.mockResolvedValue([{
+            ...relacion,
+            publicacion: { ...relacion.publicacion, fechaVigencia: Temporal.Instant.from("2026-11-04T12:00:00Z") },
+        }]);
+
+        const resultado = await obtenerPublicacionesMiMercadoProductor();
+
+        expect(resultado.publicaciones[0]).toMatchObject({ fechaVigencia: "2026-11-04", estadoVigencia: "vencida", publicacionDisponible: false });
+        expect(mocks.filtrarConfiguracion).not.toHaveBeenCalled();
     });
 
     it("mantiene la foto visible hasta el borrado y solo entonces muestra el estado de eliminada", async () => {
@@ -140,6 +180,7 @@ describe("lectura privada de Mi Mercado del productor", () => {
             pais: "URUGUAY",
             foto: null,
             estadoFoto: null,
+            estadoVigencia: null,
             precio: "125.00",
             cantidadUnidades: 10,
             fecha: "2026-10-16T12:00:00Z",

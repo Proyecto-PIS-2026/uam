@@ -103,14 +103,14 @@ describe("obtenerOperadoresPublicos", () => {
                     nave: { nombreNave: "D" },
                 },
             ],
-            publicacionesOperador: [],
+            publicacionesOperador: [relacionPublicacion(true, true, "OPERADOR")],
         }]);
 
         expect(await obtenerOperadoresPublicos()).toEqual([{
             id: 1,
             nombreFantasia: "Frutas del Norte",
             fotoPerfil: null,
-            cantidadProductos: 0,
+            cantidadProductos: 1,
             locales: [
                 { numeroLocal: "10", nombreNave: "A" },
                 { numeroLocal: "20", nombreNave: "B" },
@@ -125,6 +125,7 @@ describe("obtenerOperadoresPublicos", () => {
                 id: 1,
                 nombreFantasia: "Sin locales",
                 fotoPerfil: null,
+                enLicencia: true,
                 locales: [],
                 publicacionesOperador: [],
             },
@@ -132,6 +133,7 @@ describe("obtenerOperadoresPublicos", () => {
                 id: 2,
                 nombreFantasia: "Contrato vencido",
                 fotoPerfil: null,
+                enLicencia: true,
                 locales: [{
                     numeroLocal: "5",
                     finContrato: Temporal.Instant.from("2026-09-23T12:00:00Z"),
@@ -170,7 +172,7 @@ describe("obtenerOperadoresPublicos", () => {
                 nombreFantasia: "Álamos",
                 fotoPerfil: null,
                 locales: [localVigente],
-                publicacionesOperador: [],
+                publicacionesOperador: [relacionPublicacion(true, true, "OPERADOR")],
             },
         ]);
 
@@ -198,14 +200,41 @@ describe("obtenerOperadoresPublicos", () => {
             publicacionesOperador,
         });
 
-        it("excluye publicaciones con fechaVigencia vencida del conteo de productos del operador", async () => {
+        it.each([
+            { caso: "no tiene publicaciones", publicacionesOperador: [] },
+            { caso: "solo tiene publicaciones inactivas", publicacionesOperador: [relacionPublicacion(false, true, "OPERADOR")] },
+            { caso: "solo tiene publicaciones no disponibles", publicacionesOperador: [relacionPublicacion(true, false, "OPERADOR")] },
+            { caso: "solo tiene publicaciones de otro tipo", publicacionesOperador: [relacionPublicacion(true, true, "PRODUCTOR")] },
+        ])("excluye al operador sin licencia cuando $caso", async ({ publicacionesOperador }) => {
+            allMock.mockResolvedValue([{
+                ...operadorConPublicaciones(publicacionesOperador),
+                enLicencia: false,
+            }]);
+
+            expect(await obtenerOperadoresPublicos()).toEqual([]);
+        });
+
+        it("muestra al operador sin publicaciones solo mientras mantiene la licencia", async () => {
+            const operador = { ...operadorConPublicaciones([]), enLicencia: true };
+            allMock.mockResolvedValue([operador]);
+
+            expect(await obtenerOperadoresPublicos()).toEqual([
+                expect.objectContaining({ id: operador.id, cantidadProductos: 0, enLicencia: true }),
+            ]);
+
+            allMock.mockResolvedValue([{ ...operador, enLicencia: false }]);
+
+            expect(await obtenerOperadoresPublicos()).toEqual([]);
+        });
+
+        it("excluye al operador cuando su única publicación está vencida", async () => {
             allMock.mockResolvedValue([
                 operadorConPublicaciones([relacionPublicacion(true, true, "OPERADOR", enDias(-3))]),
             ]);
 
             const operadores = await obtenerOperadoresPublicos();
 
-            expect(operadores[0].cantidadProductos).toBe(0);
+            expect(operadores).toEqual([]);
         });
 
         it("incluye publicaciones con fechaVigencia futura en el conteo", async () => {
@@ -242,15 +271,18 @@ describe("obtenerOperadoresPublicos", () => {
             expect(operadores[0].cantidadProductos).toBe(2);
         });
 
-        it("mantiene al operador en el listado aunque todas sus publicaciones estén vencidas", async () => {
+        it("mantiene al operador en licencia aunque todas sus publicaciones estén vencidas", async () => {
             allMock.mockResolvedValue([
-                operadorConPublicaciones([relacionPublicacion(true, true, "OPERADOR", enDias(-1))]),
+                {
+                    ...operadorConPublicaciones([relacionPublicacion(true, true, "OPERADOR", enDias(-1))]),
+                    enLicencia: true,
+                },
             ]);
 
             const operadores = await obtenerOperadoresPublicos();
 
             expect(operadores).toEqual([
-                expect.objectContaining({ nombreFantasia: "Frutas del Norte", cantidadProductos: 0 }),
+                expect.objectContaining({ nombreFantasia: "Frutas del Norte", cantidadProductos: 0, enLicencia: true }),
             ]);
         });
     });

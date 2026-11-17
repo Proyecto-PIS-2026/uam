@@ -10,39 +10,58 @@ describe("dividirPeriodoHistorico", () => {
     it.each([
         ["2026-10-09", "2026-10-09"],
         ["2026-10-01", "2026-10-09"],
-        ["2023-10-09", "2026-10-09"],
-        ["2024-02-29", "2027-02-28"],
-        ["0000-01-01", "0002-12-31"],
-        ["9997-01-01", "9999-12-31"],
+        ["2024-10-09", "2026-10-09"],
+        ["2024-02-29", "2026-02-28"],
+        ["0000-01-01", "0002-01-01"],
+        ["9997-12-31", "9999-12-31"],
     ])("mantiene en un solo pedido el período de %s a %s", (desde, hasta) => {
         const original = consulta(desde, hasta);
         expect(dividirPeriodoHistorico(original)).toEqual([original]);
     });
 
-    it("conserva los tres tramos de la importación inicial de nueve años", () => {
+    it("divide un período que supera el límite de dos años por un día", () => {
+        expect(dividirPeriodoHistorico(consulta("2024-10-09", "2026-10-10"))).toEqual([
+            consulta("2024-10-09", "2024-10-10"),
+            consulta("2024-10-11", "2026-10-10"),
+        ]);
+    });
+
+    it("divide un período de nueve años en cinco tramos sin modificar la consulta", () => {
         const original = consulta("2017-10-09", "2026-10-09");
         const copia = { ...original };
 
         expect(dividirPeriodoHistorico(original)).toEqual([
-            consulta("2017-10-09", "2020-10-09"),
-            consulta("2020-10-10", "2023-10-09"),
-            consulta("2023-10-10", "2026-10-09"),
+            consulta("2017-10-09", "2018-10-09"),
+            consulta("2018-10-10", "2020-10-09"),
+            consulta("2020-10-10", "2022-10-09"),
+            consulta("2022-10-10", "2024-10-09"),
+            consulta("2024-10-10", "2026-10-09"),
         ]);
         expect(original).toEqual(copia);
     });
 
-    it("divide un período que excede tres años por el día bisiesto del extremo final", () => {
-        expect(dividirPeriodoHistorico(consulta("2021-02-28", "2024-02-29"))).toEqual([
-            consulta("2021-02-28", "2021-02-28"),
-            consulta("2021-03-01", "2024-02-29"),
+    it("divide los seis años de la carga inicial en tres consultas contiguas", () => {
+        expect(dividirPeriodoHistorico(consulta("2020-10-09", "2026-10-09"))).toEqual([
+            consulta("2020-10-09", "2022-10-09"),
+            consulta("2022-10-10", "2024-10-09"),
+            consulta("2024-10-10", "2026-10-09"),
+        ]);
+    });
+
+    it("divide un período que excede dos años por el día bisiesto del extremo final", () => {
+        expect(dividirPeriodoHistorico(consulta("2022-02-28", "2024-02-29"))).toEqual([
+            consulta("2022-02-28", "2022-02-28"),
+            consulta("2022-03-01", "2024-02-29"),
         ]);
     });
 
     it("conserva los nueve años completos al terminar un 29 de febrero", () => {
         expect(dividirPeriodoHistorico(consulta("2015-02-28", "2024-02-29"))).toEqual([
-            consulta("2015-02-28", "2018-02-28"),
-            consulta("2018-03-01", "2021-02-28"),
-            consulta("2021-03-01", "2024-02-29"),
+            consulta("2015-02-28", "2016-02-28"),
+            consulta("2016-02-29", "2018-02-28"),
+            consulta("2018-03-01", "2020-02-28"),
+            consulta("2020-02-29", "2022-02-28"),
+            consulta("2022-03-01", "2024-02-29"),
         ]);
     });
 
@@ -52,7 +71,7 @@ describe("dividirPeriodoHistorico", () => {
         ["1897-02-28", "1900-03-01"],
         ["0000-02-29", "0003-03-01"],
         ["0000-01-01", "9999-12-31"],
-    ])("cubre %s a %s con bloques contiguos de hasta tres años", (desde, hasta) => {
+    ])("cubre %s a %s con bloques contiguos de hasta dos años", (desde, hasta) => {
         const periodos = dividirPeriodoHistorico(consulta(desde, hasta));
         expect(periodos[0].desde).toBe(desde);
         expect(periodos.at(-1)?.hasta).toBe(hasta);
@@ -61,7 +80,7 @@ describe("dividirPeriodoHistorico", () => {
             const inicio = new Date(`${periodo.desde}T00:00:00.000Z`);
             const fin = new Date(`${periodo.hasta}T00:00:00.000Z`);
             const limite = new Date(inicio.getTime());
-            limite.setUTCFullYear(inicio.getUTCFullYear() + 3);
+            limite.setUTCFullYear(inicio.getUTCFullYear() + 2);
             if (limite.getUTCMonth() !== inicio.getUTCMonth()) limite.setUTCDate(0);
 
             expect(periodo.speciesId).toBe(10);

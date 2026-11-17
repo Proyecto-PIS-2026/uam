@@ -180,6 +180,7 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
             }
             await notificarCambioPublicacionProductor(tx, { productorId: relacion.productor.id, publicacionId: publicacion.id });
             return { publicacion: mapearPublicacionMiMercadoProductor(actualizada), productorId: relacion.productor.id,
+                fechaVigencia: actualizada.publicacion.fechaVigencia,
                 fotoAnterior: publicacion.foto, fotoActual: foto };
         });
     } catch (error) {
@@ -194,5 +195,5 @@ export async function modificarPublicacionProductor(sesion: DatosSesion, publica
         await eliminarImagenPublicacionGestionada(resultado.fotoAnterior, resultado.publicacion.id)
             .catch((error) => console.error("No se pudo eliminar la imagen anterior:", error));
     }
-    return { publicacion: resultado.publicacion, productorId: resultado.productorId };
+    return { publicacion: resultado.publicacion, productorId: resultado.productorId, fechaVigencia: resultado.fechaVigencia };
 }

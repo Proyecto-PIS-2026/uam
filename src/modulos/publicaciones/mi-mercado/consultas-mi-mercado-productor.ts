@@ -3,6 +3,7 @@ import { obtenerProductorActual } from "../../usuarios/productores/acciones/prod
 import type { Publicacion } from "./tipos";
 import { convertirInstantAFechaVigencia, esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
 import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
+import { agregarEstadoVigenciaPropias } from "../estado-vigencia-propias";
 
 export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
     publicacionProductorId: number;
@@ -72,7 +73,11 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
 export async function obtenerPublicacionesMiMercadoProductor() {
     const productor = await obtenerProductorActual();
     const relaciones = await consultarPublicacionesProductor(productor.id);
-    const publicaciones = await agregarEstadoFotosPropias(relaciones.map(mapearPublicacionMiMercadoProductor), "PRODUCTOR");
+    const vigencias = await agregarEstadoVigenciaPropias(relaciones.map((relacion) => relacion.publicacion), "PRODUCTOR");
+    const publicaciones = await agregarEstadoFotosPropias(relaciones.map((relacion, indice) => ({
+        ...mapearPublicacionMiMercadoProductor(relacion),
+        estadoVigencia: vigencias[indice].estadoVigencia,
+    })), "PRODUCTOR");
 
     return { productor, publicaciones };
 }

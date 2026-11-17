@@ -1,4 +1,5 @@
 import type { EstadoFotoPublicacion } from "../estado-foto-publicacion";
+import type { EstadoVigenciaPublicacion } from "../estado-vigencia-publicacion";
 
 export type Publicacion = {
     id: number;
@@ -6,6 +7,7 @@ export type Publicacion = {
     paisId: number | null;
     foto: string | null;
     estadoFoto?: EstadoFotoPublicacion;
+    estadoVigencia?: EstadoVigenciaPublicacion;
     precio: string | null;
     fecha: string;
     fechaVigencia: string | null;

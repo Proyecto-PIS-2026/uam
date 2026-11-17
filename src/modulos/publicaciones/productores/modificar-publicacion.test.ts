@@ -181,6 +181,18 @@ describe("edición de publicaciones de productores", () => {
 
         expect(mocks.publicacion.update.mock.calls[0][0]).not.toHaveProperty("fechaVigencia");
         expect(resultado.publicacion.fechaVigencia).toBe("2026-11-08");
+        expect(resultado.fechaVigencia?.toString()).toBe("2026-11-09T02:59:59Z");
+    });
+
+    it("conserva el instante interno exacto para calcular el estado sin reconstruirlo desde la fecha visible", async () => {
+        const anterior = relacion();
+        const fechaVigencia = Temporal.Instant.from("2026-11-06T12:00:00Z");
+        mocks.vinculo.first.mockResolvedValue({ ...anterior, publicacion: { ...anterior.publicacion, fechaVigencia } });
+
+        const resultado = await modificarPublicacionProductor(sesion, 12, cambios);
+
+        expect(resultado.fechaVigencia?.toString()).toBe("2026-11-06T12:00:00Z");
+        expect(resultado.publicacion.fechaVigencia).toBe("2026-11-06");
     });
 
     it.each([null, ""])("asigna el tope de Montevideo al vaciar explícitamente la fecha activa: %j", async (fechaVigencia) => {

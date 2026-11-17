@@ -7,6 +7,7 @@ import { ErrorEdicionPublicacionProductor, modificarPublicacionProductor, obtene
 import { bajaPublicacionProductorAutorizada, ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
 import { ErrorCuerpoDemasiadoGrande, leerFormularioLimitado } from "@/infraestructura/http/cuerpo-limitado";
 import { agregarEstadoFotosPropias } from "@/modulos/publicaciones/estado-fotos-propias";
+import { agregarEstadoVigenciaPropias } from "@/modulos/publicaciones/estado-vigencia-propias";
 import { registrarPublicacion } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 
@@ -85,7 +86,8 @@ export async function PATCH(solicitud: Request, contexto: Contexto) {
             }
         }
         const [publicacion] = await agregarEstadoFotosPropias([resultado.publicacion], "PRODUCTOR");
-        return NextResponse.json({ publicacion });
+        const [{ estadoVigencia }] = await agregarEstadoVigenciaPropias([{ fechaVigencia: resultado.fechaVigencia }], "PRODUCTOR");
+        return NextResponse.json({ publicacion: { ...publicacion, estadoVigencia } });
     } catch (error) {
         return respuestaError(error);
     }

@@ -46,6 +46,8 @@ describe("obtenerNaves", () => {
     it("ordena las naves por nombre", async () => {
         mockDb.nave.all.mockResolvedValue([
             { id: 3, nombreNave: "C" },
+            { id: 5, nombreNave: "D" },
+            { id: 4, nombreNave: "C - Polivalente" },
             { id: 1, nombreNave: "A" },
             { id: 2, nombreNave: "B" },
         ]);
@@ -56,6 +58,8 @@ describe("obtenerNaves", () => {
             { id: 1, nombre: "A" },
             { id: 2, nombre: "B" },
             { id: 3, nombre: "C" },
+            { id: 4, nombre: "C - Polivalente" },
+            { id: 5, nombre: "D" },
         ]);
     });
 

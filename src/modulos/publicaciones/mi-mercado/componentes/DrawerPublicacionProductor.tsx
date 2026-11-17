@@ -21,6 +21,7 @@ import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
+import { AvisoVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
@@ -490,6 +491,7 @@ export default function DrawerPublicacionProductor({ publicacion: recibida, alCe
                                 disabled={!editando || ocupado}
                                 onChange={(fechaVigencia) => cambiar({ fechaVigencia })}
                             />
+                            <AvisoVigenciaPublicacion estado={publicacion.estadoVigencia} fechaVigencia={publicacion.fechaVigencia} />
                         </div>
                         <CampoComentario
                             id={`publicacion-productor-${publicacion.id}-comentario`}

@@ -70,6 +70,10 @@ export async function obtenerOperadoresPublicos(): Promise<OperadorListado[]> {
             }
         }
 
+        if (cantidadProductos === 0 && !operador.enLicencia) {
+            continue;
+        }
+
         operadoresPublicos.push({
             id: operador.id,
             nombreFantasia: operador.nombreFantasia,

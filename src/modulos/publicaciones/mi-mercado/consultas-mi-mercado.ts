@@ -4,6 +4,7 @@ import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
 import { MAXIMO_PRECIO_PUBLICACION } from "../precio-publicacion";
 import { Temporal } from "temporal-polyfill";
 import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
+import { agregarEstadoVigenciaPropias } from "../estado-vigencia-propias";
 import { obtenerFechaEstadistica } from "@/modulos/administracion/estadisticas/fechas-estadisticas";
 
 export class PublicacionNoEncontradaError extends Error {
@@ -38,7 +39,8 @@ export async function obtenerPublicacionesDeOperador(operadorId: number) {
         );
     
     const resultado = await publicaciones.all();
-    const vigentes = await agregarEstadoFotosPropias(resultado.map((relacion) => relacion.publicacion), "OPERADOR");
+    const fotos = await agregarEstadoFotosPropias(resultado.map((relacion) => relacion.publicacion), "OPERADOR");
+    const vigentes = await agregarEstadoVigenciaPropias(fotos, "OPERADOR");
     return resultado.map((relacion, indice) => ({ ...relacion, publicacion: vigentes[indice] }));
 }
 

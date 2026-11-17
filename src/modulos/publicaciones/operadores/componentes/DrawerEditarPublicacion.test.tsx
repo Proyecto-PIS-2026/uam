@@ -128,6 +128,38 @@ describe("DrawerEditarPublicacion", () => {
         vi.restoreAllMocks();
     });
 
+    it.each([true, false])("ubica el aviso de publicación junto a su fecha y separado de la foto, web=%s", (esWeb) => {
+        mocks.mediaQuery.mockReturnValue(esWeb);
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" mostrarAvisoFoto publicacion={{ ...publicacionInicial, fechaVigencia: "2026-11-25", estadoVigencia: "por-vencer", estadoFoto: "eliminada" }} />);
+        const aviso = screen.getByText("Esta publicación vence el 25/11/2026. Podés actualizar su fecha de vigencia.").closest<HTMLDivElement>('div[role="status"]');
+        const avisoFoto = screen.getByText("La foto venció y fue eliminada. Podés cargar una nueva foto.").closest<HTMLDivElement>('div[role="status"]');
+        expect(aviso).toBeVisible();
+        expect(aviso?.parentElement).toContainElement(screen.getByLabelText("Fecha de vigencia", { selector: "input" }));
+        expect(aviso?.parentElement).not.toContainElement(avisoFoto);
+    });
+
+    it("muestra la publicación vencida aunque no corresponda mostrar el aviso de foto", () => {
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" publicacion={{ ...publicacionInicial, fechaVigencia: "2026-11-15", estadoVigencia: "vencida" }} />);
+        expect(screen.getByRole("status")).toHaveTextContent("Esta publicación venció el 15/11/2026 y ya no está disponible.");
+    });
+
+    it("conserva el aviso hasta guardar la nueva vigencia y espera su estado actualizado", async () => {
+        const inicial = { ...publicacionInicial, fechaVigencia: "2026-11-25", estadoVigencia: "por-vencer" as const };
+        render(<DrawerEditarPublicacion {...props} modoInicial="consulta" publicacion={inicial} />);
+        const aviso = "Esta publicación vence el 25/11/2026. Podés actualizar su fecha de vigencia.";
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByLabelText("Fecha de vigencia", { selector: "input" }), { target: { value: "2026-12-25" } });
+        expect(screen.getByText(aviso)).toBeVisible();
+        fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+        expect(screen.getByText(aviso)).toBeVisible();
+        fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+        fireEvent.change(screen.getByLabelText("Fecha de vigencia", { selector: "input" }), { target: { value: "2026-12-25" } });
+        guardarDesdeBoton();
+        await waitFor(() => expect(screen.getByText("Consulta de publicación")).toBeInTheDocument());
+        expect(mocks.guardar).toHaveBeenCalledWith(15, expect.objectContaining({ fechaVigencia: "2026-12-25" }), null);
+        expect(screen.queryByText(aviso)).not.toBeInTheDocument();
+    });
+
     it.each([
         { estadoFoto: "por-vencer", mensaje: "La foto está por vencer." },
         { estadoFoto: "eliminada", mensaje: "La foto venció y fue eliminada." },

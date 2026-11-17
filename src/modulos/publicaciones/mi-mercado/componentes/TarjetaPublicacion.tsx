@@ -10,6 +10,7 @@ import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { IndicadorVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
+import { DescripcionVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
 import type { Publicacion } from "../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
@@ -178,10 +179,14 @@ export default function TarjetaPublicacion({
     const calibre = pub.calibre?.nombreCalibre;
     const tieneVariedad = variedad && variedad.trim() !== "" && variedad.trim() !== "-";
     const nombreProducto = tieneVariedad ? `${especie} · ${variedad}` : especie;
+    const claseVigencia = pub.estadoVigencia === "por-vencer" ? styles.porVencer : pub.estadoVigencia === "vencida" ? styles.vencida : "";
+    const descripcionVigencia = pub.estadoVigencia ? `vigencia-publicacion-operador-${pub.id}` : undefined;
+    const descripcionFoto = [pub.estadoFoto ? `vigencia-foto-operador-${pub.id}` : null, descripcionVigencia].filter(Boolean).join(" ") || undefined;
 
     const contenido = (
-        <div className={styles.tarjeta}>
-            <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={pub.estadoFoto ? `vigencia-foto-operador-${pub.id}` : undefined}>
+        <div className={`${styles.tarjeta} ${claseVigencia}`}>
+            <DescripcionVigenciaPublicacion estado={pub.estadoVigencia} id={`vigencia-publicacion-operador-${pub.id}`} />
+            <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={descripcionFoto}>
                 <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(max-width: 639px) 112px, (max-width: 700px) 128px, (max-width: 776px) calc(50vw - 22px), (max-width: 1028px) calc(33.333vw - 18.667px), (max-width: 1279px) calc(25vw - 17px), 320px" unoptimized className={styles.foto} reemplazo={
                     <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
                         <HideImageOutlinedIcon className={styles.iconoSinFoto} aria-hidden="true" />
@@ -191,7 +196,7 @@ export default function TarjetaPublicacion({
                 <IndicadorVigenciaFoto estado={pub.estadoFoto} id={`vigencia-foto-operador-${pub.id}`} />
             </button>
             <div className={styles.contenido}>
-                <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion}>
+                <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion} aria-describedby={descripcionVigencia}>
                     <div className={styles.informacion}>
                         <div className={styles.encabezadoProducto}>
                             <div className={styles.nombreProducto} title={nombreProducto}>
@@ -250,7 +255,7 @@ export default function TarjetaPublicacion({
                             <AddIcon aria-hidden="true" fontSize="inherit" />
                         </button>
                     </div>
-                    <button type="button" onClick={consultarPublicacion} className={styles.botonDetalle} aria-label={`Ver detalle de ${nombreProducto}`}>
+                    <button type="button" onClick={consultarPublicacion} className={styles.botonDetalle} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={descripcionVigencia}>
                         <ChevronRightIcon aria-hidden="true" fontSize="inherit" />
                     </button>
                 </div>

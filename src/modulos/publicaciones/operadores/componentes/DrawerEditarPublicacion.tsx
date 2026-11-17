@@ -24,6 +24,7 @@ import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import FotoPublicacionAmpliada from "../../componentes/FotoPublicacionAmpliada";
 import estilosFoto from "../../componentes/FotoPublicacionAmpliada.module.css";
 import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
+import { AvisoVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
 import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import styles from "./DrawerEditarPublicacion.module.css";
@@ -310,6 +311,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             setGuardada({ origen: recibida, datos: {
                 ...publicacion, ...cambios, version: cambios.version + 1, foto,
                 estadoFoto: fotoNueva || (foto === null && publicacion.foto !== null) ? null : publicacion.estadoFoto,
+                estadoVigencia: cambios.fechaVigencia === publicacion.fechaVigencia ? publicacion.estadoVigencia : undefined,
                 especie: especieSeleccionada?.nombre ?? publicacion.especie,
                 variedad: variedadSeleccionada?.nombre ?? "",
                 envase: envases.find((opcion) => opcion.id === envaseId)?.nombre ?? "",
@@ -454,6 +456,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 readOnly={!editando}
                 disabled={bloqueado}
             />
+            <AvisoVigenciaPublicacion estado={publicacion.estadoVigencia} fechaVigencia={publicacion.fechaVigencia} />
         </div>
     );
     const campoComentario = (

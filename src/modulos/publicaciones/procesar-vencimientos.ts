@@ -1,7 +1,8 @@
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { enviarNotificacion } from "@/modulos/notificaciones/notificaciones";
 import { Temporal } from "temporal-polyfill";
-import { CLAVES_VIGENCIA_PUBLICACIONES } from "./claves-vigencia-publicaciones";
+import { obtenerConfiguracionAvisosVigencia } from "./estado-vigencia-propias";
+import { obtenerEstadoVigenciaPublicacion } from "./estado-vigencia-publicacion";
 
 async function registrarYEnviarAviso({
     usuarioId, publicacionId, fechaVigencia, tipo, texto, url,
@@ -55,23 +56,8 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
 
     if (!operador && !productor) return;
     const tipo = operador ? "OPERADOR" : "PRODUCTOR";
-    const [, , claveAvisos, claveAnticipacion] = CLAVES_VIGENCIA_PUBLICACIONES[tipo];
-    const [configAvisoHabilitado, configDiasAnticipacion] = await Promise.all([
-        db.orm.public.Configuracion
-            .where({ nombreConfiguracion: claveAvisos })
-            .select("valorConfiguracion")
-            .first(),
-        db.orm.public.Configuracion
-            .where({ nombreConfiguracion: claveAnticipacion })
-            .select("valorConfiguracion")
-            .first(),
-    ]);
-
-    const avisosHabilitados = configAvisoHabilitado?.valorConfiguracion !== "false";
-    const diasAnticipacion = Math.max(1, Number(configDiasAnticipacion?.valorConfiguracion ?? 7) || 7);
-
+    const configuracion = await obtenerConfiguracionAvisosVigencia(tipo);
     const ahora = Temporal.Now.instant();
-    const limiteAviso = ahora.add({ hours: diasAnticipacion * 24 });
 
     const rutaMercado = operador ? "/mi-mercado" : "/mi-mercado/productor";
 
@@ -135,17 +121,17 @@ export async function procesarVencimientosUsuario(usuarioId: number): Promise<vo
             .toPlainDate()
             .toString();
 
-        const yaVencio = Temporal.Instant.compare(instantVigencia, ahora) < 0;
+        const estadoVigencia = obtenerEstadoVigenciaPublicacion(instantVigencia, configuracion, ahora);
         const urlPublicacion = `${rutaMercado}?publicacion=${pub.id}`;
 
-        if (yaVencio) {
+        if (estadoVigencia === "vencida") {
             if (pub.avisoVencidoEnviado && !pub.publicacionDisponible) continue;
             const textoVencida = `Tu publicación de ${pub.especieNombre} ha vencido el ${fechaVigenciaStr} y ya no está disponible.`;
             await registrarYEnviarAviso({
                 usuarioId, publicacionId: pub.id, fechaVigencia: instantVigencia,
                 tipo: "vencido", texto: textoVencida, url: urlPublicacion,
             });
-        } else if (avisosHabilitados && !pub.avisoProximoEnviado && Temporal.Instant.compare(instantVigencia, limiteAviso) <= 0) {
+        } else if (estadoVigencia === "por-vencer" && !pub.avisoProximoEnviado) {
             const textoAviso = `Tu publicación de ${pub.especieNombre} está próxima a vencer el ${fechaVigenciaStr}.`;
             await registrarYEnviarAviso({
                 usuarioId, publicacionId: pub.id, fechaVigencia: instantVigencia,

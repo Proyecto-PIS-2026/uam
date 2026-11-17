@@ -1,6 +1,7 @@
 
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
 import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import { ErrorEdicionPublicacionProductor } from "@/modulos/publicaciones/productores/modificar-publicacion";
 import { ErrorBajaPublicacionProductor } from "@/modulos/publicaciones/productores/bajaPublicacionProductorAutorizada";
@@ -99,6 +100,7 @@ const publicacion = {
     fecha: "2026-10-21T12:00:00Z",
     foto: null,
     estadoFoto: null,
+    estadoVigencia: null,
 };
 
 function configurarMocksBase() {
@@ -116,6 +118,7 @@ function configurarMocksBase() {
     mocks.modificar.mockResolvedValue({
         publicacion,
         productorId: 3,
+        fechaVigencia: null,
     });
 
     mocks.baja.mockResolvedValue({ productorId: 3 });
@@ -332,6 +335,34 @@ describe("GET /api/publicaciones/productor/[id]", () => {
 });
 
 describe("PATCH /api/publicaciones/productor/[id]", () => {
+    it.each([
+        { fechaVigencia: "2026-11-05", instante: "2026-11-06T02:59:59Z", estadoVigencia: "por-vencer" },
+        { fechaVigencia: "2026-11-20", instante: "2026-11-21T02:59:59Z", estadoVigencia: null },
+        { fechaVigencia: "2026-11-04", instante: "2026-11-04T12:00:00Z", estadoVigencia: "vencida" },
+        { fechaVigencia: null, instante: null, estadoVigencia: null },
+    ])("recalcula el estado de vigencia al guardar la fecha $fechaVigencia", async ({ fechaVigencia, instante, estadoVigencia }) => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-04T15:00:00Z"));
+        mocks.modificar.mockResolvedValue({
+            publicacion: { ...publicacion, fechaVigencia, estadoVigencia: "vencida" },
+            productorId: 3,
+            fechaVigencia: instante ? Temporal.Instant.from(instante) : null,
+        });
+        mocks.modelos.Configuracion.first.mockResolvedValueOnce({ valorConfiguracion: "true" })
+            .mockResolvedValueOnce({ valorConfiguracion: "2" });
+
+        const respuesta = await PATCH(solicitud({ fechaVigencia }), contexto);
+
+        expect(respuesta.status).toBe(200);
+        expect(await respuesta.json()).toEqual({ publicacion: { ...publicacion, fechaVigencia, estadoVigencia } });
+        if (fechaVigencia && estadoVigencia !== "vencida") {
+            expect(mocks.modelos.Configuracion.where).toHaveBeenCalledWith({ nombreConfiguracion: "aviso_vencimiento_publicaciones_productor_habilitado" });
+            expect(mocks.modelos.Configuracion.where).toHaveBeenCalledWith({ nombreConfiguracion: "anticipacion_aviso_publicaciones_productor" });
+        } else {
+            expect(mocks.modelos.Configuracion.first).not.toHaveBeenCalled();
+        }
+    });
+
     it("devuelve el estado actualizado de la nueva foto sin conservar el aviso de eliminación anterior", async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-11-04T03:00:00Z"));

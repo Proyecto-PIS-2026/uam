@@ -547,6 +547,7 @@ async function crearUsuarioDemo(username: string, rol: "ADMINISTRADOR" | "OPERAD
 async function crearOperadores(archivos: Map<string, string>) {
   const todosLosOperadores = [...operadores, operadorInhabilitado, operadorAging, operadorVigencia];
   const nombresNave = new Set(todosLosOperadores.flatMap((operador) => operador.locales.map((local) => local.nave)));
+  nombresNave.add("C - Polivalente");
   for (const nombreNave of nombresNave) {
     await prisma.orm.public.Nave.create({ nombreNave });
   }

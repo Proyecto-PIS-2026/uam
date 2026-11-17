@@ -1,10 +1,11 @@
-import { fechaHaceTresAnios, validarParametrosConsulta, type ConsultaHistorica } from "./parametros-consulta";
+import { Temporal } from "temporal-polyfill";
+import { validarParametrosConsulta, type ConsultaHistorica } from "./parametros-consulta";
 
-function cabeEnTresAnios(desde: string, hasta: string): boolean {
-    const diferencia = Number(hasta.slice(0, 4)) - Number(desde.slice(0, 4));
-    if (diferencia !== 3) return diferencia < 3;
-    const aniversario = desde.slice(5) === "02-29" ? "02-28" : desde.slice(5);
-    return hasta.slice(5) <= aniversario;
+const ANIOS_MAXIMOS_POR_PEDIDO = 2;
+
+function cabeEnUnPedido(desde: string, hasta: string): boolean {
+    const limite = Temporal.PlainDate.from(desde).add({ years: ANIOS_MAXIMOS_POR_PEDIDO });
+    return Temporal.PlainDate.compare(Temporal.PlainDate.from(hasta), limite) <= 0;
 }
 
 function diaSiguiente(fecha: string): string {
@@ -18,9 +19,9 @@ export function dividirPeriodoHistorico(consulta: ConsultaHistorica): ConsultaHi
     const periodos: ConsultaHistorica[] = [];
     let hasta = consulta.hasta;
 
-    while (!cabeEnTresAnios(consulta.desde, hasta)) {
-        const corte = fechaHaceTresAnios(hasta);
-        // Los límites son inclusivos; el día siguiente evita superponer tramos y exceder tres años un 29 de febrero.
+    while (!cabeEnUnPedido(consulta.desde, hasta)) {
+        const corte = Temporal.PlainDate.from(hasta).subtract({ years: ANIOS_MAXIMOS_POR_PEDIDO }).toString();
+        // Los límites son inclusivos; el día siguiente evita superponer tramos y exceder dos años un 29 de febrero.
         periodos.push({ ...consulta, desde: diaSiguiente(corte), hasta });
         hasta = corte;
     }

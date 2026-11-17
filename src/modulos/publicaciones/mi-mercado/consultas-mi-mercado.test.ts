@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Temporal } from "temporal-polyfill";
 import {
     actualizarPrecioPublicacion,
     ConflictoPublicacionError,
@@ -47,6 +48,7 @@ const mocks = vi.hoisted(() => {
         operador: consulta(),
         usuario: consulta(),
         estadistica: consulta(),
+        configuracionVigencia: consulta(),
         transaction: vi.fn(),
         execute: vi.fn(),
         notificar: vi.fn(),
@@ -63,6 +65,7 @@ vi.mock("../../../infraestructura/persistencia/prisma/db", () => ({
                 Operador: mocks.operador,
                 Usuario: mocks.usuario,
                 EstadisticaPublicacion: mocks.estadistica,
+                Configuracion: mocks.configuracionVigencia,
             },
         },
         transaction: mocks.transaction,
@@ -153,6 +156,7 @@ describe("precios de Mi Mercado", () => {
         ]);
 
         mocks.imagen.all.mockResolvedValue([]);
+        mocks.configuracionVigencia.first.mockReset().mockResolvedValue(null);
 
         mocks.publicacion.first.mockImplementation(async () => ({
             ...fila,
@@ -213,6 +217,7 @@ describe("precios de Mi Mercado", () => {
                     ...fila,
                     foto: null,
                     estadoFoto: null,
+                    estadoVigencia: null,
                 },
             },
         ]);
@@ -220,6 +225,25 @@ describe("precios de Mi Mercado", () => {
         expect(mocks.relacion.where).toHaveBeenCalledWith({
             operadorId: 10,
         });
+    });
+
+    it("incluye la vigencia de la publicación junto al estado independiente de su foto", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-04T15:00:00Z"));
+        const fechaVigencia = Temporal.Instant.from("2026-11-06T02:59:59Z");
+        mocks.relacion.all.mockResolvedValue([{
+            id: 1,
+            publicacionId: 20,
+            publicacion: { ...fila, fechaVigencia, foto: null, fotoEliminadaPorVencimientoEn: "2026-11-03T12:00:00Z" },
+        }]);
+        mocks.configuracionVigencia.first.mockResolvedValueOnce({ valorConfiguracion: "true" })
+            .mockResolvedValueOnce({ valorConfiguracion: "2" });
+
+        const [relacion] = await obtenerPublicacionesDeOperador(10);
+
+        expect(relacion.publicacion).toMatchObject({ id: 20, estadoVigencia: "por-vencer", estadoFoto: "eliminada", version: 1 });
+        expect(mocks.configuracionVigencia.where).toHaveBeenCalledWith({ nombreConfiguracion: "aviso_vencimiento_publicaciones_operador_habilitado" });
+        expect(mocks.configuracionVigencia.where).toHaveBeenCalledWith({ nombreConfiguracion: "anticipacion_aviso_publicaciones_operador" });
     });
 
     it("conserva el estado de eliminación para el dueño sin serializar la marca interna de la base", async () => {
@@ -313,6 +337,7 @@ describe("precios de Mi Mercado", () => {
                 publicacion: {
                     ...relaciones[0].publicacion,
                     estadoFoto: "por-vencer",
+                    estadoVigencia: null,
                 },
             },
             {
@@ -320,6 +345,7 @@ describe("precios de Mi Mercado", () => {
                 publicacion: {
                     ...relaciones[1].publicacion,
                     estadoFoto: null,
+                    estadoVigencia: null,
                 },
             },
         ]);
