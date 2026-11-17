@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./precarga-operadores";
 
 const rutaListado = "/operadores";
 
@@ -81,4 +82,30 @@ test("BP-20.2 permite regresar al listado de operadores desde el perfil", async 
   await page.getByRole("link", { name: "Volver al listado de operadores" }).click();
   await expect(page).toHaveURL((url) => url.pathname === rutaListado);
   await expect(page.getByRole("searchbox", { name: "Buscar operadores" })).toBeVisible();
+});
+
+test("BP-20 no muestra públicamente a un operador deshabilitado", async ({ page, precargaOperadores }) => {
+  test.slow();
+
+  const { db, operadorA } = precargaOperadores;
+  const buscador = page.getByRole("searchbox", { name: "Buscar operadores" });
+  const todasLasTarjetas = page.locator('a[href^="/operadores/"]');
+  const tarjetaOperador = todasLasTarjetas.filter({ hasText: operadorA.nombre });
+
+  // Control: mientras está habilitado, el operador sí aparece en el listado.
+  await page.goto(rutaListado);
+  await buscador.fill(operadorA.nombre);
+  await expect(tarjetaOperador).toHaveCount(1);
+
+  await db.orm.public.Usuario.where({ id: operadorA.usuarioId }).update({ habilitado: false });
+
+  // Deshabilitado: el listado carga con otros operadores, pero ya no aparece este.
+  await page.goto(rutaListado);
+  await expect(todasLasTarjetas.first()).toBeVisible();
+  await buscador.fill(operadorA.nombre);
+  await expect(tarjetaOperador).toHaveCount(0);
+
+  // Tampoco se puede entrar a su perfil por URL directa.
+  await page.goto(`/operadores/${encodeURIComponent(operadorA.nombre)}`);
+  await expect(page.getByRole("heading", { name: operadorA.nombre, level: 1 })).toHaveCount(0);
 });
