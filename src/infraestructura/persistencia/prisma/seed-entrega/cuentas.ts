@@ -39,32 +39,32 @@ function crearAdministradores(): CuentaAdministradorEntrega[] {
 function crearCuentasPrueba(): (CuentaOperadorEntrega | CuentaProductorEntrega)[] {
   return [
     {
-      rol: "OPERADOR", username: "op_aging", identificadorIngreso: "op_aging",
-      nombreFantasia: "Pruebas de aging de imágenes - Operador", whatsapp: "", escenario: "aging",
+      rol: "OPERADOR", username: "operador_fotos", identificadorIngreso: "operador_fotos",
+      nombreFantasia: "Operador fotos", whatsapp: "", escenario: "aging",
       locales: [{ nave: NAVE_PRUEBAS, numero: "99001", finContrato: null }],
     },
     {
-      rol: "OPERADOR", username: "op_vigencia", identificadorIngreso: "op_vigencia",
-      nombreFantasia: "Pruebas de vigencia de publicaciones - Operador", whatsapp: "", escenario: "vigencia",
+      rol: "OPERADOR", username: "operador_publicacion", identificadorIngreso: "operador_publicacion",
+      nombreFantasia: "Operador publicación", whatsapp: "", escenario: "vigencia",
       locales: [{ nave: NAVE_PRUEBAS, numero: "99002", finContrato: null }],
     },
     {
-      rol: "OPERADOR", username: "op_locales", identificadorIngreso: "op_locales",
-      nombreFantasia: "Pruebas de vencimiento de contratos - Operador", whatsapp: "", escenario: "locales",
-      locales: Array.from({ length: 16 }, (_, indice) => {
-        const dia = 15 + indice;
+      rol: "OPERADOR", username: "operador_locales", identificadorIngreso: "operador_locales",
+      nombreFantasia: "Operador locales", whatsapp: "", escenario: "locales",
+      locales: ["A", "B", NAVE_PRUEBAS].map((nave, indice) => {
+        const dia = 16 + indice;
         // Fin del día de noviembre en Uruguay (UTC-3), inclusive.
         const finContrato = new Date(Date.UTC(2026, 10, dia + 1, 3) - 1).toISOString();
-        return { nave: NAVE_PRUEBAS, numero: String(99100 + dia), finContrato };
+        return { nave, numero: String(99100 + dia), finContrato };
       }),
     },
     {
-      rol: "PRODUCTOR", username: "productor_aging", identificadorIngreso: "productor_aging",
-      nombreFantasia: "Pruebas de aging de imágenes - Productor", whatsapp: "", escenario: "aging",
+      rol: "PRODUCTOR", username: "productor_fotos", identificadorIngreso: "productor_fotos",
+      nombreFantasia: "Productor fotos", whatsapp: "", escenario: "aging",
     },
     {
-      rol: "PRODUCTOR", username: "productor_vigencia", identificadorIngreso: "productor_vigencia",
-      nombreFantasia: "Pruebas de vigencia de publicaciones - Productor", whatsapp: "", escenario: "vigencia",
+      rol: "PRODUCTOR", username: "productor_publicacion", identificadorIngreso: "productor_publicacion",
+      nombreFantasia: "Productor publicación", whatsapp: "", escenario: "vigencia",
     },
   ];
 }
