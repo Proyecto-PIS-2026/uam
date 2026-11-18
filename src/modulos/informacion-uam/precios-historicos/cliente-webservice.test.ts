@@ -31,11 +31,13 @@ function respuestaValida(): Response {
 
 beforeEach(() => {
     vi.stubEnv("PRECIOS_HISTORICOS_ENDPOINT", plantilla);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
 afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
 });
 
 describe("cliente del webservice de precios históricos", () => {
@@ -46,6 +48,7 @@ describe("cliente del webservice de precios históricos", () => {
         await expect(consultarHistorico({
             baseUrl: "https://uam-pyv-testing.flow-labs.io", token: "jwt-de-prueba",
         }, consulta, fetcher)).resolves.toEqual(consultaValida);
+        expect(console.error).not.toHaveBeenCalled();
 
         expect(fetcher).toHaveBeenCalledExactlyOnceWith(
             "https://uam-pyv-testing.flow-labs.io/api/prices/history/60?from=2025-10-01&to=2025-10-31",
@@ -192,6 +195,14 @@ describe("cliente del webservice de precios históricos", () => {
         expect((error as Error).message).not.toContain(opciones.token);
         expect((error as Error).message).not.toContain(opciones.baseUrl);
         expect((error as Error).message).not.toContain("credencial inválida");
+        expect(console.error).toHaveBeenCalledExactlyOnceWith("Falló el webservice de precios históricos.", expect.any(String));
+        const detalle = vi.mocked(console.error).mock.calls[0][1] as string;
+        expect(detalle).toContain("credencial inválida [REDACTADO]");
+        expect(detalle).toContain("estadoHTTP: 401");
+        expect(detalle).toContain("especie: 60");
+        expect(detalle).toContain(consulta.desde);
+        expect(detalle).toContain(consulta.hasta);
+        expect(detalle).not.toContain(opciones.token);
         expect(vi.getTimerCount()).toBe(0);
     });
 
@@ -201,6 +212,7 @@ describe("cliente del webservice de precios históricos", () => {
         await expect(consultarHistorico(opciones, consulta, fetcher)).rejects.toThrow(
             "El webservice de precios históricos devolvió un JSON inválido.",
         );
+        expect(console.error).toHaveBeenCalledExactlyOnceWith("Falló el webservice de precios históricos.", expect.stringContaining("SyntaxError"));
     });
 
     it("rechaza un JSON que no tiene la estructura del histórico", async () => {
@@ -442,11 +454,12 @@ describe("cliente del webservice de precios históricos", () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 
-    it("distingue un HTTP 500 rápido de un timeout e informa su duración sin leer el cuerpo", async () => {
+    it("distingue un HTTP 500 rápido de un timeout sin interpretar su cuerpo como JSON", async () => {
         vi.useFakeTimers();
-        const json = vi.fn();
+        const respuesta = new Response("Servicio no disponible", { status: 500 });
+        const json = vi.spyOn(respuesta, "json");
         const fetcher = vi.fn<typeof fetch>(() => new Promise((resolve) => {
-            setTimeout(() => resolve({ ok: false, status: 500, json } as unknown as Response), 120);
+            setTimeout(() => resolve(respuesta), 120);
         }));
         const resultado = consultarHistorico(opciones, consulta, fetcher).catch((causa) => causa as Error);
 
@@ -459,6 +472,7 @@ describe("cliente del webservice de precios históricos", () => {
         );
         expect((error as Error).message).not.toContain("superó");
         expect(json).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledExactlyOnceWith("Falló el webservice de precios históricos.", expect.stringContaining("Servicio no disponible"));
         expect(vi.getTimerCount()).toBe(0);
     });
 
@@ -475,6 +489,13 @@ describe("cliente del webservice de precios históricos", () => {
         expect((error as Error).message).not.toContain(opciones.baseUrl);
         expect((error as Error).message).not.toContain(opciones.token);
         expect((error as Error).cause).toBeUndefined();
+        expect(console.error).toHaveBeenCalledExactlyOnceWith("Falló el webservice de precios históricos.", expect.any(String));
+        const detalle = vi.mocked(console.error).mock.calls[0][1] as string;
+        expect(detalle).toContain("TypeError: fetch failed");
+        expect(detalle).toContain("UND_ERR_CONNECT_TIMEOUT");
+        expect(detalle).toContain("[cause]");
+        expect(detalle).toContain("[REDACTADO]");
+        expect(detalle).not.toContain(opciones.token);
         expect(vi.getTimerCount()).toBe(0);
     });
 

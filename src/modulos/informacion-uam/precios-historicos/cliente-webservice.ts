@@ -2,6 +2,7 @@ import type { OpcionesWebservicePrecios } from "../precios-referencia/cliente-we
 import { validarParametrosConsulta, type ConsultaHistorica } from "./parametros-consulta";
 import type { HistoricoProducto } from "./tipos";
 import { validarHistoricoProducto } from "./validar-historico";
+import { detalleRespuestaFallida, registrarErrorWebservice } from "../webservice/registro-errores";
 
 const TIEMPO_MAXIMO_MS = 300_000;
 
@@ -61,17 +62,18 @@ export async function consultarHistorico(
     consulta: ConsultaHistorica,
     fetcher: typeof fetch = fetch,
 ): Promise<HistoricoProducto> {
-    validarParametrosConsulta(consulta);
-    const url = construirUrl(opciones.baseUrl, consulta);
     const token = opciones.token.trim();
-    if (!token || /[\r\n]/.test(token)) throw new Error("Falta un token válido para el webservice de precios.");
-
     const limiteMs = TIEMPO_MAXIMO_MS;
     const inicio = Date.now();
+    let detalleRespuesta: Record<string, unknown> = {};
+    let errorLecturaJSON: unknown;
 
     const controlador = new AbortController();
     const temporizador = setTimeout(() => controlador.abort(), limiteMs);
     try {
+        validarParametrosConsulta(consulta);
+        const url = construirUrl(opciones.baseUrl, consulta);
+        if (!token || /[\r\n]/.test(token)) throw new Error("Falta un token válido para el webservice de precios.");
         const respuesta = await fetcher(url, {
             method: "GET",
             headers: { Authorization: "Bearer " + token, Accept: "application/json" },
@@ -81,6 +83,7 @@ export async function consultarHistorico(
         });
         if (!respuesta.ok) {
             const ahora = Date.now();
+            detalleRespuesta = await detalleRespuestaFallida(respuesta);
             throw new ErrorWebserviceHistorico(
                 respuesta.status,
                 ahora - inicio,
@@ -92,6 +95,7 @@ export async function consultarHistorico(
             contenido = await respuesta.json();
         } catch (error) {
             if (error instanceof SyntaxError) {
+                errorLecturaJSON = error;
                 throw new Error("El webservice de precios históricos devolvió un JSON inválido.");
             }
             throw error;
@@ -99,7 +103,14 @@ export async function consultarHistorico(
         return validarHistoricoProducto(contenido, consulta);
     } catch (error) {
         const duracionMs = Date.now() - inicio;
-        if (controlador.signal.aborted) {
+        registrarErrorWebservice("precios históricos", errorLecturaJSON ?? error, {
+            especie: consulta.speciesId,
+            desde: consulta.desde,
+            hasta: consulta.hasta,
+            duracionMs,
+            ...detalleRespuesta,
+        }, token);
+        if (controlador.signal.aborted && !(error instanceof ErrorWebserviceHistorico)) {
             throw new Error(`El webservice de precios históricos superó el tiempo máximo de ${limiteMs} ms. ${contextoConsulta(consulta, duracionMs)}`);
         }
         if (error instanceof TypeError) {
