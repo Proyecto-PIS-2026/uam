@@ -7,7 +7,7 @@ async function seleccionarProducto(page: Page) {
   await expect(fila).toBeVisible();
   const celdas = await fila.getByRole("cell").allTextContents();
   await fila.click();
-  await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos" && url.searchParams.get("species_id") === "1");
+  await expect(page).toHaveURL((url) => url.pathname === "/precios-historicos" && url.searchParams.get("species_id") === "1", { timeout: 60_000 });
   return {
     producto: celdas[0].trim(), variedad: celdas[1].trim(),
     pais: celdas[5].trim(), calibre: celdas[6].trim(), categoria: celdas[7].trim(),
@@ -75,6 +75,9 @@ test.describe("BP-17.1 histórico de precios", () => {
     await expect(celdas.nth(5)).toHaveText("");
     await expect(celdas.nth(6)).toHaveText("$23,33 - $26,67");
     await expect(celdas.nth(7)).toHaveText("1 200 kg");
+    const fechas = (await filas.locator("td:first-child").allInnerTexts())
+      .map((texto) => texto.trim().split("/").reverse().join("-"));
+    expect(fechas, "Los registros deben ir de la fecha más reciente a la más antigua").toEqual([...fechas].sort().reverse());
   });
 
   test("@new aplica variedad y limpieza inmediatamente y permite ampliar los resultados después de recargar", async ({ page }) => {
@@ -231,4 +234,32 @@ test.describe("BP-17.1 histórico de precios", () => {
       await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveText("Seleccioná un producto válido desde precios de referencia para consultar su histórico.");
     });
   }
+});
+
+test("BP-17.1 @new informa el error cuando la consulta del histórico falla", async ({ page }) => {
+  test.setTimeout(90_000);
+  // El servicio simulado responde 400 para una especie ausente de su relevamiento.
+  await page.goto("/precios-historicos?species_id=999999");
+  await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert"))
+    .toHaveText("No pudimos cargar los precios históricos. Intentá nuevamente en unos minutos.", { timeout: 60_000 });
+});
+
+test("BP-17.1 @new indica que la consulta está cargando", async ({ page }) => {
+  test.setTimeout(90_000);
+  await cargarHistorico(page);
+  // Un período fuera del ya cargado obliga a consultar al servidor; uno interno se resuelve en el cliente.
+  await completarFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }), "2019-01-01");
+  await completarFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }), "2019-01-02");
+
+  let demorar = false;
+  await page.route(/\/precios-historicos\?/, async (route) => {
+    if (demorar) await new Promise((resolver) => setTimeout(resolver, 4_000));
+    await route.continue();
+  });
+  demorar = true;
+  await page.getByRole("button", { name: "Consultar", exact: true }).click();
+  await expect(page.getByRole("progressbar", { name: "Cargando precios históricos" }).first()).toBeVisible();
+  demorar = false;
+  await esperarHistorico(page);
+  await expect(page.getByRole("main").getByRole("status")).toHaveText("No hay registros históricos para los filtros y el período seleccionados.");
 });

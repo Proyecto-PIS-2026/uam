@@ -78,4 +78,17 @@ test("BP-06: modificación rápida del precio", async ({ page, precargaOperadore
         await expect(precio).toHaveText(`$${precioInicial}`);
         await expect(page).toHaveURL((url) => url.pathname === rutaInicial);
     });
+    
+    await test.step("Modificar el precio manualmente sin cambiar de pantalla", async () => {
+        const precioManual = 250;
+        await precio.click();
+        const campo = page.getByRole("textbox", { name: "Editar precio", exact: true });
+        await expect(campo).toBeVisible();
+        await campo.fill(String(precioManual));
+        await campo.press("Enter");
+        await expect(precio).toHaveText(`$${precioManual}`);
+        await comprobarPrecioGuardado(precioManual);
+        await expect(precio).toBeEnabled({ timeout: 30_000 });
+        await expect(page).toHaveURL((url) => url.pathname === rutaInicial);
+    });
 });
