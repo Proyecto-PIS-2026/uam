@@ -1,6 +1,5 @@
 import type { ConsultaPreciosReferencia } from "./consultas-precios-referencia";
 import { validarConsultaPreciosReferencia } from "./validar-consulta-webservice";
-import { detalleRespuestaFallida, registrarErrorWebservice } from "../webservice/registro-errores";
 
 const TIEMPO_MAXIMO_MS = 15_000;
 
@@ -27,17 +26,17 @@ export async function consultarUltimoRelevamiento(
     opciones: OpcionesWebservicePrecios,
     fetcher: typeof fetch = fetch,
 ): Promise<ConsultaPreciosReferencia> {
+    const url = construirUrl(opciones.baseUrl);
     const token = opciones.token.trim();
-    const inicio = Date.now();
-    let detalleRespuesta: Record<string, unknown> = {};
+
+    if (!token || /[\r\n]/.test(token)) {
+        throw new Error("Falta un token válido para el webservice de precios.");
+    }
+
     const controlador = new AbortController();
     const temporizador = setTimeout(() => controlador.abort(), TIEMPO_MAXIMO_MS);
 
     try {
-        const url = construirUrl(opciones.baseUrl);
-        if (!token || /[\r\n]/.test(token)) {
-            throw new Error("Falta un token válido para el webservice de precios.");
-        }
         const respuesta = await fetcher(url, {
             method: "GET",
             headers: { Authorization: "Bearer " + token, Accept: "application/json" },
@@ -46,18 +45,11 @@ export async function consultarUltimoRelevamiento(
         });
 
         if (!respuesta.ok) {
-            detalleRespuesta = await detalleRespuestaFallida(respuesta);
             throw new Error("El webservice de precios respondió con estado " + respuesta.status + ".");
         }
 
         const datos: unknown = await respuesta.json();
         return validarConsultaPreciosReferencia(datos);
-    } catch (error) {
-        registrarErrorWebservice("precios de referencia", error, {
-            duracionMs: Date.now() - inicio,
-            ...detalleRespuesta,
-        }, token);
-        throw error;
     } finally {
         clearTimeout(temporizador);
     }

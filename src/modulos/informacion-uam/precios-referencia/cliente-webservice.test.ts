@@ -1,15 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { consultarUltimoRelevamiento } from "./cliente-webservice";
 
 const opciones = { baseUrl: "https://datos.uam.test/", token: "jwt-de-prueba" };
-
-beforeEach(() => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-});
-
-afterEach(() => {
-    vi.restoreAllMocks();
-});
 
 const consultaValida = {
     survey_date: "2026-08-27",
@@ -47,7 +39,6 @@ describe("cliente del webservice de precios", () => {
         const resultado = await consultarUltimoRelevamiento(opciones, fetcher);
 
         expect(resultado).toEqual(consultaValida);
-        expect(console.error).not.toHaveBeenCalled();
         expect(fetcher).toHaveBeenCalledOnce();
         expect(fetcher).toHaveBeenCalledWith(
             "https://datos.uam.test/api/prices/latest",
@@ -78,39 +69,9 @@ describe("cliente del webservice de precios", () => {
     });
 
     it("propaga el estado HTTP sin mostrar la respuesta ni el token", async () => {
-        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(`credencial inválida ${opciones.token}`, { status: 401 }));
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("credencial inválida", { status: 401 }));
 
         await expect(consultarUltimoRelevamiento(opciones, fetcher)).rejects.toThrow("El webservice de precios respondió con estado 401.");
-        expect(console.error).toHaveBeenCalledExactlyOnceWith("Falló el webservice de precios de referencia.", expect.any(String));
-        const detalle = vi.mocked(console.error).mock.calls[0][1] as string;
-        expect(detalle).toContain("estadoHTTP: 401");
-        expect(detalle).toContain("credencial inválida [REDACTADO]");
-        expect(detalle).not.toContain(opciones.token);
-    });
-
-    it("registra la causa original de red y conserva el error propagado", async () => {
-        const causa = Object.assign(new Error("connect timeout"), { code: "UND_ERR_CONNECT_TIMEOUT", address: "192.0.2.1", port: 443 });
-        const error = new TypeError("fetch failed", { cause: causa });
-        const fetcher = vi.fn<typeof fetch>().mockRejectedValue(error);
-
-        await expect(consultarUltimoRelevamiento(opciones, fetcher)).rejects.toBe(error);
-
-        expect(console.error).toHaveBeenCalledOnce();
-        const detalle = vi.mocked(console.error).mock.calls[0][1] as string;
-        expect(detalle).toContain("TypeError: fetch failed");
-        expect(detalle).toContain("UND_ERR_CONNECT_TIMEOUT");
-        expect(detalle).toContain("192.0.2.1");
-        expect(detalle).toContain("port: 443");
-    });
-
-    it("registra el error original al recibir un JSON inválido", async () => {
-        const error = new SyntaxError("Respuesta JSON incompleta");
-        const fetcher = vi.fn<typeof fetch>().mockResolvedValue({ ok: true, json: vi.fn().mockRejectedValue(error) } as unknown as Response);
-
-        await expect(consultarUltimoRelevamiento(opciones, fetcher)).rejects.toBe(error);
-        expect(console.error).toHaveBeenCalledExactlyOnceWith(
-            "Falló el webservice de precios de referencia.", expect.stringContaining("SyntaxError: Respuesta JSON incompleta"),
-        );
     });
 
     it("rechaza una respuesta JSON que no tenga la estructura esperada", async () => {
@@ -119,7 +80,6 @@ describe("cliente del webservice de precios", () => {
             .mockResolvedValue(new Response(JSON.stringify({ survey_date: "2026-08-27", types: [] }), { status: 200 }));
 
         await expect(consultarUltimoRelevamiento(opciones, fetcher)).rejects.toThrow("Respuesta de precios de referencia inválida");
-        expect(console.error).toHaveBeenCalledOnce();
     });
 
     it("aborta solicitudes que superan los 15 segundos", async () => {
@@ -139,9 +99,6 @@ describe("cliente del webservice de precios", () => {
             await vi.advanceTimersByTimeAsync(15_000);
             await resultado;
             expect(fetcher).toHaveBeenCalledOnce();
-            expect(console.error).toHaveBeenCalledExactlyOnceWith(
-                "Falló el webservice de precios de referencia.", expect.stringContaining("AbortError"),
-            );
         } finally {
             vi.useRealTimers();
         }
