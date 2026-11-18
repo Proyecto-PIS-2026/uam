@@ -44,22 +44,22 @@ describe("cuentas de entrega", () => {
       .every((cuenta) => cuenta.identificadorIngreso === cuenta.username)).toBe(true);
   });
 
-  it("reserva locales de pruebas y fecha 16 vencimientos al fin de cada día de Uruguay", () => {
+  it("reserva tres locales de contratos en las naves A, B y C con vencimiento el 16, 17 y 18 de noviembre en Uruguay", () => {
     const operadores = crearCuentasEntrega([]).filter((cuenta) => cuenta.rol === "OPERADOR");
-    const aging = operadores.find((cuenta) => cuenta.username === "op_aging")!;
-    const vigencia = operadores.find((cuenta) => cuenta.username === "op_vigencia")!;
-    const contratos = operadores.find((cuenta) => cuenta.username === "op_locales")!;
+    const aging = operadores.find((cuenta) => cuenta.username === "operador_fotos")!;
+    const vigencia = operadores.find((cuenta) => cuenta.username === "operador_publicacion")!;
+    const contratos = operadores.find((cuenta) => cuenta.username === "operador_locales")!;
     expect(aging.locales).toEqual([{ nave: "C - Polivalente", numero: "99001", finContrato: null }]);
     expect(vigencia.locales).toEqual([{ nave: "C - Polivalente", numero: "99002", finContrato: null }]);
-    expect(contratos.locales).toHaveLength(16);
-    expect(contratos.locales[0].finContrato).toBe("2026-11-16T02:59:59.999Z");
-    expect(contratos.locales.at(-1)?.finContrato).toBe("2026-12-01T02:59:59.999Z");
+    expect(contratos.locales).toEqual([
+      { nave: "A", numero: "99116", finContrato: "2026-11-17T02:59:59.999Z" },
+      { nave: "B", numero: "99117", finContrato: "2026-11-18T02:59:59.999Z" },
+      { nave: "C - Polivalente", numero: "99118", finContrato: "2026-11-19T02:59:59.999Z" },
+    ]);
     for (const [indice, local] of contratos.locales.entries()) {
-      expect(local.nave).toBe("C - Polivalente");
-      expect(local.numero).toBe(String(99115 + indice));
       const instante = new Date(local.finContrato!);
       expect(instante.toLocaleDateString("en-CA", { timeZone: "America/Montevideo" }))
-        .toBe(`2026-11-${15 + indice}`);
+        .toBe(`2026-11-${16 + indice}`);
       expect(instante.toLocaleTimeString("en-GB", { timeZone: "America/Montevideo", hour12: false }))
         .toBe("23:59:59");
     }
@@ -84,7 +84,7 @@ describe("cuentas de entrega", () => {
   });
 
   it("rechaza usernames duplicados entre CSV y cuentas reservadas sin distinguir mayúsculas", () => {
-    for (const username of ["op_aging", "ADMIN1", "adminaborrar1", "productor_vigencia"]) {
+    for (const username of ["operador_fotos", "ADMIN1", "adminaborrar1", "productor_publicacion"]) {
       expect(() => crearCuentasEntrega([{ ...operadorEjemplo(), username }])).toThrow(/Username duplicado/);
     }
     const primero = operadorEjemplo();

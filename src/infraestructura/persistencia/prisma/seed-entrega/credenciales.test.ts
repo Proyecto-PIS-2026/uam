@@ -31,7 +31,7 @@ vi.mock("node:crypto", async (importOriginal) => {
 
 const usernamesFijos = [
   "adminABorrar1", "adminABorrar2", "adminABorrar3", "adminABorrar4", "adminABorrar5",
-  "op_aging", "op_vigencia", "op_locales", "productor_aging", "productor_vigencia",
+  "operador_fotos", "operador_publicacion", "operador_locales", "productor_fotos", "productor_publicacion",
 ];
 const esFija = (username: string) => usernamesFijos.includes(username);
 const entradasHash = () => vi.mocked(argon2.hash).mock.calls.map(([entrada]) => entrada.toString());
@@ -98,7 +98,7 @@ describe("contraseñas iniciales de entrega", () => {
   });
 
   it("no extiende las excepciones a prefijos parecidos ni a cambios de mayúsculas", async () => {
-    const similares = ["adminABorrar0", "adminABorrar6", "adminABorrar1_extra", "OP_AGING"]
+    const similares = ["adminABorrar0", "adminABorrar6", "adminABorrar1_extra", "OPERADOR_FOTOS"]
       .map((username) => ({ username, identificadorIngreso: username }));
     const hashes = await crearHashesIniciales(similares);
     const entradas = entradasHash();
