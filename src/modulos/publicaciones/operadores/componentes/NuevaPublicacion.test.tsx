@@ -102,6 +102,32 @@ describe("NuevaPublicacion", () => {
         expect(JSON.parse(envio[1]!.body as string)).toMatchObject({ especieId: 2, variedadId: null, envaseId, kilosId });
     });
 
+    it("permite elegir los cuatro atributos antes de la especie y los conserva al cambiarla", async () => {
+        const opciones = { ...catalogos, especies: [...catalogos.especies, { id: 8, nombre: "Pera" }] };
+        vi.stubGlobal("fetch", vi.fn((_url: string, config?: RequestInit) => Promise.resolve(new Response(JSON.stringify(
+            config?.method === "POST" ? { mensaje: "Publicación creada correctamente.", id: 15 } : opciones,
+        ), { status: config?.method === "POST" ? 201 : 200 }))));
+        renderDrawer();
+        await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar" })).toBeEnabled());
+        for (const [campo, valor] of [["Empaquetado", "Cajita"], ["Kilos del empaquetado", "20 kg"], ["Categoría", "Primera"], ["Calibre", "Grande"]]) {
+            const selector = screen.getByRole("combobox", { name: campo });
+            expect(selector).not.toHaveAttribute("aria-disabled", "true");
+            fireEvent.mouseDown(selector);
+            fireEvent.click(screen.getByRole("option", { name: valor }));
+        }
+        for (const especie of ["Manzana", "Pera"]) {
+            fireEvent.mouseDown(screen.getByRole("combobox", { name: /^Especie/ }));
+            fireEvent.click(screen.getByRole("option", { name: especie }));
+            expect(screen.getByRole("combobox", { name: "Categoría" })).toHaveTextContent("Primera");
+        }
+        fireEvent.submit(screen.getByRole("button", { name: "Confirmar" }).closest("form")!);
+        await waitFor(() => expect(mocks.alCrear).toHaveBeenCalledOnce());
+        const envio = vi.mocked(fetch).mock.calls.find(([, config]) => config?.method === "POST")!;
+        expect(JSON.parse(envio[1]!.body as string)).toMatchObject({
+            especieId: 8, variedadId: null, envaseId: 4, kilosId: 301, categoriaId: 5, calibreId: 6,
+        });
+    });
+
     it("muestra el formulario del operador actual", async () => {
         renderDrawer();
         expect(screen.getByRole("heading", { name: "Nueva publicación" })).toBeInTheDocument();
@@ -320,16 +346,21 @@ describe("NuevaPublicacion", () => {
     });
 
     it("muestra los errores devueltos al enviar", async () => {
-        prepararFetch({ errores: ["La publicación no es válida."] }, 400);
+        prepararFetch({ errores: ["La publicación no es válida.", "Revisá la especie seleccionada."] }, 400);
         renderDrawer();
         const boton = screen.getByRole("button", { name: "Confirmar" });
         await waitFor(() => expect(boton).toBeEnabled());
         const formulario = boton.closest("form");
         if (!formulario) throw new Error("No se encontró el formulario de publicación.");
+        completarFormulario(formulario);
         fireEvent.submit(formulario);
         expect(await screen.findByRole("alert")).toHaveTextContent("La publicación no es válida.");
-        expect(within(formulario).getByRole("alert")).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Cerrar notificación" })).not.toBeInTheDocument();
+        expect(screen.getByRole("alert")).toHaveTextContent("Revisá la especie seleccionada.");
+        expect(fetch).toHaveBeenCalledWith("/api/publicaciones", expect.objectContaining({ method: "POST" }));
+        expect(mocks.alCrear).not.toHaveBeenCalled();
+        expect(within(formulario).queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(screen.getByRole("alert"));
+        expect(screen.getByRole("button", { name: "Cerrar notificación" })).toBeInTheDocument();
     });
 
     it("muestra los fallos técnicos en un toast y conserva el formulario para reintentar", async () => {

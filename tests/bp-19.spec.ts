@@ -35,13 +35,15 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
   });
 
   test("abre el histórico del registro con teclado conservando sus filtros", async ({ page }) => {
+    test.setTimeout(90_000);
     const enlace = page.getByRole("table").getByRole("link", { name: /^Ver histórico de / }).first();
     const destino = await enlace.getAttribute("href");
     expect(destino).toContain("/precios-historicos?");
     await enlace.focus();
     await expect(enlace).toBeFocused();
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(new URL(destino!, "http://127.0.0.1:3100").href);
+    // El servidor de pruebas compila el histórico al acceder por primera vez.
+    await expect(page).toHaveURL(new URL(destino!, "http://127.0.0.1:3100").href, { timeout: 60_000 });
     await expect(page.getByRole("heading", { name: /^Histórico de /, level: 1 })).toBeVisible();
   });
 
@@ -90,7 +92,8 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await expect(page.getByRole("table")).toHaveCount(0);
     await filtros(page).getByRole("button", { name: "Limpiar filtros" }).click();
     await expect(buscador).toHaveValue("");
-    await resultados(page, registros.length);
+    await expect(filtros(page).getByRole("checkbox")).toBeChecked();
+    await resultados(page, registros.filter((registro) => registro.is_reference).length);
   });
 
   test("muestra solo registros de referencia por defecto y permite consultar todos", async ({ page }) => {
@@ -103,18 +106,22 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await resultados(page, registros.length);
   });
 
-  test("combina especie, variedad y presentación y reinicia los filtros dependientes", async ({ page }) => {
+  test("permite elegir presentación antes de especie y conserva los filtros compatibles", async ({ page }) => {
     await filtros(page).getByRole("checkbox").uncheck();
     const variedad = filtros(page).getByRole("combobox", { name: "Variedad", exact: true });
     const presentacion = filtros(page).getByRole("combobox", { name: "Presentación", exact: true });
     await expect(variedad).toHaveAttribute("aria-disabled", "true");
-    // En escritorio los filtros adicionales ya están visibles; el botón es solo móvil.
-    await expect(presentacion).toHaveAttribute("aria-disabled", "true");
+    for (const nombre of ["País", "Presentación", "Categoría", "Calibre"]) {
+      await expect(filtros(page).getByRole("combobox", { name: nombre, exact: true })).not.toHaveAttribute("aria-disabled", "true");
+    }
     const registro = registros.find((fila) => fila.especie === "Manzana" && fila.variedad !== "-")!;
+    await seleccionar(page, "Presentación", registro.measure_unit);
+    await resultados(page, registros.filter((fila) => fila.measure_unit === registro.measure_unit).length);
     await seleccionar(page, "Especie", registro.especie);
     await expect(variedad).not.toHaveAttribute("aria-disabled", "true");
+    await expect(presentacion).toHaveText(registro.measure_unit);
     await seleccionar(page, "Variedad", registro.variedad);
-    await seleccionar(page, "Presentación", registro.measure_unit);
+    await expect(presentacion).toHaveText(registro.measure_unit);
     const esperadas = registros.filter((fila) => fila.especie === registro.especie && fila.variedad === registro.variedad && fila.measure_unit === registro.measure_unit);
     await resultados(page, esperadas.length);
     for (const fila of await filas(page).all()) {
@@ -122,10 +129,33 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
       await expect(fila.locator("td").nth(1)).toHaveText(registro.variedad);
       await expect(fila.locator("td").nth(3).locator("small")).toHaveText(`/${registro.measure_unit}`);
     }
+    const otraVariedad = registros.find((fila) => fila.especie === registro.especie && fila.variedad !== registro.variedad && fila.measure_unit === registro.measure_unit)!;
+    await seleccionar(page, "Variedad", otraVariedad.variedad);
+    await expect(presentacion).toHaveText(registro.measure_unit);
+    await resultados(page, registros.filter((fila) => fila.especie === registro.especie && fila.variedad === otraVariedad.variedad && fila.measure_unit === registro.measure_unit).length);
     await seleccionar(page, "Especie", "Todas las especies");
     await expect(variedad).toHaveAttribute("aria-disabled", "true");
-    await expect(presentacion).toHaveAttribute("aria-disabled", "true");
-    await resultados(page, registros.length);
+    await expect(variedad).toHaveText(/^[\s\u200b]*$/);
+    await expect(presentacion).not.toHaveAttribute("aria-disabled", "true");
+    await expect(presentacion).toHaveText(registro.measure_unit);
+    await resultados(page, registros.filter((fila) => fila.measure_unit === registro.measure_unit).length);
+  });
+
+  test("al cambiar especie conserva país y presentación y limpia categoría y calibre incompatibles", async ({ page }) => {
+    await filtros(page).getByRole("checkbox").uncheck();
+    const inicial = registros.find((fila) => fila.especie === "Acelga" && fila.category === "E" && fila.caliber === "G")!;
+    await seleccionar(page, "País", inicial.country);
+    await seleccionar(page, "Presentación", inicial.measure_unit);
+    await seleccionar(page, "Categoría", inicial.category);
+    await seleccionar(page, "Calibre", inicial.caliber);
+    await resultados(page, registros.filter((fila) => fila.country === inicial.country && fila.measure_unit === inicial.measure_unit && fila.category === inicial.category && fila.caliber === inicial.caliber).length);
+
+    await seleccionar(page, "Especie", "Manzana");
+    await expect(filtros(page).getByRole("combobox", { name: "País", exact: true })).toHaveText(inicial.country);
+    await expect(filtros(page).getByRole("combobox", { name: "Presentación", exact: true })).toHaveText(inicial.measure_unit);
+    await expect(filtros(page).getByRole("combobox", { name: "Categoría", exact: true })).toHaveText(/^[\s\u200b]*$/);
+    await expect(filtros(page).getByRole("combobox", { name: "Calibre", exact: true })).toHaveText(/^[\s\u200b]*$/);
+    await resultados(page, registros.filter((fila) => fila.especie === "Manzana" && fila.country === inicial.country && fila.measure_unit === inicial.measure_unit).length);
   });
 
   for (const { caso, nombre, campo, columna, todas } of [
@@ -178,14 +208,15 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await resultados(page, porKg.length);
     await expect(filas(page)).toHaveCount(Math.min(40, porKg.length));
     await maximo.fill("10");
-    await expect(filtros(page).getByRole("alert")).toHaveText("El precio máximo no puede ser menor al mínimo.");
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveText("El precio máximo no puede ser menor al mínimo.");
     await resultados(page, 0);
     await filtros(page).getByRole("button", { name: "Limpiar filtros" }).click();
     await expect(minimo).toHaveValue("");
     await expect(maximo).toHaveValue("");
     await expect(filtros(page).getByRole("combobox", { name: "Precio por", exact: true })).toHaveText("Unidad");
-    await expect(filtros(page).getByRole("alert")).toHaveCount(0);
-    await resultados(page, registros.length);
+    await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
+    await expect(filtros(page).getByRole("checkbox")).toBeChecked();
+    await resultados(page, registros.filter((registro) => registro.is_reference).length);
   });
 
   test("pagina el listado y vuelve a la primera página al filtrar", async ({ page }) => {
@@ -195,15 +226,15 @@ test.describe("BP-19.1 — Panel de precios de referencia", () => {
     await expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
     for (let numero = 2; numero <= paginas; numero++) {
       await paginacion.getByRole("button", { name: "Siguiente" }).click();
-      await expect(paginacion.getByText(`Página ${numero} de ${paginas}`, { exact: true })).toBeVisible();
+      await expect(page.getByText(`Página ${numero} de ${paginas}`, { exact: true })).toBeVisible();
     }
     await expect(filas(page)).toHaveCount(registros.length - (paginas - 1) * 40);
     await expect(paginacion.getByRole("button", { name: "Siguiente" })).toBeDisabled();
     await paginacion.getByRole("button", { name: "Anterior" }).click();
-    await expect(paginacion.getByText(`Página ${paginas - 1} de ${paginas}`, { exact: true })).toBeVisible();
+    await expect(page.getByText(`Página ${paginas - 1} de ${paginas}`, { exact: true })).toBeVisible();
     await filtros(page).getByRole("checkbox").check();
     await expect(paginacion.getByRole("button", { name: "Anterior" })).toBeDisabled();
-    await expect(paginacion.getByText(/^Página 1 de /)).toBeVisible();
+    await expect(page.getByText(/^Página 1 de /)).toBeVisible();
   });
 
   test("permite consultar y filtrar precios desde un celular", async ({ page }) => {

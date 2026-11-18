@@ -6,10 +6,10 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
-import BotonVolver from "@/compartido/BotonVolver";
-import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/tipos";
+import HojasDecorativas from "../../../../../compartido/componentes/HojasDecorativas";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
+import type { PerfilAdminOperador } from "../../consultas/consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/catalogos/tipos";
 
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
@@ -161,7 +161,7 @@ export default function PerfilOperadorAdmin({ operador, opciones, incrementoPrec
             <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({operador.publicaciones.length})</h2>
                 <Button variant="contained" onClick={abrirAlta} startIcon={<AddIcon />} className={styles.botonAlta}>
-                    Agregar Producto
+                    Nueva publicación
                 </Button>
             </div>
 

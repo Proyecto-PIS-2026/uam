@@ -267,8 +267,8 @@ test.describe("BP-31: empaquetado y kilos independientes", () => {
                 await expect(comprador.getByRole("combobox", { name: "Kilos", exact: true })).toHaveText("10-12 kg");
                 await tarjetas.click();
                 const detalle = comprador.getByRole("dialog", { name: "Detalle de publicación", exact: true });
-                await expect(detalle.getByText("Empaquetado", { exact: true }).locator("xpath=following-sibling::span")).toHaveText("-");
-                await expect(detalle.getByText("Kilos", { exact: true }).locator("xpath=following-sibling::span")).toHaveText("10-12 kg");
+                await expect(detalle.getByText("Empaquetado", { exact: true }).locator("xpath=following-sibling::span")).toHaveText("10-12 kg");
+                await expect(detalle.getByText("Kilos", { exact: true })).toHaveCount(0);
                 await expect.poll(() => detalle.evaluate((elemento) => elemento.scrollWidth - elemento.clientWidth)).toBeLessThanOrEqual(1);
             } finally { await contexto.close(); }
         });

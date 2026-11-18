@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/infraestructura/persistencia/prisma/db";
-import { altaOperador } from "./altaOperador";
-import { modificarOperador } from "./acciones/modificarOperador";
+import { altaOperador } from "./acciones/alta-operador";
+import { modificarOperador } from "./acciones/modificar-operador";
 
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirAdministrador: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

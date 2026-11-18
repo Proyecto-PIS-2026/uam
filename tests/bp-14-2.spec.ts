@@ -5,6 +5,7 @@ import type { Contract } from "../src/infraestructura/persistencia/prisma/contra
 import contractJson from "../src/infraestructura/persistencia/prisma/contract.json" with { type: "json" };
 import { test as base } from "./usuarios-administrativos";
 import { iniciarSesionAdministrador, iniciarSesionProductor, type Credenciales } from "./autenticacion";
+import { esperarYCerrarNotificacion } from "./soporte/notificaciones";
 
 type ProductorAlta = { usuario: string; nombre: string; contrasena: string };
 type Precarga = { rutaPerfil: string; productorId: number; publicacionId: number; publicacionProductorId: number };
@@ -95,7 +96,12 @@ async function continuarPrecarga(page: Page, productor: ProductorAlta) {
 
 async function seleccionar(page: Page, formulario: Locator, campo: string, opcion: string) {
   await formulario.getByRole("combobox", { name: campo, exact: true }).click();
-  await page.getByRole("option", { name: opcion, exact: true }).click();
+  const opcionEsperada = page.getByRole("option", { name: opcion, exact: true });
+  await expect(
+    opcionEsperada,
+    `No se encontró "${opcion}" en "${campo}". Revisar los catálogos de la base E2E.`,
+  ).toBeVisible({ timeout: 15000 });
+  await opcionEsperada.click();
 }
 
 async function prepararMapa(page: Page) {
@@ -117,7 +123,7 @@ async function prepararMapa(page: Page) {
 }
 
 async function completarPrecarga(page: Page, calibre: string, precio: string) {
-  await page.getByRole("button", { name: "Agregar Producto", exact: true }).click();
+  await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
   const alta = page.getByRole("dialog", { name: "Nueva publicación de Productor" });
   await expect(alta).toBeVisible();
   await seleccionar(page, alta, "Especie", "Uchuva");
@@ -237,7 +243,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await expect(perfil.getByText("Teléfono:", { exact: true })).toBeVisible();
       await expect(perfil.getByText("+59899123456", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Agregar Producto", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Nueva publicación", exact: true })).toBeVisible();
     });
     await test.step("Recargar y comprobar que el perfil quedó registrado", async () => {
       await page.reload();
@@ -268,14 +274,16 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       await expect(page.getByRole("heading", { level: 1, name: productorAlta.nombre, exact: true })).toBeVisible();
       const tarjetas = page.getByRole("article", { name: "Ver detalles de Uchuva", exact: true });
       await expect(tarjetas).toHaveCount(2);
-      for (const producto of [{ calibre: "C", precio: "1371", precioVisible: "$ 1.371" }, { calibre: "G", precio: "2637", precioVisible: "$ 2.637" }]) {
-        const tarjeta = tarjetas.filter({ hasText: `${producto.calibre} · Categoría -` });
+      for (const producto of [{ calibre: "CHICO", precio: "1371", precioVisible: "$ 1371" }, { calibre: "GRANDE", precio: "2637", precioVisible: "$ 2637" }]) {
+        const tarjeta = tarjetas.filter({ has: page.getByText(producto.precioVisible, { exact: true }) });
         await expect(tarjeta).toHaveCount(1);
         await expect(tarjeta).toContainText(producto.precioVisible);
+        await expect(tarjeta.getByText(`${producto.calibre} · Categoría -`, { exact: true })).toBeVisible();
         await tarjeta.getByRole("button", { name: "Ver detalles de Uchuva", exact: true }).click();
         const consulta = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: "Cerrar consulta", exact: true }) });
         await expect(consulta).toBeVisible();
         await expect(consulta.getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(producto.precio);
+        await expect(consulta.getByRole("combobox", { name: "Calibre", exact: true })).toHaveText(producto.calibre);
         await expect(consulta.getByRole("combobox", { name: "País de origen", exact: true })).toHaveText("URUGUAY");
         const enlaceMapa = consulta.getByRole("link", { name: "Quinta BP-14.2", exact: true });
         await expect(enlaceMapa).toBeVisible();
@@ -373,7 +381,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
     await page.goto(rutaPerfil);
     await expect(page.getByRole("heading", { level: 1, name: productorAlta.nombre, exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Agregar Producto", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Nueva publicación", exact: true })).toBeVisible();
   });
 
   test("CP-14.2-08: cancelar una precarga completa no guarda el borrador", async ({ page, usuariosAdministrativos, productorAlta }) => {
@@ -391,7 +399,7 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
     await expect(page.getByRole("heading", { name: "Publicaciones (0)", exact: true })).toBeVisible();
     expect(await leerPrecargas(Number(rutaPerfil.split("/").at(-1)))).toHaveLength(0);
     expect(envios).toBe(0);
-    await page.getByRole("button", { name: "Agregar Producto", exact: true }).click();
+    await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Nueva publicación de Productor" }).getByLabel("Precio en pesos")).toHaveValue("");
   });
 
@@ -438,9 +446,11 @@ test.describe("BP-14.2: precarga, consulta y edición de productos", () => {
       alta.getByRole("button", { name: "Confirmar", exact: true }).click(),
     ]);
     expect(respuesta.status()).toBe(400);
-    await expect(alta.getByRole("alert")).toContainText("Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.");
+    const mensaje = "Este Productor ya tiene una publicación con la misma especie, variedad, empaquetado, kilos, categoría, calibre y país.";
+    await esperarYCerrarNotificacion(page, mensaje);
     await expect(alta.getByLabel("Precio en pesos")).toHaveValue("9999");
     await alta.getByRole("button", { name: "Cancelar", exact: true }).click();
+    await expect(alta).not.toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { name: "Publicaciones (1)", exact: true })).toBeVisible();
     const relaciones = await leerPrecargas(precarga.productorId);

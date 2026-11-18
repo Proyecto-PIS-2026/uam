@@ -19,7 +19,7 @@
     display: inline-flex;
     box-sizing: border-box;
     flex-shrink: 0;
-    width: 9rem;
+    width: 12.5rem;
     align-items: center;
     justify-content: center;
     overflow: hidden;
@@ -166,6 +166,12 @@
 
 .botonArriba:hover {
     background-color: var(--color-secondary-hover);
+}
+
+@media (max-width: 767px) {
+    .botonAgrupar {
+        width: 9rem;
+    }
 }
 
 @media (min-width: 701px) {

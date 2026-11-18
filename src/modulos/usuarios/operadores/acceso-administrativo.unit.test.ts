@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { altaOperador } from "./altaOperador";
-import { bajaOperador } from "./bajaOperador";
-import { modificarOperador } from "./acciones/modificarOperador";
-import { altaProductor } from "../productores/altaProductor";
-import { bajaProductor } from "../productores/bajaProductor";
-import { modificarProductor } from "../productores/componentes/modificar-productor-por-admin/modificarProductor";
+import { altaOperador } from "./acciones/alta-operador";
+import { bajaOperador } from "./acciones/baja-operador";
+import { modificarOperador } from "./acciones/modificar-operador";
+import { altaProductor } from "../productores/acciones/alta-productor";
+import { bajaProductor } from "../productores/acciones/baja-productor";
+import { modificarProductor } from "../productores/acciones/modificar-productor";
 import { redirect } from "next/navigation";
 import { RUTA_INICIO_SESION } from "@/modulos/identidad-acceso/autenticacion/rutas-sesion";
 

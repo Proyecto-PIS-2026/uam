@@ -125,14 +125,8 @@
     opacity: 1;
     transition: opacity var(--duracion-entrada-filtros) var(--curva-despliegue-filtros) var(--retraso-entrada-filtros);
 }
-.filtroPrecioPor,
-.errorPrecio {
+.filtroPrecioPor {
     grid-column: 1 / -1;
-}
-.errorPrecio {
-    margin: 0;
-    color: var(--color-danger);
-    font-size: var(--tamano-texto-auxiliar);
 }
 .busqueda :global(input[type="search"])::-webkit-search-cancel-button {
     filter: invert(94.63%) sepia(94%) saturate(1606%) hue-rotate(73.59deg) brightness(50.79%) contrast(173.72%);
@@ -340,41 +334,6 @@
     display: none;
 }
 
-.paginacion {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--espacio-secciones);
-    padding: var(--espacio-controles) var(--padding-panel);
-    color: var(--color-muted-foreground);
-    font-size: var(--tamano-texto-secundario);
-}
-
-.paginacion > div {
-    display: flex;
-    align-items: center;
-    gap: var(--espacio-controles);
-}
-.paginacion button {
-    min-height: var(--alto-control);
-    padding: var(--padding-control);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radio-control);
-    background: var(--color-surface);
-    color: var(--color-secondary);
-    font-size: var(--tamano-texto-secundario);
-    font-weight: 600;
-    cursor: pointer;
-}
-.paginacion button:hover:not(:disabled) {
-    border-color: var(--color-secondary);
-    background: var(--color-secondary-soft);
-}
-.paginacion button:disabled {
-    color: var(--color-disabled);
-    cursor: default;
-}
-
 @media (min-width: 600px) {
     .filtros {
         grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -446,10 +405,6 @@
         grid-row: 4;
     }
 
-    .errorPrecio {
-        grid-column: 1 / -1;
-        grid-row: 5;
-    }
 }
 
 @media (min-width: 1000px) {
@@ -507,9 +462,6 @@
         grid-row: 2;
     }
 
-    .errorPrecio {
-        grid-row: 3;
-    }
 }
 
 @media (max-width: 900px) {
@@ -620,13 +572,6 @@
     }
     .tablaCabecera p {
         max-width: 15rem;
-    }
-    .paginacion {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .paginacion > div {
-        justify-content: space-between;
     }
 }
 

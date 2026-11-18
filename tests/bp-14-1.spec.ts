@@ -23,11 +23,11 @@ async function obtenerSeleccion(request: APIRequestContext) {
   const variedad = catalogos.variedades.find((opcion) => opcion.especieId === especie!.id)!;
   const envase = catalogos.envases.find((opcion) => opcion.nombre === "Cajón")!;
   const kilos = catalogos.kilos.find((opcion) => opcion.nombre === "20")!;
-  const categoria = catalogos.categorias.find((opcion) => opcion.especieId === null || opcion.especieId === especie!.id)!;
+  const categoria = catalogos.categorias[0];
   const pais = catalogos.paises.find((opcion) => opcion.nombre === "URUGUAY")!;
   expect(catalogos.calibres.length).toBeGreaterThanOrEqual(3);
-  expect(envase).toBeDefined();
-  expect(kilos).toBeDefined();
+  expect(envase, 'Falta el envase "Cajón" en la base E2E').toBeDefined();
+  expect(kilos, 'Falta el empaquetado de 20 kg en la base E2E').toBeDefined();
   expect(categoria).toBeDefined();
   expect(pais).toBeDefined();
   return { especie: especie!, variedad, envase, kilos, categoria, pais, calibres: catalogos.calibres, catalogos };
@@ -82,7 +82,7 @@ async function abrirPerfilAdmin(page: Page, operador: OperadorPrecarga) {
 }
 
 async function abrirAlta(page: Page) {
-  await page.getByRole("button", { name: "Agregar Producto", exact: true }).click();
+  await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
   const formulario = page.getByRole("dialog", { name: "Nueva publicación", exact: true });
   await expect(formulario).toBeVisible();
   return formulario;
@@ -90,7 +90,12 @@ async function abrirAlta(page: Page) {
 
 async function seleccionar(page: Page, formulario: Locator, campo: string, opcion: string) {
   await formulario.getByRole("combobox", { name: campo, exact: true }).click();
-  await page.getByRole("option", { name: opcion, exact: true }).click();
+  const opcionEsperada = page.getByRole("option", { name: opcion, exact: true });
+  await expect(
+    opcionEsperada,
+    `No se encontró "${opcion}" en "${campo}". Revisar los catálogos de la base E2E.`,
+  ).toBeVisible({ timeout: 15000 });
+  await opcionEsperada.click();
 }
 
 async function completarProducto(page: Page, formulario: Locator, seleccion: Seleccion, indice = 0, precio = "1371") {
@@ -227,7 +232,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
       });
       await expect(tarjeta).toHaveCount(1);
       await expect(tarjeta).toContainText(`Categoría ${seleccion.categoria.nombre}`);
-      await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY").format(Number(precios[indice])));
+      await expect(tarjeta).toContainText(new Intl.NumberFormat("es-UY", { useGrouping: false }).format(Number(precios[indice])));
     }
     for (const otro of [operadorA, operadorB]) {
       expect(await db.orm.public.PublicacionOperador.where({ operadorId: otro.id }).all()).toHaveLength(0);
@@ -346,6 +351,7 @@ test.describe("BP-14.1: precarga de productos de un Operador", () => {
           const pagina = await contexto.newPage();
           try {
             await pagina.goto(`/publicaciones?especie=${encodeURIComponent(seleccion.especie.nombre)}`);
+            await pagina.getByRole("searchbox", { name: "Buscar publicaciones", exact: true }).fill(operadorA.nombre);
             const tarjeta = pagina.getByRole("button", { name: /^Ver detalles de/ }).filter({ hasText: operadorA.nombre });
             await expect(tarjeta).toHaveCount(1);
             await tarjeta.click();

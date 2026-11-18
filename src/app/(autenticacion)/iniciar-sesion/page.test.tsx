@@ -6,7 +6,7 @@ import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambi
 import PaginaInicioSesion, { metadata as metadatos } from "./page";
 
 vi.mock("@/modulos/identidad-acceso/cambio-contrasena/configuracion", () => ({ estaHabilitadoCambioContrasena: vi.fn(async () => true) }));
-vi.mock("./acciones", () => ({ iniciarSesion: vi.fn(async () => ({})) }));
+vi.mock("../../../modulos/identidad-acceso/autenticacion/acciones/iniciar-sesion", () => ({ iniciarSesion: vi.fn(async () => ({})) }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: vi.fn() }));
 vi.mock("next/navigation", () => ({
     redirect: vi.fn(() => { throw new Error("NEXT_REDIRECT"); }),
@@ -65,7 +65,9 @@ describe("PaginaInicioSesion", () => {
 
     it.each(["cancelado", "vencido", "bloqueado"])("muestra el motivo de retorno del segundo factor: %s", async (segundoFactor) => {
         render(await PaginaInicioSesion({ searchParams: Promise.resolve({ segundoFactor }) }));
-        expect(screen.getAllByRole("status").some((elemento) => elemento.textContent?.trim())).toBe(true);
+        const aviso = await screen.findByRole(segundoFactor === "cancelado" ? "status" : "alert");
+        expect(aviso.textContent?.trim()).toBeTruthy();
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
     });
 
     it("no muestra mensajes arbitrarios enviados en la URL", async () => {

@@ -7,9 +7,11 @@ import PriceCheckOutlinedIcon from "@mui/icons-material/PriceCheckOutlined";
 import { Checkbox, MenuItem, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
+import Paginacion from "@/compartido/componentes/Paginacion";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
@@ -115,12 +117,12 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
 
     const disponibles = useMemo(() => ({
         especies: opciones(filas.map((fila) => fila.especie)).sort(compararEspeciesPorPrioridad),
-        variedades: especie ? opciones(filasCompatibles(filas, seleccion, ["variedad", "unidad"]).map((fila) => fila.variedad)) : [],
-        unidades: variedad ? opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)) : [],
+        variedades: especie ? opciones(filas.filter((fila) => fila.especie === especie).map((fila) => fila.variedad)) : [],
+        unidades: opciones(filasCompatibles(filas, seleccion, ["unidad"]).map((fila) => fila.unidad)),
         paises: opciones(filasCompatibles(filas, seleccion, ["pais"]).map((fila) => fila.pais)).sort(compararPaisesPorPrioridad),
         categorias: opciones(filasCompatibles(filas, seleccion, ["categoria"]).map((fila) => fila.categoria)),
         calibres: opciones(filasCompatibles(filas, seleccion, ["calibre"]).map((fila) => fila.calibre)),
-    }), [filas, seleccion, especie, variedad]);
+    }), [filas, seleccion, especie]);
     const cantidadReferencias = useMemo(() => filas.filter((fila) => fila.esReferencia).length, [filas]);
     const minimo = leerPrecio(precioMinimo);
     const maximo = leerPrecio(precioMaximo);
@@ -186,11 +188,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
     function cambiarFiltro(campo: CampoFiltro, valor: string) {
         cambiar(() => setSeleccion((actual) => {
             const siguiente = { ...actual, [campo]: valor };
-            if (campo === "especie") {
-                siguiente.variedad = "";
-                siguiente.unidad = "";
-            }
-            if (campo === "variedad") siguiente.unidad = "";
+            if (campo === "especie") siguiente.variedad = "";
             return ajustarSeleccion(filas, siguiente, campo);
         }));
     }
@@ -205,7 +203,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
         setPrecioPor("unidad");
         setPrecioMinimo("");
         setPrecioMaximo("");
-        setSoloReferencias(false);
+        setSoloReferencias(true);
         setPagina(1);
     }
 
@@ -289,7 +287,6 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 label="Presentación"
                                 size="small"
                                 value={unidad}
-                                disabled={!variedad}
                                 onChange={(e) => cambiarFiltro("unidad", e.target.value)}
                                 slotProps={menu}
                             >
@@ -362,7 +359,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 onChange={(e) => cambiarPrecio(e.target.value, setPrecioMaximo)}
                                 slotProps={{ htmlInput: { inputMode: "numeric", pattern: "0*[1-9][0-9]*", maxLength: MAXIMO_DIGITOS_PRECIO } }}
                             />
-                            {rangoPrecioInvalido && <p className={styles.errorPrecio} role="alert">El precio máximo no puede ser menor al mínimo.</p>}
+                            <AvisoErrorToast mensaje={rangoPrecioInvalido ? "El precio máximo no puede ser menor al mínimo." : null} />
                         </div>
                     </div>
                 </div>
@@ -473,14 +470,13 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                     </>
                 )}
                 {filtradas.length > LIMITE && (
-                    <nav className={styles.paginacion} aria-label="Páginas de precios de referencia">
-                        <span>{desde + 1}-{Math.min(desde + LIMITE, filtradas.length)} de {filtradas.length}</span>
-                        <div>
-                            <button type="button" disabled={paginaActual === 1} onClick={() => setPagina(paginaActual - 1)}>Anterior</button>
-                            <span>Página {paginaActual} de {totalPaginas}</span>
-                            <button type="button" disabled={paginaActual === totalPaginas} onClick={() => setPagina(paginaActual + 1)}>Siguiente</button>
-                        </div>
-                    </nav>
+                    <Paginacion
+                        pagina={paginaActual}
+                        totalPaginas={totalPaginas}
+                        alCambiar={setPagina}
+                        etiqueta="Páginas de precios de referencia"
+                        resumen={`${desde + 1}-${Math.min(desde + LIMITE, filtradas.length)} de ${filtradas.length}`}
+                    />
                 )}
             </section>
             <FuentePrecios />

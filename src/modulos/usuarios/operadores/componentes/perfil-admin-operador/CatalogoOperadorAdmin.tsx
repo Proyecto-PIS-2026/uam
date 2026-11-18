@@ -9,12 +9,12 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
-import { useActualizacionesPublicaciones } from "@/modulos/publicaciones/tiempo-real/use-actualizaciones-publicaciones";
+import { useActualizacionesPublicaciones } from "@/modulos/publicaciones/tiempo-real/useActualizacionesPublicaciones";
 
 import DrawerEditarPublicacion from "../../../../publicaciones/operadores/componentes/DrawerEditarPublicacion";
 import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../../../../publicaciones/operadores/tipos";
-import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/operadores/tipos";
-import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "@/modulos/publicaciones/catalogos/tipos";
+import type { PublicacionPerfilAdmin } from "../../consultas/consultas-perfil-admin";
 import TarjetaPublicacionAdmin from "./TarjetaPublicacionAdmin";
 
 type CatalogoOperadorAdminProps = {
@@ -90,8 +90,9 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
         const resultado = await respuesta.json();
         if (!respuesta.ok) {
             if (respuesta.status === 409) router.refresh();
-            throw new Error(resultado.errores?.[0] ?? "No se pudieron guardar los cambios.");
+            throw new Error(resultado.errores?.join("\n") || "No se pudieron guardar los cambios.");
         }
+        notificar(resultado.mensaje ?? "Publicación actualizada.", "success");
         router.refresh();
     }
 
@@ -102,9 +103,10 @@ export default function CatalogoOperadorAdmin({operadorId, publicaciones, opcion
             const respuesta = await fetchConSesion(`/api/publicaciones/${publicacionSeleccionada.id}?operadorId=${operadorId}`, { method: "DELETE" });
             const resultado = await respuesta.json();
             if (!respuesta.ok) {
-                throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
+                throw new Error(resultado.errores?.join("\n") || "No se pudo eliminar la publicación.");
             }
             cerrarDrawer();
+            notificar(resultado.mensaje ?? "Publicación eliminada.", "success");
             router.refresh();
         } catch (error) {
             notificar(error instanceof Error ? error.message : "No se pudo conectar con el servidor.", "error");

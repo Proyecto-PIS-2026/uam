@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import DrawerPublicacionProductor from "../../../../publicaciones/mi-mercado/componentes/DrawerPublicacionProductor";
-import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/mi-mercado/consultas-mi-mercado-productor";
-import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
+import DrawerPublicacionProductor from "../../../../publicaciones/productores/componentes/DrawerPublicacionProductor";
+import type { PublicacionMiMercadoProductor } from "../../../../publicaciones/productores/tipos";
+import type { PublicacionPerfilAdminProductor } from "../../consultas/consultas-perfil-productor-admin";
 import TarjetaPublicacionProductorAdmin from "./TarjetaPublicacionProductorAdmin";
 
 type CatalogoProductorAdminProps = {
@@ -105,7 +105,7 @@ export default function CatalogoProductorAdmin({ publicaciones, alCambiarDeparta
         });
     }
 
-    function eliminarPublicacion(aviso: string) {
+    function eliminarPublicacion(aviso: string, tipo: "success" | "info") {
         setActualizadas((anteriores) => {
             const actuales = anteriores?.origen === publicaciones ? anteriores.datos : publicacionesConsulta;
             return {
@@ -114,7 +114,7 @@ export default function CatalogoProductorAdmin({ publicaciones, alCambiarDeparta
             };
         });
         setSeleccionId((actual) => actual === seleccionId ? null : actual);
-        notificar(aviso, "success");
+        notificar(aviso, tipo);
         router.refresh();
     }
 

@@ -2,15 +2,15 @@
 
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 
-import HojasDecorativas from "../../../../../compartido/HojasDecorativas";
-import BotonVolver from "@/compartido/BotonVolver";
-import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
+import HojasDecorativas from "../../../../../compartido/componentes/HojasDecorativas";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
+import type { PerfilAdminProductor } from "../../consultas/consultas-perfil-productor-admin";
 
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import EditIcon from "@mui/icons-material/Edit";
-import { DrawerAltaPublicacionProductor } from "@/modulos/publicaciones/productores/AltaPublicacionProductor";
+import { DrawerAltaPublicacionProductor } from "@/modulos/publicaciones/productores/componentes/AltaPublicacionProductor";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./PerfilProductorAdmin.module.css";
@@ -105,7 +105,7 @@ export default function PerfilProductorAdmin({ productor }: PerfilProductorAdmin
             <div className={styles.filaPublicaciones}>
                 <h2 className={styles.subtituloPublicaciones}>Publicaciones ({productor.publicaciones.length})</h2>
                 <Button variant="contained" onClick={abrirAlta} startIcon={<AddIcon />} className={styles.botonAlta}>
-                    Agregar Producto
+                    Nueva publicación
                 </Button>
             </div>
 

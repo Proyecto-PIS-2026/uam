@@ -10,13 +10,13 @@ import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import Link from "next/link";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
-import BotonVolver from "@/compartido/BotonVolver";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
-import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
+import type { PerfilPropioOperador } from "../../consultas/consultas-perfil-propio";
 import FormularioPerfilPropio from "./FormularioPerfilPropio";
 import styles from "./PerfilPropioOperador.module.css";
-import estilosFormulario from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
+import estilosFormulario from "@/modulos/usuarios/componentes/formulario-usuario.module.css";
 
 function formatearFecha(fecha: string): string {
     const [anio, mes, dia] = fecha.split("-");
@@ -132,7 +132,7 @@ export default function PerfilPropioOperador({ perfil, cambioContrasenaHabilitad
                             )}
                             <p className={styles.aviso}>
                                 <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
-                                <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
+                                <span>La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.</span>
                             </p>
                         </section>
                     </div>

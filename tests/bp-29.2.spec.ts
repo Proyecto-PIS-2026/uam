@@ -206,3 +206,18 @@ test("CP-29.2-13: borrar todo deja el mensaje de lista vacía", async ({ page, u
   await contador(page, 0);
   expect(await consultar(page)).toEqual({ notificaciones: [], noLeidas: 0 });
 });
+
+test("CP-29.2-14: con más de 9 sin leer el icono muestra 9+", async ({ page, usuariosAdministrativos, avisos, backend }) => {
+  const ids: number[] = [];
+  try {
+    for (let i = 0; i < 8; i++) {
+      const creada = await backend.orm.public.Notificacion.create({ titulo: "Notificación", descripcion: `BP-29.2 extra ${i} ${randomUUID()}`, usuarioId: avisos.usuarioId, vista: false });
+      ids.push(creada.id);
+    }
+    await ingresar(page, usuariosAdministrativos.productor);
+    await expect(cuenta(page).locator(".MuiBadge-badge")).toHaveText("9+", { timeout: 30_000 });
+    await expect(cuenta(page)).toHaveAccessibleDescription("10 notificaciones sin leer");
+  } finally {
+    for (const id of ids) await backend.orm.public.Notificacion.where({ id }).deleteAndCount();
+  }
+});

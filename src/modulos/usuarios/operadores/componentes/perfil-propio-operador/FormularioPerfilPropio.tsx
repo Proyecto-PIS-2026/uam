@@ -1,16 +1,19 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import { Temporal } from "temporal-polyfill";
 import { useRouter } from "next/navigation";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import TextField from "@mui/material/TextField";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
-import { modificarPerfilPropio } from "../../acciones/modificarPerfilPropio";
-import type { PerfilPropioOperador } from "../../consultasPerfilPropio";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
-import BotonVolver from "@/compartido/BotonVolver";
+import { modificarPerfilPropio } from "../../acciones/modificar-perfil-propio";
+import type { PerfilPropioOperador } from "../../consultas/consultas-perfil-propio";
+import { LARGO_MAXIMO_COMENTARIO_LICENCIA } from "../../comentario-licencia";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import ConfirmacionLicencia from "../ConfirmacionLicencia";
 import styles from "./FormularioPerfilPropio.module.css";
@@ -50,9 +53,10 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
     const [confirmandoLicencia, setConfirmandoLicencia] = useState(false);
     const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
     const [finLicencia, setFinLicencia] = useState(licencia.fin);
+    const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
+    const finLicenciaMinimo = inicioLicencia > hoy ? inicioLicencia : hoy;
     const [comentario, setComentario] = useState(licencia.comentario);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
-    const [errores, setErrores] = useState<string[]>([]);
     const [guardando, setGuardando] = useState(false);
     const enCurso = useRef(false);
     async function guardar(evento: FormEvent<HTMLFormElement>) {
@@ -60,7 +64,6 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
         if (enCurso.current) return;
         enCurso.current = true;
         setGuardando(true);
-        setErrores([]);
         try {
             const resultado = await modificarPerfilPropio({
                 nombre,
@@ -72,14 +75,14 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 comentario,
             }, ...argumentosFotoPerfil(foto));
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
             notificar(resultado.mensaje, "success");
             alCancelar();
             router.refresh();
         } catch {
-            setErrores(["No se pudieron guardar los cambios. Intentá nuevamente."]);
+            notificar("No se pudieron guardar los cambios. Intentá nuevamente.", "error");
         } finally {
             enCurso.current = false;
             setGuardando(false);
@@ -99,18 +102,18 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                 </header>
                 <form className={styles.formulario} onSubmit={guardar} noValidate>
                     <section className={styles.seccion}>
-                        <SelectorFotoPerfil nombre={nombre} fotoActual={perfil.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => setErrores([mensaje])} deshabilitado={guardando} />
-                        <TextField label="Nombre" value={nombre} onChange={(event) => setNombre(event.target.value)} disabled={guardando} fullWidth />
+                        <SelectorFotoPerfil nombre={nombre} fotoActual={perfil.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
+                        <TextField label="Nombre" required value={nombre} onChange={(event) => setNombre(event.target.value)} disabled={guardando} fullWidth />
                         
                         <div className={styles.telefono}>
-                            <TextField select label="Código de país" value={codigoPais} onChange={(event) => setCodigoPais(event.target.value)} disabled={guardando}>
+                            <TextField select label="Código de país" required value={codigoPais} onChange={(event) => setCodigoPais(event.target.value)} disabled={guardando}>
                                 {CODIGOS_PAIS.map(({ codigo, pais }) => <MenuItem key={codigo} value={codigo}>{codigo} ({pais})</MenuItem>)}
                             </TextField>
                             <TextField label="Teléfono" required type="tel" value={telefono} onChange={(event) => { if (/^[0-9]*$/.test(event.target.value)) setTelefono(event.target.value); }} disabled={guardando} />
                         </div>
                         <p className={styles.aviso}>
                             <WarningAmberOutlinedIcon aria-hidden="true" className={styles.iconoAviso} />
-                            <span>La declaración de licencia en la aplicación no sustituye la solicitud formal ante el área jurídica de la UAM.</span>
+                            <span>La gestión de licencias debe tramitarse exclusivamente a través de los mecanismos habituales de la UAM. La información exhibida en este sitio tiene carácter meramente informativo.</span>
                         </p>
                         <label className={styles.licencia} htmlFor="perfil-propio-licencia" data-activa={enLicencia}>
                             <span className={styles.textoLicencia}>
@@ -130,30 +133,29 @@ export default function FormularioPerfilPropio({ perfil, alCancelar }: { perfil:
                         {enLicencia && (
                             <>
                                 <div className={styles.fechasLicencia}>
-                                    <TextField
+                                    <SelectorFecha
                                         label="Inicio de licencia"
-                                        type="date"
+                                        required
                                         value={inicioLicencia}
-                                        onChange={(event) => setInicioLicencia(event.target.value)}
+                                        onChange={setInicioLicencia}
                                         disabled={guardando}
-                                        slotProps={{ htmlInput: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
-                                        size="small"
                                     />
-                                    <TextField
+                                    <SelectorFecha
                                         label="Fin de licencia"
-                                        type="date"
+                                        required
                                         value={finLicencia}
-                                        onChange={(event) => setFinLicencia(event.target.value)}
+                                        onChange={setFinLicencia}
                                         disabled={guardando}
-                                        slotProps={{ htmlInput: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }}
-                                        size="small"
+                                        min={finLicenciaMinimo}
                                     />
                                 </div>
-                            <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(event) => setComentario(event.target.value)} disabled={guardando} fullWidth />
+                                <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(event) => setComentario(event.target.value)} disabled={guardando} fullWidth
+                                    slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_COMENTARIO_LICENCIA } }}
+                                    helperText={`${comentario.length}/${LARGO_MAXIMO_COMENTARIO_LICENCIA} caracteres`}
+                                    error={comentario.length > LARGO_MAXIMO_COMENTARIO_LICENCIA} />
                             </>
                         )}
                     </section>
-                    {errores.length > 0 && <div className={styles.error} role="alert">{errores.map((error) => <p key={error}>{error}</p>)}</div>}
                     <div className={styles.acciones}>
                         <button className={styles.cancelar} type="button" onClick={alCancelar} disabled={guardando}>Cancelar</button>
                         <button className={styles.guardar} type="submit" disabled={guardando}>{guardando ? "Guardando..." : "Guardar cambios"}</button>

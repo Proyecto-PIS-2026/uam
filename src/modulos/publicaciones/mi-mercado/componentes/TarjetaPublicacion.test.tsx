@@ -2,8 +2,9 @@ import { act, fireEvent, render, screen, waitFor } from "@/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import TarjetaPublicacionProductor from "./TarjetaPublicacionProductor";
-import type { Publicacion } from "../tipos";
+import type { Publicacion } from "../../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
+import styles from "./TarjetaPublicacion.module.css";
 
 vi.mock("../acciones", () => ({
   actualizarPrecio: vi.fn(),
@@ -70,6 +71,23 @@ describe("TarjetaPublicacion", () => {
         ? <TarjetaPublicacion pub={publicacion} operadorId={37} incrementoPrecio={10} puedeModificar alConsultar={consultar} />
         : <TarjetaPublicacionProductor publicacion={{ ...publicacion, publicacionProductorId: 51, pais: "Uruguay", ubicaciones: [] }} alConsultar={consultar} />;
     }
+
+    it.each([
+      { estadoVigencia: "por-vencer", etiqueta: "Publicación por vencer", clase: styles.porVencer },
+      { estadoVigencia: "vencida", etiqueta: "Publicación vencida", clase: styles.vencida },
+    ] as const)("distingue la publicación $estadoVigencia de la foto y conserva su consulta", ({ estadoVigencia, etiqueta, clase }) => {
+      const consultar = vi.fn();
+      const { rerender } = render(tarjeta({ ...crearPublicacion(), estadoVigencia, estadoFoto: "eliminada" }, consultar));
+      const descripcion = screen.getByText(etiqueta);
+      expect(descripcion.parentElement).toHaveClass(clase);
+      const botonesDetalle = screen.getAllByRole("button", { name: "Ver detalle de Manzana · Red Delicious" });
+      expect(botonesDetalle[0]).toHaveAccessibleDescription(`Foto eliminada por vencimiento ${etiqueta}`);
+      fireEvent.click(botonesDetalle[0]);
+      expect(consultar).toHaveBeenCalledOnce();
+      rerender(tarjeta({ ...crearPublicacion(), estadoVigencia: null }, consultar));
+      expect(screen.queryByText(etiqueta)).not.toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: "Ver detalle de Manzana · Red Delicious" })[0]).not.toHaveAttribute("aria-describedby");
+    });
 
     it.each([
       { estadoFoto: "por-vencer", etiqueta: "Foto por vencer" },
@@ -214,7 +232,7 @@ describe("TarjetaPublicacion", () => {
     pub.foto = "/api/publicaciones/imagenes/1/foto-perdida.jpg";
     render(<TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />);
     fireEvent.error(screen.getByAltText("Manzana · Red Delicious"));
-    expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+    expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Manzana · Red Delicious" })).not.toBeInTheDocument();
   });
 
@@ -229,7 +247,7 @@ describe("TarjetaPublicacion", () => {
       <TarjetaPublicacion puedeModificar={true} pub={pub} incrementoPrecio={10} operadorId={37} />,
     );
 
-    expect(screen.getByText("Sin fotografía")).toBeInTheDocument();
+    expect(screen.getByText("Sin foto disponible")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Manzana" })).not.toBeInTheDocument();
   });
 
@@ -244,7 +262,7 @@ describe("TarjetaPublicacion", () => {
     );
 
     expect(
-      screen.getByText("Sin fotografía"),
+      screen.getByText("Sin foto disponible"),
     ).toBeInTheDocument();
   });
 

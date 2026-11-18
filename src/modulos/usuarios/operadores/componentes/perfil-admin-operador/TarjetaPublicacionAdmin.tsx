@@ -2,7 +2,7 @@ import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-public
 import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../../../../publicaciones/componentes/ImagenPublicacion";
 import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
-import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
+import type { PublicacionPerfilAdmin } from "../../consultas/consultas-perfil-admin";
 import styles from "./TarjetaPublicacionAdmin.module.css";
 
 type TarjetaPublicacionAdminProps = {
@@ -52,7 +52,7 @@ export default function TarjetaPublicacionAdmin({publicacion, onSeleccionar }: T
                     <div className={styles.informacionMobile}>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Calibre</span>
-                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
+                            <span className={styles.chip}>{publicacion.codigoCalibre?.trim() || "-"}</span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Cat.</span>

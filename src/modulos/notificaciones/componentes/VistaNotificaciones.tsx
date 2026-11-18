@@ -10,9 +10,8 @@ import DoneAllIcon from "@mui/icons-material/DoneAll";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import CloudOffOutlinedIcon from "@mui/icons-material/CloudOffOutlined";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { ConfirmModal } from "@/compartido/componentes/ConfirmModal";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
@@ -36,7 +35,7 @@ function mensajeError(datos: unknown, alternativa: string): string {
     const respuesta = datos as { errores?: unknown; error?: unknown };
     if (Array.isArray(respuesta.errores)) {
         const mensajes = respuesta.errores.filter((mensaje): mensaje is string => typeof mensaje === "string" && mensaje.trim() !== "");
-        if (mensajes.length > 0) return mensajes.join(" ");
+        if (mensajes.length > 0) return mensajes.join("\n");
     }
     return typeof respuesta.error === "string" && respuesta.error.trim() ? respuesta.error : alternativa;
 }
@@ -49,10 +48,10 @@ function leerContador(datos: unknown): number {
 
 export default function VistaNotificaciones({ usuarioId }: Props) {
     const router = useRouter();
-    const { notificar, cerrarNotificacion } = useNotificacionToast();
+    const { notificar } = useNotificacionToast();
     const [datos, setDatos] = useState<{ usuarioId: number; listado: NotificacionesUsuario } | null>(null);
     const [cargando, setCargando] = useState(true);
-    const [error, setError] = useState("");
+    const [cargaFallida, setCargaFallida] = useState(false);
     const [guardando, setGuardando] = useState<string | null>(null);
     const [confirmarBorrado, setConfirmarBorrado] = useState(false);
     const montado = useRef(false);
@@ -74,12 +73,12 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                 throw new ErrorNotificaciones("La respuesta del servidor no es válida. Intentá nuevamente.");
             }
             setDatos({ usuarioId, listado: { notificaciones: (resultado as NotificacionesUsuario).notificaciones, noLeidas } });
-            setError("");
+            setCargaFallida(false);
             notificarCambioNotificaciones(usuarioId, noLeidas);
         } catch (razon) {
             if (!montado.current || carga.current !== solicitud || solicitud.signal.aborted) return;
             const mensaje = razon instanceof ErrorNotificaciones ? razon.message : "No se pudieron cargar las notificaciones. Intentá nuevamente.";
-            setError(mensaje);
+            setCargaFallida(true);
             notificar(mensaje, "error");
         } finally {
             if (carga.current === solicitud) {
@@ -121,7 +120,6 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
         carga.current = null;
         setCargando(false);
         setGuardando(`${operacion}:${id ?? "todas"}`);
-        cerrarNotificacion();
         const alternativa = operacion === "leer" ? "No se pudieron marcar las notificaciones como leídas. Intentá nuevamente." : "No se pudieron borrar las notificaciones. Intentá nuevamente.";
         try {
             const respuesta = await fetchConSesion(`/api/notificaciones${id === undefined ? "" : `/${id}`}`, {
@@ -192,15 +190,13 @@ export default function VistaNotificaciones({ usuarioId }: Props) {
                         <button type="button" className={`boton-secundario ${styles.leer}`} onClick={() => void modificar("leer")} disabled={!listado || listado.noLeidas === 0 || ocupado} aria-busy={guardando === "leer:todas"}>
                             <DoneAllIcon fontSize="small" aria-hidden="true" />Leer todo
                         </button>
-                        <button type="button" className={`boton-secundario ${styles.borrarTodo}`} onClick={() => { cerrarNotificacion(); setConfirmarBorrado(true); }} disabled={!listado?.notificaciones.length || ocupado}>
+                        <button type="button" className={`boton-secundario ${styles.borrarTodo}`} onClick={() => setConfirmarBorrado(true)} disabled={!listado?.notificaciones.length || ocupado}>
                             <DeleteSweepOutlinedIcon fontSize="small" aria-hidden="true" />Borrar todo
                         </button>
                     </div>
                 </div>
-                {error && <div className={styles.error}>
-                    <CloudOffOutlinedIcon aria-hidden="true" />
-                    <p>{error}</p>
-                    <button type="button" className="boton-secundario" onClick={() => { cerrarNotificacion(); setCargando(true); void cargar(); }} disabled={cargando || ocupado}>
+                {cargaFallida && <div className={styles.reintento}>
+                    <button type="button" className="boton-secundario" onClick={() => { setCargando(true); void cargar(); }} disabled={cargando || ocupado}>
                         <RefreshIcon fontSize="small" aria-hidden="true" />Reintentar
                     </button>
                 </div>}

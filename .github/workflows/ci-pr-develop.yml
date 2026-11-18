@@ -106,7 +106,7 @@ jobs:
         run: npm run typecheck
 
       - name: Aplicar migraciones de base de datos
-        run: npm run db:setup
+        run: npm run db:setup:demo
 
       - name: Ejecutar Suite Completa de Tests (Vitest)
         env:

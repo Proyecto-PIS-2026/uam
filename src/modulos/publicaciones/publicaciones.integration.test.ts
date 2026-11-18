@@ -5,16 +5,16 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { obtenerDatabaseUrlTest } from "@/infraestructura/persistencia/configuracion-db-test";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { notificarCambioPublicacion } from "@/infraestructura/tiempo-real/publicaciones";
-import { consultarPublicaciones } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
-import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import { consultarPublicaciones } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-operador";
+import { consultarPublicacionesProductores } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
 import { obtenerEspeciesConPublicacionesActivas } from "@/modulos/consulta-mercado/inicio/consultas-inicio";
-import { obtenerPerfilPublicoOperador } from "@/modulos/usuarios/operadores/consultas-perfil-publico";
-import { obtenerPerfilProductor } from "@/modulos/usuarios/productores/acciones/consultas-productores";
-import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
+import { obtenerPerfilPublicoOperador } from "@/modulos/usuarios/operadores/consultas/consultas-perfil-publico";
+import { obtenerPerfilProductorPorOperador } from "@/modulos/usuarios/productores/consultas/consultas-perfil-por-operador";
 import { obtenerPublicacionesMiMercadoProductor } from "./mi-mercado/consultas-mi-mercado-productor";
 import { mapearPublicacionesMiMercado } from "./mi-mercado/mapear-publicaciones";
 import type { DatosSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
-import { actualizarPrecioPublicacion, obtenerPublicacionesDeOperador, ConflictoPublicacionError, incrementarPrecioPublicacion } from "./mi-mercado/consultas-mi-mercado";
+import { obtenerPublicacionesDeOperador } from "./mi-mercado/consultas-mi-mercado";
+import { actualizarPrecioPublicacion, ConflictoPublicacionError, incrementarPrecioPublicacion } from "./operadores/operaciones/actualizar-precio-publicacion";
 
 const sesionActual = vi.hoisted(() => vi.fn());
 
@@ -282,10 +282,8 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
             expect(miMercado).toContainEqual(expect.objectContaining({ id: operador.id, especie: expect.objectContaining({ id: especie.id }), variedad: null, envase: null, kilos: null, categoria: null, calibre: null, paisId: null }));
             const perfilOperador = await obtenerPerfilPublicoOperador(fixture!.prefijo);
             expect(perfilOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: operador.id, especie: especie.nombreEspecie, pais: "" }));
-            const perfilProductor = await obtenerPerfilProductor(fixture!.prefijo + "-productor");
-            expect(perfilProductor?.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, pais: "" }));
             const perfilProductorOperador = await obtenerPerfilProductorPorOperador(fixture!.prefijo + "-productor");
-            expect(perfilProductorOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, ubicaciones: [] }));
+            expect(perfilProductorOperador?.publicaciones).toContainEqual(expect.objectContaining({ id: productor.id, especie: especie.nombreEspecie, pais: "", ubicaciones: [] }));
             expect(await obtenerEspeciesConPublicacionesActivas()).toContainEqual({ nombreEspecie: especie.nombreEspecie, fotoEspecie: null, cantidadOperadores: 1 });
             sesionActual.mockResolvedValue({ usuarioId: fixture!.usuarioProductorId, rol: "PRODUCTOR", expiraEn: 2000000000 });
             const miMercadoProductor = await obtenerPublicacionesMiMercadoProductor();

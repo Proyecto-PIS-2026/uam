@@ -3,14 +3,14 @@ import type { DialogProps } from "@mui/material/Dialog";
 import type { ReactNode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicacionMiMercadoProductor } from "../consultas-mi-mercado-productor";
+import type { PublicacionMiMercadoProductor } from "../../productores/tipos";
 import MiMercadoProductor from "./MiMercadoProductor";
 
 const mocks = vi.hoisted(() => ({ mediaQuery: vi.fn(), refresh: vi.fn(), altaReal: false }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }) }));
-vi.mock("../../productores/AltaPublicacionProductor", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("../../productores/AltaPublicacionProductor")>();
+vi.mock("../../productores/componentes/AltaPublicacionProductor", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../productores/componentes/AltaPublicacionProductor")>();
     return { DrawerAltaPublicacionProductor: (props: { productorId: number; abierto: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void }) => mocks.altaReal ? <actual.DrawerAltaPublicacionProductor {...props} /> : props.abierto ? (
         <section role="dialog" aria-label="Nueva publicación de Productor">
             <button onClick={props.alCerrar}>Cancelar alta</button>
@@ -32,7 +32,7 @@ vi.mock("@/compartido/componentes/DrawerDeslizable", () => ({
 vi.mock("@mui/material/Dialog", () => ({
     default: ({ open, children, "aria-label": etiqueta }: DialogProps) => open ? <section role="dialog" aria-label={etiqueta}>{children}</section> : null,
 }));
-vi.mock("../../componentes/drawer-publicacion/TextoAjustable", () => ({
+vi.mock("../../../../compartido/componentes/TextoAjustable", () => ({
     default: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }));
 vi.mock("next/image", async () => {
@@ -113,7 +113,7 @@ describe("MiMercadoProductor", () => {
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} publicacionInicialId={publicacionInicialId} />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+        expect(screen.getByRole("alert")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
         expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -141,7 +141,7 @@ describe("MiMercadoProductor", () => {
         rerender(<MiMercadoProductor publicaciones={[]} publicacionInicialId={1} />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.getByRole("status")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
+        expect(screen.getByRole("alert")).toHaveTextContent("La publicación del aviso ya no está disponible en tu mercado.");
     });
 
     it("muestra las publicaciones propias sin agrupar y el botón de alta junto al listado", () => {
@@ -200,7 +200,7 @@ describe("MiMercadoProductor", () => {
         mocks.mediaQuery.mockReturnValue(esWeb);
         render(<MiMercadoProductor publicaciones={[crearPublicacion(1, "Pera")]} />);
         const tarjeta = screen.getByRole("button", { name: "Ver detalle de Pera" });
-        const zonas = [tarjeta, ...["$100", "Disponible", "Pera", "Sin fotografía"].map((texto) => within(tarjeta).getByText(texto)), within(tarjeta).getByTestId("ChevronRightIcon")];
+        const zonas = [tarjeta, ...["$100", "Disponible", "Pera", "Sin foto disponible"].map((texto) => within(tarjeta).getByText(texto)), within(tarjeta).getByTestId("ChevronRightIcon")];
 
         for (const zona of zonas) {
             fireEvent.click(zona);
@@ -250,7 +250,7 @@ describe("MiMercadoProductor", () => {
             envases: [{ id: 1, nombre: "Cajon" }],
             kilos: [],
             categorias: [{ id: 1, nombre: "Primera", especieId: null }],
-            calibres: [{ id: 1, nombre: "G - Grande" }],
+            calibres: [{ id: 1, nombre: "Grande" }],
             paises: [{ id: 1, nombre: "Uruguay" }, { id: 2, nombre: "Argentina" }],
         };
         const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => opciones })
@@ -386,7 +386,7 @@ describe("MiMercadoProductor", () => {
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("0");
         expect(within(detalle).getByLabelText("Unidades (Cajon)")).toHaveValue("0");
-        expect(within(detalle).getByText("Sin foto")).toBeInTheDocument();
+        expect(within(detalle).getByText("Sin foto disponible")).toBeInTheDocument();
         expect(within(detalle).getByText("No hay puntos de retiro informados.")).toBeInTheDocument();
         expect(within(detalle).queryByRole("button", { name: /Ampliar foto/ })).not.toBeInTheDocument();
         expect(within(detalle).queryByRole("link", { name: /WhatsApp|Ver Perfil/ })).not.toBeInTheDocument();
@@ -424,7 +424,7 @@ describe("MiMercadoProductor", () => {
         fireEvent.error(screen.getByAltText("Foto de Pera"));
 
         const detalle = screen.getByRole("dialog", { name: "Consulta de publicación" });
-        expect(within(detalle).getByText("Sin foto")).toBeInTheDocument();
+        expect(within(detalle).getByText("Sin foto disponible")).toBeInTheDocument();
         expect(within(detalle).getByLabelText("Precio en pesos")).toHaveValue("100");
         expect(within(detalle).queryByRole("img")).not.toBeInTheDocument();
         fireEvent.click(within(detalle).getByRole("button", { name: "Cerrar consulta" }));
@@ -477,6 +477,7 @@ describe("MiMercadoProductor", () => {
             fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
 
             expect(await screen.findByRole("status")).toHaveTextContent("Publicación eliminada correctamente.");
+            expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorSuccess");
             expect(fetchMock).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/productor/101", { method: "DELETE" });
             expect(mocks.refresh).toHaveBeenCalledOnce();
             expect(screen.queryByRole("dialog", { name: "Consulta de publicación" })).not.toBeInTheDocument();
@@ -492,7 +493,7 @@ describe("MiMercadoProductor", () => {
                 envases: [{ id: 1, nombre: "Cajon" }],
             kilos: [],
                 categorias: [{ id: 1, nombre: "Primera", especieId: null }],
-                calibres: [{ id: 1, nombre: "G - Grande" }],
+                calibres: [{ id: 1, nombre: "Grande" }],
                 paises: [{ id: 1, nombre: "Uruguay" }],
             };
             const fetchMock = vi.fn()
@@ -529,6 +530,7 @@ describe("MiMercadoProductor", () => {
             fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
 
             expect(await screen.findByRole("status")).toHaveTextContent("La publicación ya había sido eliminada.");
+            expect(screen.getByRole("status")).toHaveClass("MuiAlert-colorInfo");
             expect(mocks.refresh).toHaveBeenCalledOnce();
         });
 

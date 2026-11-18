@@ -1,0 +1,9 @@
+{
+  "from": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "to": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "providedInvariants": [
+    "uam:habilitacion-avisos-vencimiento-locales"
+  ],
+  "createdAt": "2026-11-15T15:00:00.000Z",
+  "migrationHash": "250edef587ba25f424f4c6b47c223de2a2a9bdbaa6ef1f5f4a3e954eb4d864c2"
+}

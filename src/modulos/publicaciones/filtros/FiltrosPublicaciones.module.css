@@ -15,20 +15,6 @@
     gap: var(--espacio-controles);
 }
 
-.mensajeError {
-    grid-column: 1 / -1;
-    grid-row: 4;
-    width: 100%;
-    margin-top: calc(-1 * var(--espacio-textos));
-    padding-left: var(--espacio-textos);
-    box-sizing: border-box;
-    color: var(--color-danger);
-    font-size: var(--tamano-texto-auxiliar);
-    font-weight: 500;
-    line-height: 1.2;
-    text-align: left;
-}
-
 .filtroBuscador,
 .filtroEspecie,
 .filtroNave,
@@ -208,10 +194,6 @@
     grid-column: 2;
 }
 
-.rangoInvalido .barraOpciones {
-    grid-row: 5;
-}
-
 .selectMui {
     width: 100%;
     min-width: 0;
@@ -253,33 +235,12 @@
     margin-left: auto;
 }
 
-.rangoInvalido .filtrosExtendidos {
-    grid-row: 6;
-}
-
-@media (max-width: 380px) {
-    .rangoInvalido .barraOpciones {
-        grid-row: 5;
-    }
-
-    .rangoInvalido .filtrosExtendidos {
-        grid-row: 6;
-    }
-}
-
 @media (min-width: 420px) {
     .barraOpciones {
         grid-column: 1 / -1;
         grid-row: 4;
     }
 
-    .rangoInvalido .barraOpciones {
-        grid-row: 5;
-    }
-
-    .rangoInvalido .filtrosExtendidos {
-        grid-row: 6;
-    }
 }
 
 @media (min-width: 600px) {
@@ -396,10 +357,6 @@
         grid-row: 1;
     }
 
-    .rangoInvalido .filtrosCategoriaCalibre {
-        grid-row: 6;
-    }
-
     .filtrosVariedadEnvase .filtroVariedad {
         grid-column: 3 / 5;
         grid-row: 2;
@@ -484,15 +441,6 @@
         justify-content: flex-end;
     }
 
-    .rangoInvalido .barraOpciones {
-        grid-row: 3;
-    }
-
-    .rangoInvalido .mensajeError {
-        grid-row: 3;
-        padding-top: var(--espacio-controles);
-    }
-
     .barraOpciones .botonExtendidos:first-child {
         display: none;
     }
@@ -527,13 +475,6 @@
         grid-column: 20 / 25;
     }
 
-    .conFiltroNave.rangoInvalido .mensajeError {
-        grid-column: 1 / 21;
-    }
-
-    .conFiltroNave.rangoInvalido .barraOpciones {
-        grid-column: 21 / 25;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {

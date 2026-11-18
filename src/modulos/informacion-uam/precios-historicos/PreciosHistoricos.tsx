@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import BotonDesplegable from "@/compartido/componentes/BotonDesplegable";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
+import Paginacion from "@/compartido/componentes/Paginacion";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import PlaylistRemoveOutlinedIcon from "@mui/icons-material/PlaylistRemoveOutlined";
 import { MenuItem, TextField } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useRouter } from "next/navigation";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import FuentePrecios from "../FuentePrecios";
@@ -77,7 +79,6 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
     const idProducto = identificadorEspecie(producto);
     const [pendiente, iniciarConsulta] = useTransition();
     const idCarga = useId();
-    const cargandoTabla = cargando || pendiente;
     const hoy = fechaActualMontevideo();
     const [fechaDesde, setFechaDesde] = useState(desde);
     const [fechaHasta, setFechaHasta] = useState(hasta);
@@ -98,6 +99,32 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         url.searchParams.delete("classification_id");
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }, []);
+    useEffect(() => {
+        if (!idProducto || cargando) return;
+        function restaurarSeleccion() {
+            const parametros = new URL(window.location.href).searchParams;
+            if (identificadorEspecie({ id: parametros.get("species_id") ?? "" }) !== idProducto) return;
+            setEspecieId(idProducto);
+            setVariedad(parametros.get("variedad") ?? "");
+            setPais(parametros.get("pais") ?? "");
+            setCategoria(parametros.get("categoria") ?? "");
+            setCalibre(parametros.get("calibre") ?? "");
+            const desdeUrl = parametros.get("from") ?? desde;
+            const hastaUrl = parametros.get("to") ?? hasta;
+            if (esFechaISO(desdeUrl) && esFechaISO(hastaUrl) && desdeUrl <= hastaUrl
+                && desdeUrl >= desde && hastaUrl <= hasta) {
+                setFechaDesde(desdeUrl);
+                setFechaHasta(hastaUrl);
+                setPeriodoVisible((actual) => actual.desde === desdeUrl && actual.hasta === hastaUrl
+                    ? actual : { desde: desdeUrl, hasta: hastaUrl });
+            }
+            setPagina(1);
+        }
+        // Al volver, Next puede restaurar datos cargados antes de cambiar los filtros locales.
+        restaurarSeleccion();
+        window.addEventListener("popstate", restaurarSeleccion);
+        return () => window.removeEventListener("popstate", restaurarSeleccion);
+    }, [idProducto, desde, hasta, cargando]);
     useLayoutEffect(() => {
         const panel = panelFiltrosRef.current;
         const contenido = contenidoFiltrosRef.current;
@@ -127,54 +154,78 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         ? "Seleccioná una especie para consultar su histórico de precios."
         : "No hay especies disponibles para consultar el histórico. Podés volver a precios de referencia.";
     const cambioEspecie = especieId !== idProducto;
+    const cargandoTabla = cargando || pendiente || cambioEspecie;
+    const validarFiltros = historico !== null && !error && !cargandoTabla;
     const registros = useMemo(() => {
-        if (!historico || error) return [];
+        if (!historico || error || cambioEspecie) return [];
         return historico.series
             .filter((dia) => !esFechaISO(dia.date) || dia.date >= desde && dia.date <= hasta)
             .sort((a, b) => textoValorHistorico(b.date).localeCompare(textoValorHistorico(a.date)))
             .flatMap((dia) => dia.presentations.flatMap((presentacion) =>
                 presentacion.prices.map((precio) => ({ dia, presentacion, precio }))));
-    }, [historico, desde, hasta, error]);
+    }, [historico, desde, hasta, error, cambioEspecie]);
+    const registrosDelPeriodo = useMemo(() => registros.filter(({ dia }) =>
+        !esFechaISO(dia.date) || dia.date >= periodoVisible.desde && dia.date <= periodoVisible.hasta),
+    [registros, periodoVisible]);
     const disponibles = useMemo(() => {
         if (cambioEspecie) return { variedades: [], paises: [], categorias: [], calibres: [] };
-        const presentaciones = historico && !error ? historico.series.flatMap((dia) => dia.presentations) : [];
+        const alternativas = historico && !error ? undefined : opcionesFiltros;
         return {
-            variedades: opciones(opcionesFiltros?.variedades ?? presentaciones.map((presentacion) => presentacion.variety), variedad),
-            paises: opciones(opcionesFiltros?.paises ?? presentaciones.map((presentacion) => presentacion.country), pais).sort(compararPaisesPorPrioridad),
-            categorias: opciones(opcionesFiltros?.categorias ?? presentaciones.flatMap((presentacion) => presentacion.prices.map((precio) => precio.category)), categoria),
-            calibres: opciones(opcionesFiltros?.calibres ?? presentaciones.map((presentacion) => presentacion.caliber), calibre),
+            variedades: opciones(alternativas?.variedades ?? registrosDelPeriodo.map(({ presentacion }) => presentacion.variety), validarFiltros ? "" : variedad),
+            paises: opciones(alternativas?.paises ?? registrosDelPeriodo.map(({ presentacion }) => presentacion.country), validarFiltros ? "" : pais).sort(compararPaisesPorPrioridad),
+            categorias: opciones(alternativas?.categorias ?? registrosDelPeriodo.map(({ precio }) => precio.category), validarFiltros ? "" : categoria),
+            calibres: opciones(alternativas?.calibres ?? registrosDelPeriodo.map(({ presentacion }) => presentacion.caliber), validarFiltros ? "" : calibre),
         };
-    }, [historico, opcionesFiltros, error, cambioEspecie, variedad, pais, categoria, calibre]);
-    const variedadSeleccionada = variedad;
-    const paisSeleccionado = pais;
-    const categoriaSeleccionada = categoria;
-    const calibreSeleccionado = calibre;
+    }, [historico, opcionesFiltros, registrosDelPeriodo, validarFiltros, error, cambioEspecie, variedad, pais, categoria, calibre]);
+    const variedadAplicada = validarFiltros && !disponibles.variedades.includes(variedad) ? "" : variedad;
+    const paisAplicado = validarFiltros && !disponibles.paises.includes(pais) ? "" : pais;
+    const categoriaAplicada = validarFiltros && !disponibles.categorias.includes(categoria) ? "" : categoria;
+    const calibreAplicado = validarFiltros && !disponibles.calibres.includes(calibre) ? "" : calibre;
+    useEffect(() => {
+        if (!validarFiltros) return;
+        const url = new URL(window.location.href);
+        const mismaEspecie = identificadorEspecie({ id: url.searchParams.get("species_id") ?? "" }) === idProducto;
+        let cambioUrl = false;
+        for (const [nombre, anterior, aplicado, actualizar] of [
+            ["variedad", variedad, variedadAplicada, setVariedad],
+            ["pais", pais, paisAplicado, setPais],
+            ["categoria", categoria, categoriaAplicada, setCategoria],
+            ["calibre", calibre, calibreAplicado, setCalibre],
+        ] as const) {
+            if (anterior === aplicado) continue;
+            actualizar((actual) => actual === anterior ? aplicado : actual);
+            if (mismaEspecie && url.searchParams.get(nombre) === anterior) {
+                url.searchParams.delete(nombre);
+                cambioUrl = true;
+            }
+        }
+        if (cambioUrl) window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }, [validarFiltros, idProducto, variedad, variedadAplicada, pais, paisAplicado, categoria, categoriaAplicada, calibre, calibreAplicado]);
     const filas = useMemo(() => {
-        return registros.filter(({ dia, presentacion, precio }) => {
-            if (esFechaISO(dia.date) && (dia.date < periodoVisible.desde || dia.date > periodoVisible.hasta)) return false;
-            if (variedadSeleccionada && textoValorHistorico(presentacion.variety) !== variedadSeleccionada) return false;
-            if (paisSeleccionado && textoValorHistorico(presentacion.country) !== paisSeleccionado) return false;
-            if (categoriaSeleccionada && textoValorHistorico(precio.category) !== categoriaSeleccionada) return false;
-            if (calibreSeleccionado && textoValorHistorico(presentacion.caliber) !== calibreSeleccionado) return false;
+        return registrosDelPeriodo.filter(({ presentacion, precio }) => {
+            if (variedadAplicada && textoValorHistorico(presentacion.variety) !== variedadAplicada) return false;
+            if (paisAplicado && textoValorHistorico(presentacion.country) !== paisAplicado) return false;
+            if (categoriaAplicada && textoValorHistorico(precio.category) !== categoriaAplicada) return false;
+            if (calibreAplicado && textoValorHistorico(presentacion.caliber) !== calibreAplicado) return false;
             return true;
         });
-    }, [registros, periodoVisible, variedadSeleccionada, paisSeleccionado, categoriaSeleccionada, calibreSeleccionado]);
+    }, [registrosDelPeriodo, variedadAplicada, paisAplicado, categoriaAplicada, calibreAplicado]);
     const totalPaginas = Math.max(1, Math.ceil(filas.length / LIMITE));
     const paginaActual = Math.min(pagina, totalPaginas);
     const inicio = (paginaActual - 1) * LIMITE;
     const visibles = filas.slice(inicio, inicio + LIMITE);
 
-    // La URL conserva el período y el producto aplicados hasta confirmar otra consulta.
+    // Las fechas se aplican al consultar; los atributos se aplican al seleccionarlos.
     function urlConsulta(cambios: Record<string, string> = {}) {
         const parametros = {
             species_id: idProducto,
             producto: producto.especie,
             from: periodoVisible.desde,
             to: periodoVisible.hasta,
-            variedad: variedadSeleccionada,
-            pais: paisSeleccionado,
-            calibre: calibreSeleccionado,
-            categoria: categoriaSeleccionada,
+            variedad: variedadAplicada,
+            pais: paisAplicado,
+            calibre: calibreAplicado,
+            categoria: categoriaAplicada,
             ...cambios,
         };
         const url = new URL(window.location.href);
@@ -191,21 +242,30 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         window.history.replaceState(null, "", urlConsulta(cambios));
     }
 
-    function cambiar(accion: () => void, cambios: Record<string, string>) {
+    function cambiarFiltro(accion: () => void, cambios: Record<string, string>) {
         accion();
         setPagina(1);
-        if (cambioEspecie) return;
-        iniciarConsulta(() => router.push(urlConsulta(cambios), { scroll: false }));
+        actualizarUrl(cambios);
     }
 
     function cambiarEspecie(id: string) {
         if (id === especieId) return;
+        const especie = especiesDisponibles.find((opcion) => opcion.id === id);
+        if (!especie) return;
         setEspecieId(id);
+        setVariedad("");
+        setPais("");
+        setCategoria("");
+        setCalibre("");
         setPagina(1);
+        iniciarConsulta(() => router.push(urlConsulta({
+            species_id: id,
+            producto: especie.especie,
+            variedad: "", pais: "", calibre: "", categoria: "",
+        }), { scroll: false }));
     }
 
     function limpiar() {
-        setEspecieId(idProducto);
         setVariedad("");
         setPais("");
         setCategoria("");
@@ -214,21 +274,14 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         setFechaHasta(hasta);
         setPeriodoVisible({ desde, hasta });
         setPagina(1);
-        const cambios = { from: desde, to: hasta, variedad: "", pais: "", calibre: "", categoria: "" };
-        if (producto.variedad || producto.pais || producto.calibre || producto.categoria
-            || variedad || pais || calibre || categoria) {
-            iniciarConsulta(() => router.push(urlConsulta(cambios), { scroll: false }));
-        } else {
-            actualizarUrl(cambios);
-        }
+        if (idProducto) actualizarUrl({ from: desde, to: hasta, variedad: "", pais: "", calibre: "", categoria: "" });
     }
 
     function consultar(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (cargandoTabla || rangoInvalido || !fechaDesde || !fechaHasta || !especieConsulta) return;
-        const mismosFiltros = variedad === producto.variedad && pais === producto.pais
-            && calibre === producto.calibre && categoria === producto.categoria;
-        if (!cambioEspecie && mismosFiltros && fechaDesde >= desde && fechaHasta <= hasta && historico && !error) {
+        if (fechaDesde >= desde && fechaHasta <= hasta && historico && historico.series.length > 0 && !error
+            && fechaDesde >= historico.from && fechaHasta <= historico.to) {
             setPeriodoVisible({ desde: fechaDesde, hasta: fechaHasta });
             setPagina(1);
             actualizarUrl({ from: fechaDesde, to: fechaHasta });
@@ -237,9 +290,6 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
         const parametros: Record<string, string> = {};
         for (const [nombre, valor] of new FormData(evento.currentTarget)) {
             if (typeof valor === "string") parametros[nombre] = valor;
-        }
-        if (cambioEspecie) {
-            Object.assign(parametros, { variedad: "", pais: "", calibre: "", categoria: "" });
         }
         const url = urlConsulta(parametros);
         setPagina(1);
@@ -270,8 +320,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         </TextField>
                         <TextField
                             className={`${styles.campo} ${styles.filtroVariedad}`}
-                            select label="Variedad" name="variedad" size="small" value={cambioEspecie ? "" : variedadSeleccionada} disabled={cargandoTabla || cambioEspecie}
-                            onChange={(evento) => cambiar(() => setVariedad(evento.target.value), { variedad: evento.target.value })} slotProps={menu}
+                            select label="Variedad" name="variedad" size="small" value={variedadAplicada} disabled={cargandoTabla || !especieConsulta}
+                            onChange={(evento) => cambiarFiltro(() => setVariedad(evento.target.value), { variedad: evento.target.value })} slotProps={menu}
                         >
                             <MenuItem value="" className={styles.opcionSelect}>Todas las variedades</MenuItem>
                             {disponibles.variedades.map((valor) => (
@@ -289,8 +339,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <div ref={contenidoFiltrosRef} className={styles.contenidoAdicional}>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroPais}`}
-                                    select label="País" name="pais" size="small" value={cambioEspecie ? "" : paisSeleccionado} disabled={cargandoTabla || cambioEspecie}
-                                    onChange={(evento) => cambiar(() => setPais(evento.target.value), { pais: evento.target.value })} slotProps={menu}
+                                    select label="País" name="pais" size="small" value={paisAplicado} disabled={cargandoTabla || !especieConsulta}
+                                    onChange={(evento) => cambiarFiltro(() => setPais(evento.target.value), { pais: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los países</MenuItem>
                                     {disponibles.paises.map((valor) => (
@@ -299,8 +349,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCalibre}`}
-                                    select label="Calibre" name="calibre" size="small" value={cambioEspecie ? "" : calibreSeleccionado} disabled={cargandoTabla || cambioEspecie}
-                                    onChange={(evento) => cambiar(() => setCalibre(evento.target.value), { calibre: evento.target.value })} slotProps={menu}
+                                    select label="Calibre" name="calibre" size="small" value={calibreAplicado} disabled={cargandoTabla || !especieConsulta}
+                                    onChange={(evento) => cambiarFiltro(() => setCalibre(evento.target.value), { calibre: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todos los calibres</MenuItem>
                                     {disponibles.calibres.map((valor) => (
@@ -309,8 +359,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </TextField>
                                 <TextField
                                     className={`${styles.campo} ${styles.filtroCategoria}`}
-                                    select label="Categoría" name="categoria" size="small" value={cambioEspecie ? "" : categoriaSeleccionada} disabled={cargandoTabla || cambioEspecie}
-                                    onChange={(evento) => cambiar(() => setCategoria(evento.target.value), { categoria: evento.target.value })} slotProps={menu}
+                                    select label="Categoría" name="categoria" size="small" value={categoriaAplicada} disabled={cargandoTabla || !especieConsulta}
+                                    onChange={(evento) => cambiarFiltro(() => setCategoria(evento.target.value), { categoria: evento.target.value })} slotProps={menu}
                                 >
                                     <MenuItem value="" className={styles.opcionSelect}>Todas las categorías</MenuItem>
                                     {disponibles.categorias.map((valor) => (
@@ -320,19 +370,19 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             </div>
                         </div>
                         <div className={styles.fechas}>
-                            <TextField
+                            <SelectorFecha
                                 className={`${styles.campo} ${styles.filtroDesde}`}
-                                label="Desde" name="from" type="date" size="small" required
+                                label="Desde" name="from" required
                                 value={fechaDesde} disabled={cargandoTabla}
-                                onChange={(evento) => setFechaDesde(evento.target.value)}
-                                slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: fechaHasta || hoy } }}
+                                onChange={setFechaDesde}
+                                max={fechaHasta || hoy}
                             />
-                            <TextField
+                            <SelectorFecha
                                 className={`${styles.campo} ${styles.filtroHasta}`}
-                                label="Hasta" name="to" type="date" size="small" required
+                                label="Hasta" name="to" required
                                 value={fechaHasta} disabled={cargandoTabla} error={rangoInvalido}
-                                onChange={(evento) => setFechaHasta(evento.target.value)}
-                                slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: fechaDesde || undefined, max: hoy } }}
+                                onChange={setFechaHasta}
+                                min={fechaDesde || undefined} max={hoy}
                             />
                         </div>
                     </div>
@@ -344,9 +394,10 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                         </div>
                     </div>
                 </form>
-                {rangoInvalido && <p className={styles.vacio} role="alert">La fecha de inicio debe ser anterior o igual a la fecha de fin.</p>}
+                <AvisoErrorToast mensaje={rangoInvalido ? "La fecha de inicio debe ser anterior o igual a la fecha de fin." : null} />
             </section>
 
+            <AvisoErrorToast mensaje={cargandoTabla ? null : error} cerrarAlCorregir={false} />
             <GraficaPreciosHistoricos
                 registros={filas}
                 desde={periodoVisible.desde}
@@ -373,9 +424,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                                 </td></tr>
                             ) : error ? (
                                 <tr><td colSpan={8}>
-                                    <div className={`${styles.carga} ${styles.errorCarga}`} role="alert">
-                                        <WarningAmberIcon fontSize="large" />
-                                        <p>{error}</p>
+                                    <div className={styles.carga}>
+                                        <p>Consultá nuevamente para ver los precios.</p>
                                     </div>
                                 </td></tr>
                             ) : visibles.map(({ dia, presentacion, precio }, indice) => (
@@ -396,9 +446,8 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                             <CircularProgress id={`${idCarga}-mobile`} size={36} color="inherit" aria-label="Cargando precios históricos" />
                         </div>
                     ) : error ? (
-                        <div className={`${styles.carga} ${styles.errorCarga}`} role="alert">
-                            <WarningAmberIcon fontSize="large" />
-                            <p>{error}</p>
+                        <div className={styles.carga}>
+                            <p>Consultá nuevamente para ver los precios.</p>
                         </div>
                     ) : visibles.map(({ dia, presentacion, precio }, indice) => {
                         const nombre = `${producto.especie} · ${textoValorHistorico(presentacion.variety)}`;
@@ -428,14 +477,13 @@ export default function PreciosHistoricos({ producto, historico, desde, hasta, e
                     </div>
                 )}
                 {!cargandoTabla && filas.length > LIMITE && (
-                    <nav className={styles.paginacion} aria-label="Páginas de precios históricos">
-                        <span>{inicio + 1}-{Math.min(inicio + LIMITE, filas.length)} de {filas.length}</span>
-                        <div>
-                            <button type="button" disabled={paginaActual === 1} onClick={() => setPagina(paginaActual - 1)}>Anterior</button>
-                            <span>Página {paginaActual} de {totalPaginas}</span>
-                            <button type="button" disabled={paginaActual === totalPaginas} onClick={() => setPagina(paginaActual + 1)}>Siguiente</button>
-                        </div>
-                    </nav>
+                    <Paginacion
+                        pagina={paginaActual}
+                        totalPaginas={totalPaginas}
+                        alCambiar={setPagina}
+                        etiqueta="Páginas de precios históricos"
+                        resumen={`${inicio + 1}-${Math.min(inicio + LIMITE, filas.length)} de ${filas.length}`}
+                    />
                 )}
             </section>
             <FuentePrecios />

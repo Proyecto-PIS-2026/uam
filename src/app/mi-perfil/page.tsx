@@ -3,17 +3,18 @@ import { redirect } from "next/navigation";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { RUTA_SESION_FINALIZADA } from "@/modulos/identidad-acceso/autenticacion/rutas-sesion";
 import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
-import { obtenerPerfilPropioOperador } from "@/modulos/usuarios/operadores/consultasPerfilPropio";
+import { obtenerPerfilPropioOperador } from "@/modulos/usuarios/operadores/consultas/consultas-perfil-propio";
 import PerfilPropioOperador from "@/modulos/usuarios/operadores/componentes/perfil-propio-operador/PerfilPropioOperador";
-import { consultarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultar-mi-perfil";
-import BotonVolver from "@/compartido/BotonVolver";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import { consultarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultas/consultar-mi-perfil";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import styles from "@/modulos/usuarios/administradores/componentes/perfil-administrador/PerfilAdministrador.module.css";
-import estilosFormulario from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
+import estilosFormulario from "@/modulos/usuarios/componentes/formulario-usuario.module.css";
 
 export const metadata = { title: "Mi perfil | UAM" };
 export const dynamic = "force-dynamic";
@@ -22,7 +23,6 @@ export default async function PaginaMiPerfil() {
     const sesion = await obtenerSesion();
     if (!sesion) redirect(RUTA_SESION_FINALIZADA);
 
-    // Mantener intactas las funcionalidades de otros roles ya fusionadas en develop.
     if (sesion.rol === "PRODUCTOR") redirect("/mi-perfil/productor");
     const habilitarCambioContrasena = await estaHabilitadoCambioContrasena();
     if (sesion.rol === "OPERADOR") {
@@ -40,9 +40,7 @@ export default async function PaginaMiPerfil() {
             {!perfil ? (
                 <div className="secciones-pagina">
                     <EncabezadoPagina titulo="Mi perfil" subtitulo="Administrador" />
-                    <section className={`${styles.tarjetaPerfil} ${styles.tarjetaInformacion}`} role="alert">
-                        No se pudieron encontrar los datos de tu perfil. Volvé a intentarlo más tarde.
-                    </section>
+                    <AvisoErrorToast mensaje="No se pudieron encontrar los datos de tu perfil. Volvé a intentarlo más tarde." />
                 </div>
             ) : (
                 <>

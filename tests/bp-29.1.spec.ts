@@ -20,7 +20,6 @@ test.beforeEach(() => test.setTimeout(180_000));
 test.use({ viewport: { width: 1280, height: 900 } });
 
 async function ingresar(page: Page, credenciales: Credenciales) {
-  await page.bringToFront();
   for (let intento = 0; intento < 2; intento++) {
     try {
       await page.goto("/iniciar-sesion", { waitUntil: "domcontentloaded", timeout: 30_000 });
@@ -84,5 +83,33 @@ test("CP-29.1-15: todas las operaciones sin sesión devuelven 401 y conservan lo
       expect(await respuesta.json()).toEqual({ errores: ["Iniciá sesión para consultar tus notificaciones."] });
       expect(await db.orm.public.Notificacion.where({ id: avisoAjeno.id }).first()).toEqual(antes);
     });
+  }
+});
+
+test("CP-29.1-16: leer todo no marca como leídas las notificaciones de otro usuario", async ({ page, precargaOperadores: datos, avisoAjeno }) => {
+  await ingresar(page, datos.operadorA.credenciales);
+  const respuesta = await page.request.patch("/api/notificaciones");
+  expect(respuesta.status()).toBe(200);
+  expect(await datos.db.orm.public.Notificacion.where({ id: avisoAjeno.id }).select("vista").first()).toEqual({ vista: false });
+});
+
+
+test("CP-29.1-17: borrar todo elimina únicamente las notificaciones propias", async ({ page, precargaOperadores: datos, avisoAjeno }) => {
+  const textoPropio = `BP-29.1 propio ${randomUUID()}`;
+
+  const propia = await datos.db.orm.public.Notificacion.create({titulo: "Notificación",descripcion: textoPropio,usuarioId: datos.operadorA.usuarioId,vista: false,});
+
+  try {
+    await ingresar(page, datos.operadorA.credenciales);
+
+    const respuesta = await page.request.delete("/api/notificaciones");
+    expect(respuesta.status()).toBe(200);
+
+    expect(await datos.db.orm.public.Notificacion.where({ id: propia.id }).first()).toBeNull();
+
+    expect(await datos.db.orm.public.Notificacion.where({ id: avisoAjeno.id }).first()).not.toBeNull();
+
+  } finally {
+    await datos.db.orm.public.Notificacion.where({ id: propia.id }).deleteAndCount();
   }
 });

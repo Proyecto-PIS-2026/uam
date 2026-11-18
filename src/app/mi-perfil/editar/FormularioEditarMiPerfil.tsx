@@ -3,14 +3,15 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import TextField from "@mui/material/TextField";
-import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/modificar-mi-perfil";
-import type { MiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultar-mi-perfil";
-import styles from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
+import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/acciones/modificar-mi-perfil";
+import type { MiPerfilAdministrador } from "@/modulos/usuarios/administradores/consultas/consultar-mi-perfil";
+import styles from "@/modulos/usuarios/componentes/formulario-usuario.module.css";
 
 export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilAdministrador }) {
     const router = useRouter();
     const [nombre, setNombre] = useState(perfil.nombre);
-    const [errores, setErrores] = useState<string[]>([]);
+    const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const enviando = useRef(false);
 
@@ -19,17 +20,17 @@ export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilA
         if (enviando.current) return;
         enviando.current = true;
         setGuardando(true);
-        setErrores([]);
         try {
             const resultado = await modificarMiPerfilAdministrador({ nombre });
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
+            notificar(resultado.mensaje, "success");
             router.push("/mi-perfil");
             router.refresh();
         } catch {
-            setErrores(["No se pudieron guardar los cambios. Intentá nuevamente."]);
+            notificar("No se pudieron guardar los cambios. Intentá nuevamente.", "error");
         } finally {
             enviando.current = false;
             setGuardando(false);
@@ -54,7 +55,6 @@ export default function FormularioEditarMiPerfil({ perfil }: { perfil: MiPerfilA
                     slotProps={{ htmlInput: { minLength: 3 } }}
                 />
             </section>
-            {errores.length > 0 && <div role="alert" className={styles.error}>{errores.join(" ")}</div>}
             <div className={styles.acciones}>
                 <button type="button" className={styles.cancelar} disabled={guardando} onClick={() => router.push("/mi-perfil")}>Cancelar</button>
                 <button type="submit" className={styles.guardar} disabled={guardando}>{guardando ? "Guardando…" : "Guardar cambios"}</button>

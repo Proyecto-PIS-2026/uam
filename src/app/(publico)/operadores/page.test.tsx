@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OperadorListado } from "../../../modulos/usuarios/operadores/consultas-listado-publico";
+import type { OperadorListado } from "../../../modulos/usuarios/operadores/consultas/consultas-listado-publico";
 import Page from "./page";
 
 const {
@@ -22,7 +22,7 @@ vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({
 
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
-vi.mock("@/modulos/usuarios/operadores/consultas-listado-publico", () => ({
+vi.mock("@/modulos/usuarios/operadores/consultas/consultas-listado-publico", () => ({
     obtenerOperadoresPublicos: obtenerOperadoresMock,
 }));
 

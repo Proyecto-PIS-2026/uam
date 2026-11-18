@@ -1,3 +1,4 @@
+import { completarFecha, leerFecha } from "./soporte/fechas";
 import { expect, test, type Page } from "@playwright/test";
 
 // Comparte el servicio histórico controlado de BP-17 (puertos 3100/3101).
@@ -11,12 +12,12 @@ const precioVisible = (valor: number) => new Intl.NumberFormat("es-UY", { maximu
 async function esperarConsulta(page: Page) {
   await expect(consultar(page)).toBeEnabled({ timeout: 60_000 });
   await expect(grafica(page)).toHaveAttribute("aria-busy", "false");
-  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Notificaciones", exact: true }).getByRole("alert")).toHaveCount(0);
 }
 
 async function cambiarRango(page: Page, desde: string, hasta: string) {
-  await page.getByRole("textbox", { name: "Desde", exact: true }).fill(desde);
-  await page.getByRole("textbox", { name: "Hasta", exact: true }).fill(hasta);
+  await completarFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }), desde);
+  await completarFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }), hasta);
   await consultar(page).click();
   await expect(page).toHaveURL((url) => url.searchParams.get("from") === desde && url.searchParams.get("to") === hasta);
   await esperarConsulta(page);
@@ -50,8 +51,8 @@ test.describe("BP-26: gráfica de precios históricos", () => {
   });
 
   test("CP-26-01: muestra listado y gráfica para el rango inicial con datos", async ({ page }) => {
-    const desde = await page.getByRole("textbox", { name: "Desde", exact: true }).inputValue();
-    const hasta = await page.getByRole("textbox", { name: "Hasta", exact: true }).inputValue();
+    const desde = await leerFecha(page.getByRole("group", { name: /^Desde(?:\s*\*)?$/ }));
+    const hasta = await leerFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }));
     expect(desde).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(hasta).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(desde <= hasta).toBe(true);
@@ -103,7 +104,7 @@ test.describe("BP-26: gráfica de precios históricos", () => {
   });
 
   test("CP-26-05: un único registro se representa con puntos visibles", async ({ page }) => {
-    const dia = await page.getByRole("textbox", { name: "Hasta", exact: true }).inputValue();
+    const dia = await leerFecha(page.getByRole("group", { name: /^Hasta(?:\s*\*)?$/ }));
     await cambiarRango(page, dia, dia);
     await expect(filas(page)).toHaveCount(1);
     await expect(filas(page).first().getByRole("cell").first()).toHaveText(fechaVisible(dia));

@@ -1,10 +1,10 @@
-import Inicio from "@/modulos/consulta-mercado/inicio/inicio";
+import Inicio from "@/modulos/consulta-mercado/inicio/Inicio";
 import { redirigirAMercadoPropio } from "@/modulos/identidad-acceso/autorizacion/controles";
 import {
     obtenerEspeciesInicio,
     obtenerUrlListaInteligente,
 } from "@/modulos/consulta-mercado/inicio/consultas-inicio";
-import { obtenerConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
+import { obtenerConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/consultas/configuracion-ordenamiento";
 
 
 export const dynamic = "force-dynamic";

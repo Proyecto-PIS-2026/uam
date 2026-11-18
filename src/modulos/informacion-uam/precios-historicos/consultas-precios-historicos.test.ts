@@ -37,13 +37,55 @@ beforeEach(() => {
 });
 
 describe("consultas del histórico persistido", () => {
+    it("extrae opciones únicas ordenadas del período y excluye atributos de fechas anteriores y posteriores", async () => {
+        const guardado = estado();
+        guardado.historico.series[0].presentations = [{
+            ...presentacion("Anterior", "ARGENTINA", "99"),
+            prices: [{ ...presentacion().prices[0], category: "Anterior" }],
+        }];
+        guardado.historico.series[3].presentations = [{
+            ...presentacion("Posterior", "BRASIL", "100"),
+            prices: [{ ...presentacion().prices[0], category: "Posterior" }],
+        }];
+        guardado.historico.series[1].presentations[0].caliber = "2";
+        guardado.historico.series[2].presentations[0].caliber = "10";
+        const original = structuredClone(guardado);
+        leer.mockResolvedValue(guardado);
+
+        const { opcionesFiltros } = await obtenerHistoricoPreciosConFiltros(consulta);
+
+        expect(opcionesFiltros).toEqual({
+            variedades: ["Cavendish", "Otra"],
+            paises: ["ECUADOR", "URUGUAY"], calibres: ["2", "10", "M"], categorias: ["I", "II"],
+        });
+        expect(guardado).toStrictEqual(original);
+    });
+
+    it("devuelve opciones vacías si el histórico no tiene presentaciones", async () => {
+        const guardado = estado();
+        guardado.historico.series = [];
+        leer.mockResolvedValue(guardado);
+
+        const { historico: recibido, opcionesFiltros } = await obtenerHistoricoPreciosConFiltros(consulta);
+
+        expect(recibido.series).toEqual([]);
+        expect(opcionesFiltros).toEqual({ variedades: [], paises: [], calibres: [], categorias: [] });
+    });
+
+    it("devuelve opciones vacías en un período sin registros aunque existan datos antes y después", async () => {
+        const recibido = await obtenerHistoricoPreciosConFiltros({ ...consulta, desde: "2022-01-01", hasta: "2022-12-31" });
+
+        expect(recibido.historico.series).toEqual([]);
+        expect(recibido.opcionesFiltros).toEqual({ variedades: [], paises: [], calibres: [], categorias: [] });
+    });
+
     it("actualiza únicamente la especie solicitada antes de leer sus datos", async () => {
         const orden: string[] = [];
         actualizarEspecie.mockImplementation(async () => { orden.push("actualizar"); });
         leer.mockImplementation(async () => { orden.push("leer"); return estado(); });
         const { historico: recibido } = await obtenerHistoricoPreciosConFiltros(consulta);
         expect(orden).toEqual(["actualizar", "leer"]);
-        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60);
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, consulta.desde);
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
         expect(recibido.series.map((dia) => dia.date)).toEqual(["2026-10-01", "2026-10-08"]);
         expect(recibido.from).toBe(consulta.desde);
@@ -56,7 +98,7 @@ describe("consultas del histórico persistido", () => {
 
         const pendiente = obtenerHistoricoPreciosConFiltros(consulta);
 
-        await vi.waitFor(() => expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60));
+        await vi.waitFor(() => expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, consulta.desde));
         expect(leer).not.toHaveBeenCalled();
         completarActualizacion();
         await expect(pendiente).resolves.toMatchObject({ historico: { species_id: 60 } });
@@ -74,19 +116,61 @@ describe("consultas del histórico persistido", () => {
 
         await expect(obtenerHistoricoPreciosConFiltros(consulta)).resolves.toMatchObject({ historico: { species_id: 60 } });
 
-        expect(actualizarEspecie.mock.calls).toEqual([[61], [60]]);
+        expect(actualizarEspecie.mock.calls).toEqual([[61, consulta.desde], [60, consulta.desde]]);
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
         completarOtraEspecie();
         await expect(otraConsulta).resolves.toMatchObject({ historico: { species_id: 61 } });
     });
 
-    it("filtra todos los atributos en backend y conserva las facetas del período completo", async () => {
+    it("filtra todos los atributos en backend y conserva todas las opciones del período", async () => {
         const recibido = await obtenerHistoricoPreciosConFiltros(consulta, { variedad: "Otra", pais: "URUGUAY", calibre: "M", categoria: "II" });
         expect(recibido.historico.series).toEqual([{
             date: "2026-10-01", volume_kg: 1000,
             presentations: [{ ...presentacion("Otra", "URUGUAY", "M"), prices: [presentacion().prices[1]] }],
         }]);
         expect(recibido.opcionesFiltros).toEqual({ variedades: ["Cavendish", "Otra"], paises: ["ECUADOR", "URUGUAY"], calibres: ["G", "M"], categorias: ["I", "II"] });
+    });
+
+    it("conserva las opciones del período aunque los atributos seleccionados no tengan coincidencias", async () => {
+        const recibido = await obtenerHistoricoPreciosConFiltros(consulta, { variedad: "Otra", pais: "ECUADOR" });
+
+        expect(recibido.historico.series).toEqual([]);
+        expect(recibido.opcionesFiltros).toEqual({
+            variedades: ["Cavendish", "Otra"], paises: ["ECUADOR", "URUGUAY"],
+            calibres: ["G", "M"], categorias: ["I", "II"],
+        });
+    });
+
+    it("incorpora los atributos de fechas anteriores solo al ampliar el período consultado", async () => {
+        const guardado = estado();
+        guardado.historico.series[0].presentations = [{
+            ...presentacion("Fuera del período", "ARGENTINA", "P"),
+            prices: [{ ...presentacion().prices[0], category: "III" }],
+        }];
+        const original = structuredClone(guardado);
+        leer.mockResolvedValue(guardado);
+
+        const primera = await obtenerHistoricoPreciosConFiltros(consulta);
+
+        expect(primera.historico.series.map((dia) => dia.date)).toEqual(["2026-10-01", "2026-10-08"]);
+        expect(primera.opcionesFiltros).toEqual({
+            variedades: ["Cavendish", "Otra"],
+            paises: ["ECUADOR", "URUGUAY"], calibres: ["G", "M"], categorias: ["I", "II"],
+        });
+
+        const ampliada = { ...consulta, desde: "2021-10-09" };
+        const segunda = await obtenerHistoricoPreciosConFiltros(ampliada, {
+            variedad: "Fuera del período", pais: "ARGENTINA", calibre: "P", categoria: "III",
+        });
+
+        expect(segunda.historico.series).toEqual([original.historico.series[0]]);
+        expect(segunda.opcionesFiltros).toEqual({
+            variedades: ["Cavendish", "Fuera del período", "Otra"],
+            paises: ["ARGENTINA", "ECUADOR", "URUGUAY"], calibres: ["G", "M", "P"], categorias: ["I", "II", "III"],
+        });
+        expect(actualizarEspecie.mock.calls).toEqual([[60, consulta.desde], [60, ampliada.desde]]);
+        expect(leer.mock.calls).toEqual([[60], [60]]);
+        expect(guardado).toStrictEqual(original);
     });
 
     it("distintos rangos reutilizan el mismo registro sin modificar el histórico acumulado", async () => {
@@ -100,7 +184,52 @@ describe("consultas del histórico persistido", () => {
         expect(leer.mock.calls).toEqual([[60], [60]]);
     });
 
-    it("devuelve solamente la intersección disponible cuando el rango solicitado empieza antes de la cobertura guardada", async () => {
+    it("espera la ampliación hacia atrás y filtra los datos nuevos por el período y los atributos solicitados", async () => {
+        let guardado = estado();
+        const periodoSolicitado = { ...consulta, desde: "2018-01-01", hasta: "2019-12-31" };
+        let completarAmpliacion!: () => void;
+        const ampliacion = new Promise<void>((resolve) => { completarAmpliacion = resolve; });
+        actualizarEspecie.mockImplementation(async () => {
+            await ampliacion;
+            guardado = {
+                ...guardado,
+                historico: {
+                    ...guardado.historico,
+                    from: periodoSolicitado.desde,
+                    series: [
+                        { date: "2018-06-01", presentations: [presentacion()] },
+                        { date: "2019-06-01", presentations: [presentacion("Otra")] },
+                        { date: "2020-06-01", presentations: [presentacion()] },
+                        ...guardado.historico.series,
+                    ],
+                },
+            };
+        });
+        leer.mockImplementation(async () => guardado);
+
+        const pendiente = obtenerHistoricoPreciosConFiltros(periodoSolicitado, { variedad: "Cavendish", categoria: "I" });
+
+        try {
+            expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, periodoSolicitado.desde);
+            expect(leer).not.toHaveBeenCalled();
+            completarAmpliacion();
+            const recibido = await pendiente;
+
+            expect(recibido.historico.from).toBe(periodoSolicitado.desde);
+            expect(recibido.historico.to).toBe(periodoSolicitado.hasta);
+            expect(recibido.historico.series).toEqual([{
+                date: "2018-06-01",
+                presentations: [{ ...presentacion(), prices: [presentacion().prices[0]] }],
+            }]);
+            expect(recibido.opcionesFiltros.variedades).toEqual(["Cavendish", "Otra"]);
+            expect(leer).toHaveBeenCalledExactlyOnceWith(60);
+        } finally {
+            completarAmpliacion();
+            await Promise.allSettled([pendiente]);
+        }
+    });
+
+    it("devuelve la intersección disponible si la sincronización no pudo ampliar la cobertura guardada", async () => {
         const guardado = estado();
         guardado.historico.from = "2023-01-01";
         guardado.historico.series = [
@@ -121,11 +250,11 @@ describe("consultas del histórico persistido", () => {
             calibres: ["G", "M", "P"], categorias: ["I", "II"],
         });
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
-        expect(actualizarEspecie).toHaveBeenCalledOnce();
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, periodoSolicitado.desde);
         expect(guardado).toStrictEqual(original);
     });
 
-    it("devuelve un resultado vacío sin fallar cuando todo el rango solicitado es anterior a la cobertura guardada", async () => {
+    it("devuelve opciones vacías cuando el período solicitado no tiene cobertura guardada", async () => {
         const guardado = estado();
         guardado.historico.from = "2023-01-01";
         guardado.historico.series = guardado.historico.series.slice(1);
@@ -141,7 +270,7 @@ describe("consultas del histórico persistido", () => {
         });
 
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
-        expect(actualizarEspecie).toHaveBeenCalledOnce();
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, periodoSolicitado.desde);
         expect(guardado).toStrictEqual(original);
     });
 
@@ -162,7 +291,7 @@ describe("consultas del histórico persistido", () => {
             obtenerHistoricoPreciosConFiltros({ ...consulta, speciesId: 61 }),
         ]);
 
-        expect(actualizarEspecie.mock.calls).toEqual([[60], [61]]);
+        expect(actualizarEspecie.mock.calls).toEqual([[60, consulta.desde], [61, consulta.desde]]);
         expect(leer.mock.calls).toEqual([[60], [61]]);
         expect(resultados.map((resultado) => resultado.historico.species_id)).toEqual([60, 61]);
     });
@@ -170,7 +299,7 @@ describe("consultas del histórico persistido", () => {
     it("informa que no hay un histórico disponible si la carga automática no pudo crear el registro", async () => {
         leer.mockResolvedValue(null);
         await expect(obtenerHistoricoPreciosConFiltros(consulta)).rejects.toThrow("No se pudo obtener el histórico de esta especie");
-        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60);
+        expect(actualizarEspecie).toHaveBeenCalledExactlyOnceWith(60, consulta.desde);
         expect(leer).toHaveBeenCalledExactlyOnceWith(60);
     });
 

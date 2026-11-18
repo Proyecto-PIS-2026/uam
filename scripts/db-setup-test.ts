@@ -7,7 +7,7 @@ const databaseUrlTest = obtenerDatabaseUrlTest()
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const resultado = spawnSync(
   npmCommand,
-  ['run', 'db:setup'],
+  ['run', 'db:setup:demo'],
   {
     stdio: 'inherit',
     shell: process.platform === 'win32',

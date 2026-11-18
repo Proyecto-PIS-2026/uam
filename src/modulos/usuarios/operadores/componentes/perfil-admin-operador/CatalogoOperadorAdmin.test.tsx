@@ -3,8 +3,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@/test-utils";
 import type { ReactNode } from "react";
 
 import CatalogoOperadorAdmin from "./CatalogoOperadorAdmin";
-import type { PublicacionPerfilAdmin } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/tipos";
+import type { PublicacionPerfilAdmin } from "../../consultas/consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/catalogos/tipos";
 
 const mocks = vi.hoisted(() => ({
     propsDrawer: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
-vi.mock("@/modulos/publicaciones/tiempo-real/use-actualizaciones-publicaciones", () => ({
+vi.mock("@/modulos/publicaciones/tiempo-real/useActualizacionesPublicaciones", () => ({
     useActualizacionesPublicaciones: mocks.suscribir,
 }));
 
@@ -88,7 +88,7 @@ const opciones: OpcionesEdicionPublicacion = {
     envases: [{ id: 111, nombre: "Cajon" }],
     kilos: [{ id: 301, nombre: "20" }, { id: 302, nombre: "10-12" }],
     categorias: [{ id: 3, nombre: "Extra", especieId: null }],
-    calibres: [{ id: 4, nombre: "G - Grande" }],
+    calibres: [{ id: 4, nombre: "Grande" }],
     paises: [{ id: 44, nombre: "Uruguay" }],
 };
 
@@ -197,7 +197,7 @@ describe("CatalogoOperadorAdmin", () => {
         responderFetch({ mensaje: "Publicación modificada correctamente." });
         abrirPublicacion();
 
-        await ultimasPropsDrawer().alGuardar(15, cambios, null);
+        await act(async () => { await ultimasPropsDrawer().alGuardar(15, cambios, null); });
 
         expect(fetch).toHaveBeenCalledExactlyOnceWith(
             "/api/publicaciones/101?operadorId=12",
@@ -207,13 +207,16 @@ describe("CatalogoOperadorAdmin", () => {
         expect(cuerpo.get("cambios")).toBe(JSON.stringify(cambios));
         expect(cuerpo.get("fotografia")).toBeNull();
         expect(mocks.refresh).toHaveBeenCalledOnce();
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Publicación modificada correctamente.");
+        expect(aviso).toHaveClass("MuiAlert-colorSuccess");
     });
 
     it("devuelve el error de la API al guardar sin refrescar la página", async () => {
-        responderFetch({ errores: ["Los cambios no son válidos."] }, 400);
+        responderFetch({ errores: ["Los cambios no son válidos.", "La cantidad debe ser positiva."] }, 400);
         abrirPublicacion();
 
-        await expect(ultimasPropsDrawer().alGuardar(15, cambios, null)).rejects.toThrow("Los cambios no son válidos.");
+        await expect(ultimasPropsDrawer().alGuardar(15, cambios, null)).rejects.toThrow("Los cambios no son válidos.\nLa cantidad debe ser positiva.");
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
@@ -241,6 +244,9 @@ describe("CatalogoOperadorAdmin", () => {
         await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
         expect(fetch).toHaveBeenCalledExactlyOnceWith("/api/publicaciones/101?operadorId=12", { method: "DELETE" });
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Publicación eliminada.");
+        expect(aviso).toHaveClass("MuiAlert-colorSuccess");
     });
 
     // Cancelar la confirmación no elimina nada

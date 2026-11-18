@@ -1,7 +1,7 @@
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
-import type { UbicacionPublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
+import type { UbicacionPublicacionProductorListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-productor";
 import styles from "./UbicacionesRetiro.module.css";
 
 type UbicacionesRetiroProps = {

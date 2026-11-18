@@ -2,7 +2,7 @@
 
 import OutlinedInput from "@mui/material/OutlinedInput";
 
-import { LARGO_MAXIMO_COMENTARIO } from "../validarComentario";
+import { LARGO_MAXIMO_COMENTARIO } from "../validar-comentario";
 
 type ClasesCampoComentario = {
     campo?: string;
@@ -39,7 +39,7 @@ export default function CampoComentario({ id, valor, alCambiar, editando = true,
                 value={valor}
                 onChange={(evento) => alCambiar?.(evento.target.value)}
                 readOnly={!editando}
-                disabled={deshabilitado}
+                disabled={!editando || deshabilitado}
             />
             {editando && (
                 <small className={clases.ayuda}>

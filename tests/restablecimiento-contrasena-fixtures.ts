@@ -56,7 +56,6 @@ export const test = base.extend<Datos>({
 export const rutaCambio = "/mi-perfil/cambiar-contrasena";
 export const roles: Rol[] = ["OPERADOR", "PRODUCTOR", "ADMINISTRADOR"];
 export const perfil = (cuenta: Cuenta) => cuenta.rol === "PRODUCTOR" ? "/mi-perfil/productor" : "/mi-perfil";
-export const cp = (numero: number) => `CP-${String(numero).padStart(2, "0")}`;
 
 export async function enviarCredenciales(page: Page, cuenta: Cuenta, contrasena = cuenta.contrasena) {
     await page.goto("/iniciar-sesion");

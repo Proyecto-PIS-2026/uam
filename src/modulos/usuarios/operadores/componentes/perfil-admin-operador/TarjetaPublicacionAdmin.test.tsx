@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';  
 import TarjetaPublicacionAdmin from './TarjetaPublicacionAdmin';
-import type { PublicacionPerfilAdmin } from '../../consultas-perfil-admin';
+import type { PublicacionPerfilAdmin } from '../../consultas/consultas-perfil-admin';
 
 const publicacionBase: PublicacionPerfilAdmin = {
     id: 101,
@@ -37,7 +37,8 @@ describe ('TarjetaPublicacionAdmin', () => {
         render(<TarjetaPublicacionAdmin publicacion={publicacionBase} />);
 
         expect(screen.getByRole("heading", { name: "Tomate - Perita" })).toBeInTheDocument();
-        expect(screen.getAllByText(/Grande/).length).toBeGreaterThan(0);
+        expect(screen.getByText("G")).toBeInTheDocument();
+        expect(screen.getByText("Grande · Categoría Extra")).toBeInTheDocument();
         expect(screen.getAllByText(/Extra/).length).toBeGreaterThan(0);
         expect(screen.getByText("por Cajón")).toBeInTheDocument();
         expect(screen.getByText("$ 120")).toBeInTheDocument();

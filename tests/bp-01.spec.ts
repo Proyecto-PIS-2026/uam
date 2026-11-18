@@ -1,3 +1,5 @@
+import { completarFecha } from "./soporte/fechas";
+import { esperarYCerrarNotificacion } from "./soporte/notificaciones";
 
 import { randomUUID } from "node:crypto";
 import { expect, type Locator, type Page } from "@playwright/test";
@@ -98,7 +100,6 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, 
     nave,
   });
 
-  // 4 5 6 9 10 12 y 13
   for (const selector of ["#nombreUsuario", "#contraseña", "#confirmacionContraseña", "#nombre", "#numero"]) {
     const campo = page.locator(selector);
     const original = await campo.inputValue();
@@ -113,43 +114,36 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, 
   expect(await primerLocal.evaluate((elemento: HTMLInputElement) => elemento.validity.valueMissing)).toBe(true);
   await primerLocal.fill(numeroOriginal);
 
-  // 8
   await page.locator("#contraseña").fill("1234567");
   expect(await page.locator("#contraseña").evaluate((elemento: HTMLInputElement) => elemento.validity.tooShort)).toBe(true);
   await page.locator("#contraseña").fill(CLAVE_INICIAL);
 
-  // 22
   await page.getByRole("button", { name: "Agregar fin de contrato" }).first().click();
-  await expect(page.locator('input[type="date"]')).toHaveCount(1);
+  await expect(page.getByRole("group", { name: "Fin de contrato", exact: true })).toHaveCount(1);
   await page.getByRole("button", { name: "Eliminar fecha" }).click();
-  await expect(page.locator('input[type="date"]')).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Fin de contrato", exact: true })).toHaveCount(0);
 
-  // 23
   await page.getByRole("button", { name: "Agregar local" }).click();
   await expect(page.getByPlaceholder("Número de local")).toHaveCount(2);
   await page.getByRole("button", { name: "Eliminar local" }).last().click();
   await expect(page.getByPlaceholder("Número de local")).toHaveCount(1);
 
-  // 07
   await page.locator("#confirmacionContraseña").fill("OtraClave123!");
   await page.getByRole("button", { name: "Registrar usuario" }).click();
   await expect(page.getByText("Las contraseñas no coinciden.")).toBeVisible();
   await page.locator("#confirmacionContraseña").fill(CLAVE_INICIAL);
 
-  // CP 11
   await page.locator("#numero").fill("123");
   await page.getByRole("button", { name: "Registrar usuario" }).click();
   await expect(page.getByText("El teléfono no es válido.")).toBeVisible();
   await page.locator("#numero").fill("99123456");
 
-  // CP-19
   const usuarioOriginal = await page.locator("#nombreUsuario").inputValue();
   await page.locator("#nombreUsuario").fill("ab");
   await page.getByRole("button", { name: "Registrar usuario" }).click();
   await expect(page.getByText("El nombre de usuario debe tener al menos 3 caracteres.")).toBeVisible();
   await page.locator("#nombreUsuario").fill(usuarioOriginal);
 
-  // Cp 20
   await page.getByRole("button", { name: "Agregar local" }).click();
   await page.getByPlaceholder("Número de local").last().fill(numeroOriginal);
   await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Nave/ }).last(), nave);
@@ -159,7 +153,6 @@ test("BP-01.1: validaciones de alta y controles del formulario", async ({ page, 
     body: await page.screenshot({ fullPage: true }), contentType: "image/png",
   });
 
-  // CP-18
   await page.getByRole("button", { name: "Limpiar" }).click();
   await expect(page.locator("#nombreUsuario")).toHaveValue("");
   await expect(page.locator("#nombre")).toHaveValue("");
@@ -190,7 +183,7 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
 
       await completarAlta(page, { usuario, nombre, local, nave: opciones[0] });
       await page.getByRole("button", { name: "Agregar fin de contrato" }).click();
-      await page.locator('input[type="date"]').fill("2027-12-31");
+      await completarFecha(page.getByRole("group", { name: "Fin de contrato", exact: true }), "2027-12-31");
       await page.getByRole("button", { name: "Agregar local" }).click();
       await page.getByPlaceholder("Número de local").last().fill(local);
       await seleccionarOpcion(page, page.getByRole("combobox", { name: /^Nave/ }).last(), opciones[1]);
@@ -275,24 +268,24 @@ test("BP-01: alta, consulta, modificación, permisos y baja", async ({ page, bro
       // CP-08/09/10: entradas inválidas.
       await page.getByRole("textbox", { name: "Teléfono" }).fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("El teléfono no es válido.");
+      await esperarYCerrarNotificacion(page, "El teléfono no es válido.");
       await page.getByRole("textbox", { name: "Teléfono" }).fill("99234567");
 
       await page.getByLabel("Nueva contraseña").fill("123");
       await page.getByLabel("Confirmar contraseña").fill("123");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("La contraseña debe tener al menos 8 caracteres.");
+      await esperarYCerrarNotificacion(page, "La contraseña debe tener al menos 8 caracteres.");
 
       await page.getByLabel("Nueva contraseña").fill(CLAVE_NUEVA);
       await page.getByLabel("Confirmar contraseña").fill("OtraClave123!");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
-      await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("Las contraseñas no coinciden.");
+      await esperarYCerrarNotificacion(page, "Las contraseñas no coinciden.");
 
       // CP-05/06/07/12: modificación válida + nueva contraseña + persistencia.
       await page.getByLabel("Confirmar contraseña").fill(CLAVE_NUEVA);
       await page.getByRole("textbox", { name: "Nombre", exact: true }).fill(nombreNuevo);
       await page.getByRole("textbox", { name: "Número de local" }).first().fill(localNuevo);
-      await page.locator('input[type="date"]').first().fill("2028-06-30");
+      await completarFecha(page.getByRole("group", { name: "Fin de contrato", exact: true }).first(), "2028-06-30");
       await page.getByRole("button", { name: "Guardar cambios" }).click();
       await expect(page).toHaveURL(new RegExp(`/gestion-operadores/${operadorId}$`), { timeout: 20_000 });
       await page.reload();

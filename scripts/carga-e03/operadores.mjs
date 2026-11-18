@@ -1,236 +1,268 @@
 import assert from "node:assert/strict";
+import { expect } from "@playwright/test";
+import { paso } from "./diagnostico.mjs";
 
-export async function iniciarSesion(browser, baseURL, usuario, password, timeout) {
-  const context = await browser.newContext({ baseURL });
+export async function iniciarSesion(browser, baseURL, usuario, password, timeout = 45_000) {
+  const context = await browser.newContext({ baseURL, viewport: { width: 1366, height: 900 } });
   try {
     const page = await context.newPage();
     page.setDefaultTimeout(timeout);
     await page.goto("/iniciar-sesion", { waitUntil: "domcontentloaded" });
     await page.getByLabel("Correo electrónico o nombre de usuario").fill(usuario);
     await page.getByLabel("Contraseña", { exact: true }).fill(password);
-    const urlDeDestino = /\/mi-mercado(?:\/|$)/;
-    const navegacion = page.waitForURL(urlDeDestino, { waitUntil: "domcontentloaded", timeout })
-      .then(() => ({ ok: true }));
-    const accion = page.waitForResponse(respuesta =>
-      respuesta.request().method() === "POST"
-      && Boolean(respuesta.request().headers()["next-action"]), { timeout });
-    const resultadoAccion = accion.then(async respuesta => {
-      const boton = page.getByRole("button", { name: "Iniciar sesión", exact: true });
-      await boton.waitFor({ state: "visible", timeout: 8_000 }).catch(() => {});
-      if (urlDeDestino.test(new URL(page.url()).pathname)) return { ok: true };
-      const mensajes = (await page.locator('[role="alert"]').allTextContents())
-        .map(texto => texto.trim()).filter(Boolean);
-      return {
-        ok: false,
-        mensaje: mensajes.join(" | ") || "La acción terminó sin redirigir ni mostrar un mensaje.",
-        estadoHttp: respuesta.status(),
-        botonVisible: await boton.isVisible().catch(() => false),
-      };
-    });
     await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
-    const resultado = await Promise.race([navegacion, resultadoAccion]);
-    if (!resultado.ok) throw new Error("El acceso no llegó a Mi Mercado: " + JSON.stringify(resultado));
-    return { context, page, usuario };
+    await page.waitForURL(/\/mi-mercado(?:\/|$)/, { waitUntil: "domcontentloaded", timeout });
+    await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible({ timeout });
+    return { context, page, usuario, baseURL, timeout, storageState: await context.storageState() };
   } catch (error) {
-    const url = await pageUrl(context);
     await context.close();
-    throw new Error("Inicio de sesión de " + usuario + " (URL: " + url + "): " + error.message, { cause: error });
+    throw error;
   }
 }
 
-async function pageUrl(context) {
-  try { return context.pages()[0]?.url() ?? "desconocida"; }
-  catch { return "desconocida"; }
+export async function obtenerEspeciesLibres(sesion, rol) {
+  return paso(sesion, "consultar_especies_libres", async () => {
+    const { page, timeout } = sesion;
+    await page.goto(rol === "PRODUCTOR" ? "/mi-mercado/productor" : "/mi-mercado", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible({ timeout });
+    const usadas = new Set(await page.getByRole("button", { name: /^Ver detalle de / }).evaluateAll(botones =>
+      botones.map(boton => boton.getAttribute("aria-label").replace(/^Ver detalle de /, "")),
+    ));
+    await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: rol === "PRODUCTOR" ? "Nueva publicación de Productor" : "Nueva publicación", exact: true });
+    await dialog.getByRole("combobox", { name: /^Especie(?:\s*\*)?$/ }).click();
+    const opciones = page.getByRole("option", { disabled: false });
+    await opciones.first().waitFor();
+    const disponibles = (await opciones.allTextContents()).map(texto => texto.trim()).filter(Boolean);
+    await page.keyboard.press("Escape");
+    await dialog.getByRole("button", { name: "Cancelar", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+    return disponibles.filter(nombre => ![...usadas].some(usada => usada === nombre || usada.startsWith(nombre + " · ")));
+  }, { rol });
 }
 
-export async function leerPropias(sesion, operadorId = sesion.operadorId, { reintentos = 0 } = {}) {
-  let respuesta;
-  for (let intento = 0; intento <= reintentos; intento++) {
-    respuesta = await sesion.context.request.get("/api/publicaciones/operador/" + operadorId);
-    if (respuesta.status() === 200) break;
-    if (respuesta.status() < 500 || intento === reintentos) {
-      assert.equal(respuesta.status(), 200, "Lectura de publicaciones propias de " + sesion.usuario);
+function observarEnvio(sesion, metodo, ruta) {
+  const { page, timeout } = sesion;
+  let solicitud, resolverSolicitud, resolverRespuesta;
+  const enviada = new Promise(resolve => { resolverSolicitud = resolve; });
+  const recibida = new Promise(resolve => { resolverRespuesta = resolve; });
+  const alEnviar = request => {
+    if (!solicitud && request.method() === metodo && new URL(request.url()).pathname === ruta) {
+      solicitud = request;
+      resolverSolicitud({ solicitud });
+      sesion.diagnostico?.anotar("solicitud_emitida", { metodo, ruta });
     }
-    await new Promise(resolve => setTimeout(resolve, 750 * (intento + 1)));
-  }
-  const { publicaciones } = await respuesta.json();
-  assert.ok(Array.isArray(publicaciones));
-  return publicaciones;
-}
-
-export async function identificarOperador(sesion) {
-  const r = await sesion.context.request.get("/api/publicaciones");
-  assert.equal(r.status(), 200);
-  const catalogo = await r.json();
-  const esperado = "Prueba Carga E03 " + sesion.usuario.slice(-2);
-  assert.equal(catalogo.operadores.length, 1);
-  assert.equal(catalogo.operadores[0].nombre, esperado, "No se pudo verificar el propietario de los datos de prueba");
-  sesion.nombre = esperado;
-  sesion.operadorId = catalogo.operadores[0].id;
-  sesion.especies = catalogo.especies;
-  sesion.inventarioInicial = await leerPropias(sesion, sesion.operadorId, { reintentos: 2 });
-}
-
-export async function prepararInterfazOperador(sesion) {
-  const respuesta = await sesion.page.goto("/mi-mercado", { waitUntil: "domcontentloaded" });
-  if (respuesta) assert.equal(respuesta.status(), 200);
-  await sesion.page.getByRole("button", {
-    name: "Ver detalle de " + sesion.registro.especie, exact: true,
-  }).first().waitFor({ state: "visible" });
-}
-
-export async function crearPublicacion(sesion, posicion, creadas) {
-  const ocupadas = new Set((await leerPropias(sesion, sesion.operadorId, { reintentos: 2 })).map(p => p.especie));
-  const especies = sesion.especies;
-  for (let i = 0; i < especies.length; i++) {
-    const especie = especies[(posicion + i) % especies.length];
-    if (ocupadas.has(especie.nombre)) continue;
-    const r = await sesion.context.request.post("/api/publicaciones", { data: {
-      operadorId: sesion.operadorId, especieId: especie.id, precio: "1000", disponibilidad: true,
-      variedadId: null, envaseId: null, kilosId: null, categoriaId: null, calibreId: null, paisId: null,
-      cantidadUnidades: null, fotografia: "",
-    } });
-    const body = await r.json();
-    if (r.status() === 400 && body.errores?.some(e => /ya tiene una publicación/i.test(e))) continue;
-    assert.equal(r.status(), 201, "Alta de prueba de " + sesion.usuario + ": " + JSON.stringify(body.errores));
-    assert.ok(Number.isInteger(body.id));
-    const registro = { usuario: sesion.usuario, operadorId: sesion.operadorId, id: body.id, especie: especie.nombre, especieId: especie.id, version: 1, precio: 1000 };
-    creadas.push(registro);
-    const propia = (await leerPropias(sesion, sesion.operadorId, { reintentos: 2 })).find(p => p.id === registro.id);
-    assert.ok(propia && Number(propia.precio) === registro.precio, "Alta sin persistencia verificada");
-    return registro;
-  }
-  throw new Error("No quedan especies libres para " + sesion.usuario);
-}
-
-export function enviarPrecio(sesion, registro, precio, version = registro.version) {
-  const cambios = { version, precio: String(precio), especieId: registro.especieId, disponible: true,
-    variedadId: null, envaseId: null, kilosId: null, categoriaId: null, calibreId: null, paisId: null,
-    cantidadUnidades: null, foto: null };
-  return sesion.context.request.patch("/api/publicaciones/" + registro.id + "?operadorId=" + registro.operadorId,
-    { multipart: { cambios: JSON.stringify(cambios) } });
-}
-
-export async function cambiarPrecio(sesion, registro, precio) {
-  const r = await enviarPrecio(sesion, registro, precio);
-  const body = await r.json();
-  assert.equal(r.status(), 200, "PATCH de " + registro.id + ": " + JSON.stringify(body.errores));
-  assert.equal(body.publicacionId, registro.id);
-  registro.precio = precio;
-  registro.version++;
-  return r.status();
-}
-
-export async function cambiarPrecioDesdePantalla(sesion, registro, precio) {
-  const { page } = sesion;
-  const detalle = page.getByRole("button", { name: "Ver detalle de " + registro.especie, exact: true }).first();
-  const tarjeta = detalle.locator("xpath=..");
-  const editar = tarjeta.getByTitle("Editar precio", { exact: true });
-  await editar.click();
-  const entrada = tarjeta.getByRole("textbox", { name: "Editar precio", exact: true });
-  const respuestaPendiente = page.waitForResponse(r =>
-    r.request().method() === "POST" && Boolean(r.request().headers()["next-action"]))
-    .then(respuesta => ({ respuesta }), error => ({ error }));
-  await entrada.fill(String(precio));
-  await entrada.press("Enter");
-  const resultado = await respuestaPendiente;
-  if (resultado.error) throw resultado.error;
-  const respuesta = resultado.respuesta;
-  assert.equal(respuesta.status(), 200, "Edición de precio desde la interfaz de " + sesion.usuario);
-  const botonPrecio = tarjeta.getByTitle("Editar precio", { exact: true });
-  await botonPrecio.waitFor({ state: "visible" });
-  const mostrado = Number((await botonPrecio.innerText()).replace(/[^\d]/g, ""));
-  assert.equal(mostrado, precio, "El precio actualizado no aparece en la tarjeta " + registro.id);
-  const propia = (await leerPropias(sesion)).find(publicacion => publicacion.id === registro.id);
-  assert.equal(Number(propia?.precio), precio, "El precio actualizado no se persistió para " + registro.id);
-  registro.precio = precio;
-  registro.version++;
-  return { http: respuesta.status(), precio };
-}
-
-export async function crearPublicacionDesdePantalla(sesion, posicion, creadas) {
-  const propias = await leerPropias(sesion);
-  const ocupadas = new Set(propias.map(publicacion => publicacion.especie));
-  const especie = sesion.especies.find((opcion, indice) =>
-    !ocupadas.has(opcion.nombre) && indice >= posicion);
-  const alternativa = especie ?? sesion.especies.find(opcion => !ocupadas.has(opcion.nombre));
-  assert.ok(alternativa, "No quedan especies disponibles para " + sesion.usuario);
-
-  const { page } = sesion;
-  await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Nueva publicación" });
-  await dialog.waitFor({ state: "visible" });
-  const selector = dialog.getByRole("combobox", { name: "Especie", exact: true });
-  await selector.click();
-  await page.getByRole("option", { name: alternativa.nombre, exact: true }).click();
-  await dialog.getByRole("textbox", { name: "Precio en pesos", exact: true }).fill("1000");
-  const respuestaPendiente = page.waitForResponse(r =>
-    r.request().method() === "POST" && new URL(r.url()).pathname === "/api/publicaciones")
-    .then(respuesta => ({ respuesta }), error => ({ error }));
-  await dialog.getByRole("button", { name: "Confirmar", exact: true }).click();
-  const resultado = await respuestaPendiente;
-  if (resultado.error) throw resultado.error;
-  const respuesta = resultado.respuesta;
-  const body = await respuesta.json();
-  assert.equal(respuesta.status(), 201, "Alta desde la interfaz de " + sesion.usuario);
-  assert.ok(Number.isInteger(body.id), "El alta no devolvió un identificador");
-  const registro = {
-    usuario: sesion.usuario, operadorId: sesion.operadorId, id: body.id,
-    especie: alternativa.nombre, especieId: alternativa.id, version: 1, precio: 1000,
-    http: respuesta.status(),
   };
-  creadas.push(registro);
-  await dialog.waitFor({ state: "hidden" });
-  const propia = (await leerPropias(sesion)).find(publicacion => publicacion.id === registro.id);
-  assert.ok(propia && Number(propia.precio) === registro.precio, "El alta desde la interfaz no persistió " + registro.id);
+  const alResponder = response => {
+    if (response.request() === solicitud) resolverRespuesta({ respuesta: response });
+  };
+  const alFallar = request => {
+    if (request === solicitud) resolverRespuesta({ error: "La solicitud falló: " + request.failure()?.errorText });
+  };
+  const alCerrar = () => {
+    const resultado = { error: "La página se cerró mientras se esperaba " + metodo + " " + ruta };
+    resolverSolicitud(resultado);
+    resolverRespuesta(resultado);
+  };
+  page.on("request", alEnviar);
+  page.on("response", alResponder);
+  page.on("requestfailed", alFallar);
+  page.on("close", alCerrar);
+  async function esperar(promesa, descripcion) {
+    let temporizador;
+    try {
+      const resultado = await Promise.race([
+        promesa,
+        new Promise((_, reject) => {
+          temporizador = setTimeout(() => reject(new Error("No se " + descripcion + " " + metodo + " " + ruta + " en " + timeout + " ms")), timeout);
+        }),
+      ]);
+      assert.ok(!resultado.error, resultado.error);
+      return resultado;
+    } finally { clearTimeout(temporizador); }
+  }
+  return {
+    async solicitud() { return (await esperar(enviada, "emitió la solicitud")).solicitud; },
+    async respuesta() { return (await esperar(recibida, "recibió la respuesta de")).respuesta; },
+    cerrar() {
+      page.off("request", alEnviar);
+      page.off("response", alResponder);
+      page.off("requestfailed", alFallar);
+      page.off("close", alCerrar);
+    },
+  };
+}
+
+function cambiosEnviados(solicitud) {
+  const contenido = solicitud.postData() ?? "";
+  const parte = /name="cambios"\r?\n\r?\n([^\r\n]*)/.exec(contenido);
+  assert.ok(parte, "La solicitud PATCH debe incluir los cambios del formulario");
+  return JSON.parse(parte[1]);
+}
+
+async function irAMercado(sesion) {
+  await paso(sesion, "navegar_mi_mercado", async () => {
+    const respuesta = await sesion.page.goto("/mi-mercado", { waitUntil: "domcontentloaded" });
+    assert.equal(respuesta?.status(), 200, "Navegación a Mi Mercado");
+    await expect(sesion.page.getByRole("heading", { name: "Mi Mercado", exact: true })).toBeVisible({ timeout: sesion.timeout });
+  });
+}
+
+async function abrirPropia(sesion, registro) {
+  await irAMercado(sesion);
+  return paso(sesion, "abrir_consulta_propia", async () => {
+    assert.equal(registro.usuario, sesion.usuario, "La publicación debe pertenecer a la sesión que la consulta");
+    assert.equal(registro.propietario, sesion.nombre, "Nombre del propietario de la publicación de prueba");
+    await sesion.page.getByRole("button", { name: "Ver detalle de " + registro.especie, exact: true }).first().click();
+    const consulta = sesion.page.getByRole("dialog", { name: "Consulta de publicación", exact: true });
+    await expect(consulta).toBeVisible({ timeout: sesion.timeout });
+    await expect(consulta.getByRole("textbox", { name: "Comentario", exact: true })).toHaveValue(registro.etiqueta, { timeout: sesion.timeout });
+    const campo = consulta.getByRole("textbox", { name: "Precio en pesos", exact: true });
+    const id = await campo.getAttribute("id");
+    const relacion = /^editar-publicacion-([1-9]\d*)-precio$/.exec(id ?? "");
+    assert.ok(relacion, "El campo debe identificar la relación de la publicación consultada");
+    const relacionId = Number(relacion[1]);
+    if (registro.relacionId != null) assert.equal(relacionId, registro.relacionId, "La relación seleccionada cambió");
+    registro.relacionId = relacionId;
+    sesion.diagnostico?.anotar("publicacion_seleccionada", { publicacionId: registro.id, relacionId, propietario: registro.propietario, campoId: id });
+    return consulta;
+  }, { publicacionId: registro.id, especie: registro.especie });
+}
+
+export async function crearPublicacionOperadorDesdePantalla(sesion, especie, precio, etiqueta, creadas) {
+  await irAMercado(sesion);
+  const { page, timeout } = sesion;
+  const dialog = page.getByRole("dialog", { name: "Nueva publicación", exact: true });
+  await paso(sesion, "abrir_alta_operador", async () => {
+    await page.getByRole("button", { name: "Nueva publicación", exact: true }).click();
+    await expect(dialog).toBeVisible({ timeout });
+  });
+  await paso(sesion, "completar_alta_operador", async () => {
+    await dialog.getByRole("combobox", { name: /^Especie(?:\s*\*)?$/ }).click();
+    await page.getByRole("option", { name: especie, exact: true }).click();
+    const campo = dialog.getByRole("textbox", { name: "Precio en pesos", exact: true });
+    await expect(campo).toBeEditable({ timeout });
+    await campo.fill(String(precio));
+    await expect(campo).toHaveValue(String(precio), { timeout });
+    await dialog.getByRole("textbox", { name: "Comentario", exact: true }).fill(etiqueta);
+  }, { especie, precio });
+  const envio = observarEnvio(sesion, "POST", "/api/publicaciones");
+  let registro;
+  try {
+    await paso(sesion, "confirmar_alta_operador", async () => {
+      const boton = dialog.getByRole("button", { name: "Confirmar", exact: true });
+      await expect(boton).toBeEnabled({ timeout });
+      await boton.click();
+    });
+    const solicitud = await paso(sesion, "alta_operador_solicitud_emitida", () => envio.solicitud());
+    const respuesta = await paso(sesion, "alta_operador_respuesta", () => envio.respuesta());
+    await paso(sesion, "alta_operador_guardada", async () => {
+      const body = await respuesta.json();
+      assert.equal(respuesta.status(), 201, "Alta UI operador: " + JSON.stringify(body.errores));
+      assert.ok(Number.isSafeInteger(body.id));
+      const enviados = solicitud.postDataJSON();
+      registro = { id: body.id, operadorId: enviados.operadorId, especieId: enviados.especieId, especie, precio, etiqueta, nombre: sesion.nombre, propietario: sesion.nombre, usuario: sesion.usuario, rol: "OPERADOR" };
+      creadas.push(registro);
+      assert.equal(Number(enviados.precio), precio, "Precio enviado en el alta");
+      sesion.diagnostico?.anotar("alta_confirmada", { publicacionId: registro.id, operadorId: registro.operadorId, precio, http: respuesta.status() });
+    });
+  } finally { envio.cerrar(); }
+  await verificarPersistenciaOperadorPorApi(sesion, registro, precio);
+  await paso(sesion, "alta_operador_cierra_drawer", () => expect(dialog).toBeHidden({ timeout }));
+  await verificarPropiaOperadorDesdePantalla(sesion, registro);
   return registro;
 }
 
-export async function verificarConflictoEnPantalla(escritor, lector, registro) {
-  const page = lector.page;
-  await page.goto("/mi-mercado", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Ver detalle de " + registro.especie, exact: true }).first().click();
-  await page.getByRole("button", { name: "Editar", exact: true }).click();
-  const precioConfirmado = registro.precio + 1;
-  const precioRechazado = registro.precio + 2;
-  await page.getByRole("textbox", { name: "Precio en pesos" }).fill(String(precioRechazado));
-  await cambiarPrecio(escritor, registro, precioConfirmado);
-  const [respuesta] = await Promise.all([
-    page.waitForResponse(r => r.request().method() === "PATCH" && new URL(r.url()).pathname === "/api/publicaciones/" + registro.id),
-    page.getByRole("button", { name: "Guardar", exact: true }).click(),
-  ]);
-  assert.equal(respuesta.status(), 409);
-  const { errores } = await respuesta.json();
-  assert.ok(errores?.[0], "Conflicto sin mensaje");
-  await page.getByText(errores[0], { exact: true }).first().waitFor({ state: "visible" });
-  assert.equal(await page.getByText(/publicación (modificada correctamente|actualizada)\./i).count(), 0);
-  assert.equal(Number((await leerPropias(escritor)).find(p => p.id === registro.id)?.precio), precioConfirmado);
-  return { publicacion: registro.id, http: 409, mensaje: errores[0], precioConfirmado, precioRechazado };
+export async function cambiarPrecioOperadorDesdePantalla(sesion, registro, precio, { antesDeCompletar } = {}) {
+  const consulta = await abrirPropia(sesion, registro);
+  const { page, timeout } = sesion;
+  await paso(sesion, "clic_editar_operador", async () => {
+    const boton = consulta.getByRole("button", { name: "Editar", exact: true });
+    await expect(boton).toBeEnabled({ timeout });
+    await boton.click();
+  }, { publicacionId: registro.id });
+  const dialog = page.getByRole("dialog", { name: "Editar publicación", exact: true });
+  await paso(sesion, "drawer_edicion_operador_visible", () => expect(dialog).toBeVisible({ timeout }));
+  const campo = dialog.getByRole("textbox", { name: "Precio en pesos", exact: true });
+  await paso(sesion, "precio_operador_editable", async () => {
+    await expect(campo).toHaveAttribute("id", "editar-publicacion-" + registro.relacionId + "-precio", { timeout });
+    await expect(campo).toBeEditable({ timeout });
+  });
+  await antesDeCompletar?.({ page, dialog, campo });
+  await paso(sesion, "completar_precio_operador", async () => {
+    await campo.fill(String(precio));
+    await expect(campo).toHaveValue(String(precio), { timeout });
+  }, { publicacionId: registro.id, anterior: registro.precio, esperado: precio });
+  const ruta = "/api/publicaciones/" + registro.id;
+  const envio = observarEnvio(sesion, "PATCH", ruta);
+  let estado;
+  try {
+    await paso(sesion, "clic_guardar_operador", async () => {
+      const boton = dialog.getByRole("button", { name: "Guardar", exact: true });
+      await expect(boton).toBeEnabled({ timeout });
+      await expect(campo).toHaveValue(String(precio), { timeout });
+      await boton.click();
+    });
+    const solicitud = await paso(sesion, "guardado_operador_solicitud_emitida", () => envio.solicitud(), { publicacionId: registro.id, ruta, precio });
+    await paso(sesion, "guardado_operador_datos_enviados", async () => {
+      const cambios = cambiosEnviados(solicitud);
+      assert.equal(Number(new URL(solicitud.url()).searchParams.get("operadorId")), registro.operadorId);
+      assert.equal(Number(cambios.precio), precio, "Precio enviado por el formulario");
+      assert.ok(Number.isSafeInteger(cambios.version) && cambios.version >= 0, "Versión enviada por el formulario");
+      sesion.diagnostico?.anotar("cambios_enviados", { publicacionId: registro.id, operadorId: registro.operadorId, precio: Number(cambios.precio), version: cambios.version });
+    });
+    const respuesta = await paso(sesion, "guardado_operador_respuesta", () => envio.respuesta());
+    await paso(sesion, "guardado_operador_respuesta_valida", async () => {
+      const body = await respuesta.json();
+      estado = respuesta.status();
+      assert.equal(estado, 200, "Edición UI operador: " + JSON.stringify(body.errores));
+      assert.equal(body.publicacionId, registro.id);
+      sesion.diagnostico?.anotar("guardado_respondido", { publicacionId: registro.id, precio, http: estado });
+    });
+  } finally { envio.cerrar(); }
+  await verificarPersistenciaOperadorPorApi(sesion, registro, precio);
+  registro.precio = precio;
+  await paso(sesion, "precio_operador_guardado_visible", async () => {
+    const guardada = page.getByRole("dialog", { name: "Consulta de publicación", exact: true });
+    await expect(guardada).toBeVisible({ timeout });
+    await expect(guardada.getByRole("textbox", { name: "Precio en pesos", exact: true })).toHaveValue(String(precio), { timeout });
+  }, { publicacionId: registro.id, precio });
+  return { publicacionId: registro.id, precio, http: estado };
 }
 
-export async function verificarVistas(browser, baseURL, sesion, operador, registros) {
-  await sesion.page.reload({ waitUntil: "domcontentloaded" });
-  const publicas = await browser.newContext({ baseURL });
-  try {
-    const page = await publicas.newPage();
-    await page.goto("/operadores/" + encodeURIComponent(operador.nombre), { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: operador.nombre, exact: true }).waitFor();
-    const propias = await leerPropias(sesion, operador.operadorId);
-    const datos = [];
-    for (const reg of registros) {
-      const item = propias.find(p => p.id === reg.id);
-      assert.ok(item, "Publicación propia ausente: " + reg.id);
-      assert.equal(Number(item.precio), reg.precio);
-      const detalle = sesion.page.getByRole("button", { name: "Ver detalle de " + reg.especie, exact: true }).first();
-      const precioVisible = await detalle.locator("xpath=..").getByTitle("Editar precio", { exact: true }).innerText();
-      const ficha = page.getByRole("button", { name: "Ver detalles de " + reg.especie, exact: true });
-      const precioPublico = (await ficha.innerText()).match(/\$\s*([\d.]+)/);
-      assert.equal(Number(precioVisible.replace(/[^\d]/g, "")), reg.precio, "Precio en la vista propietaria de " + reg.id);
-      assert.ok(precioPublico && Number(precioPublico[1].replaceAll(".", "")) === reg.precio, "Precio público de " + reg.id);
-      datos.push({ id: reg.id, precio: reg.precio });
+export async function verificarPersistenciaOperadorPorApi(sesion, registro, precio = registro.precio) {
+  return paso(sesion, "persistencia_operador_api", async () => {
+    assert.ok(Number.isSafeInteger(registro.operadorId) && registro.operadorId > 0);
+    assert.equal(registro.usuario, sesion.usuario);
+    if (sesion.operadorValidadoId !== registro.operadorId) {
+      const respuesta = await sesion.context.request.get("/api/publicaciones", { timeout: sesion.timeout });
+      assert.equal(respuesta.status(), 200, "Catálogo autenticado para comprobar el propietario");
+      const { operadores } = await respuesta.json();
+      assert.equal(operadores?.length, 1, "La sesión debe identificar a un único operador propio");
+      assert.equal(operadores[0].id, registro.operadorId);
+      assert.equal(operadores[0].nombre, registro.propietario);
+      sesion.operadorValidadoId = registro.operadorId;
     }
-    const nuevas = new Set(registros.map(r => r.id));
-    assert.deepEqual(propias.filter(p => !nuevas.has(p.id)), operador.inventarioInicial, "Cambió otra publicación de " + operador.usuario);
-    return datos;
-  } finally { await publicas.close(); }
+    const respuesta = await sesion.context.request.get("/api/publicaciones/operador/" + registro.operadorId, { timeout: sesion.timeout });
+    assert.equal(respuesta.status(), 200, "Lectura independiente del precio persistido");
+    const { publicaciones } = await respuesta.json();
+    assert.ok(Array.isArray(publicaciones));
+    const coincidencias = publicaciones.filter(p => p.id === registro.id);
+    assert.equal(coincidencias.length, 1, "La publicación guardada debe existir una sola vez");
+    assert.equal(coincidencias[0].especie, registro.especie);
+    assert.equal(Number(coincidencias[0].precio), precio, "Precio realmente persistido");
+    registro.ultimoGuardadoConfirmado = { precio, instante: Date.now() };
+    const verificacion = { publicacionId: registro.id, operadorId: registro.operadorId, especie: registro.especie, precio, http: respuesta.status(), verificadoPor: "api" };
+    sesion.diagnostico?.anotar("persistencia_confirmada", verificacion);
+    return verificacion;
+  }, { publicacionId: registro.id, operadorId: registro.operadorId, precioEsperado: precio });
+}
+
+export async function verificarPropiaOperadorDesdePantalla(sesion, registro) {
+  const consulta = await abrirPropia(sesion, registro);
+  return paso(sesion, "verificar_precio_propio_operador", async () => {
+    const campo = consulta.getByRole("textbox", { name: "Precio en pesos", exact: true });
+    await expect(campo).toHaveValue(String(registro.precio), { timeout: sesion.timeout });
+    return { publicacionId: registro.id, precio: Number(await campo.inputValue()) };
+  }, { publicacionId: registro.id, precioEsperado: registro.precio });
 }

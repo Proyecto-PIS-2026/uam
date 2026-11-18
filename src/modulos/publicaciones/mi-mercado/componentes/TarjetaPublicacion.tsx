@@ -6,10 +6,12 @@ import OutlinedInput from "@mui/material/OutlinedInput";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
 import { IndicadorVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
-import type { Publicacion } from "../tipos";
+import { DescripcionVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
+import type { Publicacion } from "../../tipos";
 import { actualizarPrecio, incrementarPrecio } from "../acciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
 import styles from "./TarjetaPublicacion.module.css";
@@ -39,7 +41,6 @@ export default function TarjetaPublicacion({
     const actual = confirmado.version > recibido.version ? confirmado : recibido;
     const [optimista, setOptimista] = useState<number | null | undefined>(undefined);
     const precio = optimista === undefined ? actual.precio : optimista;
-    const [errorPrecio, setErrorPrecio] = useState("");
     const guardandoRef = useRef(false);
     const incrementosPendientesRef = useRef<number[]>([]);
     const precioVisibleRef = useRef(recibido.precio ?? 0);
@@ -53,14 +54,13 @@ export default function TarjetaPublicacion({
         if (guardandoRef.current) return;
         const nuevoPrecio = valor;
         if (!precioPublicacionValido(nuevoPrecio === null ? null : String(nuevoPrecio))) {
-            setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
         }
         guardandoRef.current = true;
         setGuardandoPrecio(true);
         setGuardandoManual(true);
         setOptimista(nuevoPrecio);
-        setErrorPrecio("");
         try {
             const resultado = await actualizarPrecio(pub.id, valor, operadorId, versionEdicionRef.current);
             if (resultado.publicacionEliminada) {
@@ -85,7 +85,6 @@ export default function TarjetaPublicacion({
         if (guardandoRef.current) return;
         guardandoRef.current = true;
         setGuardandoPrecio(true);
-        setErrorPrecio("");
         try {
             while (incrementosPendientesRef.current.length > 0) {
                 const incremento = incrementosPendientesRef.current.shift()!;
@@ -159,7 +158,7 @@ export default function TarjetaPublicacion({
         if (!editandoPrecio) return;
         setEditandoPrecio(false);
         if (!precioPublicacionValido(precioTemporal)) {
-            setErrorPrecio(PRECIO_PUBLICACION_INVALIDO);
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
         }
         const normalizado = normalizarPrecioPublicacion(precioTemporal);
@@ -180,15 +179,24 @@ export default function TarjetaPublicacion({
     const calibre = pub.calibre?.nombreCalibre;
     const tieneVariedad = variedad && variedad.trim() !== "" && variedad.trim() !== "-";
     const nombreProducto = tieneVariedad ? `${especie} · ${variedad}` : especie;
+    const claseVigencia = pub.estadoVigencia === "por-vencer" ? styles.porVencer : pub.estadoVigencia === "vencida" ? styles.vencida : "";
+    const descripcionVigencia = pub.estadoVigencia ? `vigencia-publicacion-operador-${pub.id}` : undefined;
+    const descripcionFoto = [pub.estadoFoto ? `vigencia-foto-operador-${pub.id}` : null, descripcionVigencia].filter(Boolean).join(" ") || undefined;
 
     const contenido = (
-        <div className={styles.tarjeta}>
-            <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={pub.estadoFoto ? `vigencia-foto-operador-${pub.id}` : undefined}>
-                <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(max-width: 639px) 112px, (max-width: 700px) 128px, (max-width: 776px) calc(50vw - 22px), (max-width: 1028px) calc(33.333vw - 18.667px), (max-width: 1279px) calc(25vw - 17px), 320px" unoptimized className={styles.foto} reemplazo={<div className={styles.sinFoto}>Sin fotografía</div>} />
+        <div className={`${styles.tarjeta} ${claseVigencia}`}>
+            <DescripcionVigenciaPublicacion estado={pub.estadoVigencia} id={`vigencia-publicacion-operador-${pub.id}`} />
+            <button type="button" onClick={consultarPublicacion} className={styles.botonFoto} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={descripcionFoto}>
+                <ImagenPublicacion src={pub.foto} alt={nombreProducto} fill sizes="(max-width: 639px) 112px, (max-width: 700px) 128px, (max-width: 776px) calc(50vw - 22px), (max-width: 1028px) calc(33.333vw - 18.667px), (max-width: 1279px) calc(25vw - 17px), 320px" unoptimized className={styles.foto} reemplazo={
+                    <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
+                        <HideImageOutlinedIcon className={styles.iconoSinFoto} aria-hidden="true" />
+                        <span className={styles.textoSinFotoWeb}>Sin foto disponible</span>
+                    </div>
+                } />
                 <IndicadorVigenciaFoto estado={pub.estadoFoto} id={`vigencia-foto-operador-${pub.id}`} />
             </button>
             <div className={styles.contenido}>
-                <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion}>
+                <button type="button" onClick={consultarPublicacion} className={styles.botonInformacion} aria-describedby={descripcionVigencia}>
                     <div className={styles.informacion}>
                         <div className={styles.encabezadoProducto}>
                             <div className={styles.nombreProducto} title={nombreProducto}>
@@ -199,7 +207,8 @@ export default function TarjetaPublicacion({
                             </span>
                         </div>
                         <div className={styles.datos}>
-                            {calibre || "-"}
+                            <span className={styles.calibreCompleto}>{calibre?.trim() || "-"}</span>
+                            <span className={styles.codigoCalibre}>{pub.calibre?.codigoCalibre?.trim() || "-"}</span>
                             {" · "}
                             Cat. {categoria || "-"}
                             {" · "}
@@ -238,7 +247,7 @@ export default function TarjetaPublicacion({
                                 }}
                             />
                         ) : (
-                            <button type="button" onClick={comenzarEdicionPrecio} className={styles.precio} title="Editar precio" disabled={guardandoPrecio || !puedeModificar}>
+                            <button type="button" onClick={comenzarEdicionPrecio} className={`${styles.precio} ${precio === null ? styles.sinPrecio : ""}`} title="Editar precio" disabled={guardandoPrecio || !puedeModificar}>
                                 {precio === null ? "Sin precio" : `$${precio}`}
                             </button>
                         )}
@@ -246,11 +255,10 @@ export default function TarjetaPublicacion({
                             <AddIcon aria-hidden="true" fontSize="inherit" />
                         </button>
                     </div>
-                    <button type="button" onClick={consultarPublicacion} className={styles.botonDetalle} aria-label={`Ver detalle de ${nombreProducto}`}>
+                    <button type="button" onClick={consultarPublicacion} className={styles.botonDetalle} aria-label={`Ver detalle de ${nombreProducto}`} aria-describedby={descripcionVigencia}>
                         <ChevronRightIcon aria-hidden="true" fontSize="inherit" />
                     </button>
                 </div>
-                {errorPrecio && <div role="alert" className={styles.errorPrecio}>{errorPrecio}</div>}
             </div>
         </div>
     );

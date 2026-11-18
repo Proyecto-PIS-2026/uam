@@ -10,8 +10,8 @@ import {
     vi,
 } from "vitest";
 
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
 import { DrawerPublicacionPerfil } from "./DrawerPublicacionPerfil";
 
 const usarMediaQueryMock = vi.hoisted(() => vi.fn(() => true));
@@ -216,7 +216,7 @@ vi.mock("@mui/icons-material/Close", async () => {
     };
 });
 
-vi.mock("./TextoAjustable", () => ({
+vi.mock("../../../../../compartido/componentes/TextoAjustable", () => ({
     default: ({
         children,
         className,
@@ -514,10 +514,14 @@ describe("DrawerPublicacionPerfil con operadores", () => {
         },
     );
 
-    it("muestra los datos de la publicación y el enlace de contacto", () => {
+    it.each([
+        { envase: "Cajón", kilos: "", empaquetado: "Cajón" },
+        { envase: "Cajón", kilos: "250", empaquetado: "Cajón (250 kg)" },
+        { envase: "", kilos: "10-12", empaquetado: "10-12 kg" },
+    ])("muestra los datos, el contacto y el empaquetado $empaquetado en una sola fila", ({ envase, kilos, empaquetado }) => {
         render(
             <DrawerPublicacionPerfil
-                publicacion={crearPublicacion()}
+                publicacion={{ ...crearPublicacion(), envase, kilos }}
                 open
                 onOpenChange={vi.fn()}
             />,
@@ -533,13 +537,14 @@ describe("DrawerPublicacionPerfil con operadores", () => {
             "Tomate",
             "Perita",
             "$150",
-            "Cajón",
+            empaquetado,
             "Mediano",
             "Primera",
             "Uruguay",
         ]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
+        expect(screen.queryByText("Kilos", { exact: true })).not.toBeInTheDocument();
 
         expect(
             screen.getByRole("link", {
@@ -630,7 +635,7 @@ describe("DrawerPublicacionPerfil con operadores", () => {
         );
 
         expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
         expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
 
         expect(
@@ -699,7 +704,7 @@ describe("DrawerPublicacionPerfil con operadores", () => {
             }),
         ).toBeInTheDocument();
 
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
     });
 
     it.each([
@@ -1411,7 +1416,7 @@ describe("DrawerPublicacionPerfil con productores", () => {
             }),
         ).toBeInTheDocument();
 
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
     });
 
     it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {

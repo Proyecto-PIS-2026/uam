@@ -3,18 +3,21 @@
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
+import { Temporal } from "temporal-polyfill";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import Switch from "@mui/material/Switch";
 import { useRouter } from "next/navigation";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 
-import { modificarOperador } from "../../acciones/modificarOperador";
-import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas-naves";
+import { modificarOperador } from "../../acciones/modificar-operador";
+import type { NaveOpcion } from "@/modulos/usuarios/operadores/consultas/consultas-naves";
 import type { OperadorParaModificar } from "../../tipos";
+import { LARGO_MAXIMO_COMENTARIO_LICENCIA } from "../../comentario-licencia";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 import ConfirmacionLicencia from "@/modulos/usuarios/operadores/componentes/ConfirmacionLicencia";
 
@@ -65,6 +68,8 @@ export default function FormularioModificarOperador({
     const [confirmandoLicencia, setConfirmandoLicencia] = useState(false);
     const [inicioLicencia, setInicioLicencia] = useState(licencia.inicio);
     const [finLicencia, setFinLicencia] = useState(licencia.fin);
+    const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
+    const finLicenciaMinimo = inicioLicencia > hoy ? inicioLicencia : hoy;
     const [comentario, setComentario] = useState(licencia.comentario);
 
     const [contraseña, setContraseña] = useState("");
@@ -79,8 +84,7 @@ export default function FormularioModificarOperador({
         })),
     );
 
-    const [errores, setErrores] = useState<string[]>([]);
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
     const [foto, setFoto] = useState<CambioFotoPerfil>(undefined);
@@ -124,7 +128,7 @@ export default function FormularioModificarOperador({
             actuales.filter((_, i) => i !== indice),
         );
 
-        setErrores([]);
+        cerrarNotificacion();
     }
 
     function cancelar() {
@@ -139,7 +143,6 @@ export default function FormularioModificarOperador({
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        setErrores([]);
         setGuardando(true);
 
         try {
@@ -158,10 +161,11 @@ export default function FormularioModificarOperador({
             }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
 
+            notificar(resultado.mensaje, "success");
             router.push(`/gestion-operadores/${resultado.id}`);
         } catch (error) {
             console.error(
@@ -205,7 +209,6 @@ export default function FormularioModificarOperador({
                 <form
                     className={styles.formulario}
                     onSubmit={guardar}
-                    noValidate
                 >
                     <section className={styles.seccion}>
                         <SelectorFotoPerfil nombre={nombre} fotoActual={operador.fotoPerfil} cambio={foto} alCambiar={setFoto} alError={(mensaje) => notificar(mensaje, "error")} deshabilitado={guardando} />
@@ -215,6 +218,7 @@ export default function FormularioModificarOperador({
                             size="small"
                             className={styles.control}
                             label="Nombre"
+                            required
                             value={nombre}
                             onChange={(evento) => setNombre(evento.target.value)}
                             disabled={guardando}
@@ -228,6 +232,7 @@ export default function FormularioModificarOperador({
                                 className={styles.control}
                                 id={`${idFormulario}-codigo`}
                                 label="Código de país"
+                                required
                                 value={codigoPais}
                                 onChange={(evento) => setCodigoPais(evento.target.value)}
                                 disabled={guardando}
@@ -339,7 +344,8 @@ export default function FormularioModificarOperador({
                                                 className={styles.control}
                                                 id={`${idFormulario}-nave-${indice}`}
                                                 label="Nave"
-                                                value={local.naveId}
+                                                required
+                                                value={local.naveId || ""}
                                                 onChange={(evento) => actualizarLocal(indice, "naveId", Number(evento.target.value))}
                                                 disabled={guardando}
                                             >
@@ -361,15 +367,12 @@ export default function FormularioModificarOperador({
                                                 disabled={guardando}
                                             />
 
-                                            <TextField
+                                            <SelectorFecha
                                                 fullWidth
-                                                size="small"
                                                 className={styles.control}
                                                 label="Fin de contrato"
-                                                type="date"
                                                 value={local.contrato}
-                                                slotProps={{ inputLabel: { shrink: true } }}
-                                                onChange={(evento) => actualizarLocal(indice, "contrato", evento.target.value)}
+                                                onChange={(valor) => actualizarLocal(indice, "contrato", valor)}
                                                 disabled={guardando}
                                             />
                                         </div>
@@ -398,10 +401,13 @@ export default function FormularioModificarOperador({
                         {enLicencia && (
                             <>
                                 <div className={styles.fechasLicencia}>
-                                    <TextField label="Inicio de licencia" type="date" value={inicioLicencia} onChange={(evento) => setInicioLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
-                                    <TextField label="Fin de licencia" type="date" value={finLicencia} onChange={(evento) => setFinLicencia(evento.target.value)} disabled={guardando} slotProps={{ htmlInput: { min: inicioLicencia || new Date().toISOString().slice(0, 10) }, inputLabel: { shrink: true } }} size="small" />
+                                    <SelectorFecha label="Inicio de licencia" required value={inicioLicencia} onChange={setInicioLicencia} disabled={guardando} />
+                                    <SelectorFecha label="Fin de licencia" required value={finLicencia} onChange={setFinLicencia} disabled={guardando} min={finLicenciaMinimo} />
                                 </div>
-                                <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth />
+                                <TextField label="Mensaje de recomendación" multiline minRows={3} value={comentario} onChange={(evento) => setComentario(evento.target.value)} disabled={guardando} fullWidth
+                                    slotProps={{ htmlInput: { maxLength: LARGO_MAXIMO_COMENTARIO_LICENCIA } }}
+                                    helperText={`${comentario.length}/${LARGO_MAXIMO_COMENTARIO_LICENCIA} caracteres`}
+                                    error={comentario.length > LARGO_MAXIMO_COMENTARIO_LICENCIA} />
                             </>
                         )}
                     </section>
@@ -426,6 +432,7 @@ export default function FormularioModificarOperador({
                                 size="small"
                                 className={styles.control}
                                 label="Nueva contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={contraseña}
                                 onChange={(evento) => setContraseña(evento.target.value)}
@@ -438,6 +445,7 @@ export default function FormularioModificarOperador({
                                 size="small"
                                 className={styles.control}
                                 label="Confirmar contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={confirmacionContraseña}
                                 onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
@@ -446,17 +454,6 @@ export default function FormularioModificarOperador({
                             />
                         </div>
                     </section>
-
-                    {errores.length > 0 && (
-                        <div
-                            className={styles.error}
-                            role="alert"
-                        >
-                            {errores.map((error) => (
-                                <p key={error}>{error}</p>
-                            ))}
-                        </div>
-                    )}
 
                     <div className={styles.acciones}>
                         <button

@@ -117,7 +117,7 @@ describe("GraficaPreciosHistoricos con Recharts", () => {
         render(<GraficaPreciosHistoricos registros={[]} desde={desde} hasta="2026-10-07" producto="Pera" error />);
 
         expect(screen.getByRole("heading", { name: "Evolución del precio" })).toBeInTheDocument();
-        expect(screen.getByText(/La gráfica no está disponible/)).toBeInTheDocument();
+        expect(screen.getByText("Consultá nuevamente para ver la gráfica.")).toBeInTheDocument();
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
         expect(screen.queryByRole("application")).not.toBeInTheDocument();

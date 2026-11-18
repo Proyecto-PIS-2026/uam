@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requerirAdministrador } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { obtenerPerfilAdministradorPorUsuario } from "@/modulos/usuarios/administradores/acciones/consultas-perfil-administrador";
+import { obtenerPerfilAdministradorPorUsuario } from "@/modulos/usuarios/administradores/consultas/consultas-perfil-administrador";
 import FormularioModificarAdministrador from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador";
 
 export const dynamic = "force-dynamic";

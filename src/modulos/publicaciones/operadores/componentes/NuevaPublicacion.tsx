@@ -4,7 +4,9 @@ import { fetchConSesion } from "@/modulos/identidad-acceso/autenticacion/cliente
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -15,13 +17,15 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import Image from "next/image";
 import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
-import type { DatosAltaPublicacionOperador } from "../../validarAltaPublicacionOperador";
-import { ordenarOpcionesPorNombre } from "../ordenar-opciones";
+import type { DatosAltaPublicacionOperador } from "../validaciones/validar-alta-publicacion";
+import { ordenarOpcionesPorNombre } from "../../catalogos/ordenar-opciones";
 import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
-import drawerStyles from "./DrawerEditarPublicacion.module.css";
+import drawerStyles from "../../componentes/formulario-publicacion/formulario-publicacion.module.css";
 import CampoComentario from "../../componentes/CampoComentario";
 
 type Opcion = { id: number; nombre: string };
@@ -74,7 +78,7 @@ function CampoSelect({ nombre, valor, opciones, cambiar, deshabilitado = false }
 }
 
 export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, disponibilidadInicial = true, abierto, alCerrar, alCrear }: NuevaPublicacionProps) {
-    const { notificar } = useNotificacionToast();
+    const { notificar, cerrarNotificacion } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [catalogos, setCatalogos] = useState<Catalogos | null>(null);
     const [datos, setDatos] = useState<Formulario>({
@@ -93,7 +97,6 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         fechaVigencia: "",
         comentario: "",
     });
-    const [errores, setErrores] = useState<string[]>([]);
     const [errorCarga, setErrorCarga] = useState("");
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
@@ -126,13 +129,9 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         return () => { activo = false; };
     }, []);
 
-    useEffect(() => {
-        if (abierto && errorCarga) notificar(errorCarga, "error");
-    }, [abierto, errorCarga, notificar]);
-
     function actualizar(cambio: Partial<Formulario>) {
         setDatos((actuales) => ({ ...actuales, ...cambio }));
-        setErrores([]);
+        cerrarNotificacion();
     }
 
     function cambiarPrecio(cantidad: number) {
@@ -148,7 +147,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
         const lecturaActual = ++lecturaFotoRef.current;
         if (!["image/png", "image/jpeg", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
             setLeyendoFoto(false);
-            setErrores(["La fotografía debe ser PNG, JPEG o WebP y pesar hasta 10 MB."]);
+            notificar("La fotografía debe ser PNG, JPEG o WebP y pesar hasta 10 MB.", "error");
             evento.target.value = "";
             return;
         }
@@ -163,7 +162,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
             if (lecturaActual !== lecturaFotoRef.current) return;
             actualizar({ fotografia });
         } catch {
-            if (lecturaActual === lecturaFotoRef.current) setErrores(["No se pudo leer la fotografía."]);
+            if (lecturaActual === lecturaFotoRef.current) notificar("No se pudo leer la fotografía.", "error");
         } finally {
             if (lecturaActual === lecturaFotoRef.current) setLeyendoFoto(false);
         }
@@ -180,9 +179,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
     async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
         evento.preventDefault();
         if (deshabilitado || leyendoFoto) return;
-        setErrores([]);
         if (!precioPublicacionValido(datos.precio)) {
-            setErrores([PRECIO_PUBLICACION_INVALIDO]);
+            notificar(PRECIO_PUBLICACION_INVALIDO, "error");
             return;
         }
         setGuardando(true);
@@ -209,9 +207,8 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
             });
             const resultado = await respuesta.json();
             if (!respuesta.ok) {
-                const mensajes = resultado.errores ?? ["No se pudo guardar la publicación."];
-                if (respuesta.status === 400 || respuesta.status === 422) setErrores(mensajes);
-                else notificar(mensajes.join(" "), "error");
+                const mensajes = resultado.errores?.length ? resultado.errores : ["No se pudo guardar la publicación."];
+                notificar(mensajes.join("\n"), "error");
                 return;
             }
             alCrear(resultado.mensaje ?? "Publicación creada correctamente.");
@@ -223,11 +220,12 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
     }
 
     const variedades = catalogos?.variedades.filter((item) => item.especieId === datos.especieId) ?? [];
-    const categorias = catalogos?.categorias.filter((item) => item.especieId === null || item.especieId === datos.especieId) ?? [];
+    const categorias = catalogos?.categorias ?? [];
     const deshabilitado = cargando || guardando || !catalogos;
 
     return (
         <>
+        <AvisoErrorToast mensaje={abierto ? errorCarga : null} />
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto} onClose={() => { if (!guardando) alCerrar(); }} arrastreDeshabilitado={guardando} slotProps={{ paper: { className: drawerStyles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": "titulo-nueva-publicacion" } }}>
             <header className={drawerStyles.encabezado}>
                 <h1 id="titulo-nueva-publicacion" className={drawerStyles.titulo}>Nueva publicación</h1>
@@ -240,7 +238,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                 <div className={drawerStyles.cuerpo}>
                     <div className={drawerStyles.datosProducto}>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(especieId) => actualizar({ especieId, variedadId: 0, categoriaId: 0 })} deshabilitado={deshabilitado} />
+                            <CampoSelect nombre="Especie" valor={datos.especieId} opciones={catalogos?.especies ?? []} cambiar={(especieId) => actualizar({ especieId, variedadId: 0 })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
                             <CampoSelect nombre="Variedad" valor={datos.variedadId} opciones={variedades} cambiar={(variedadId) => actualizar({ variedadId })} deshabilitado={deshabilitado || !datos.especieId} />
@@ -255,7 +253,7 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                             <CampoSelect nombre="País de origen" valor={datos.paisId} opciones={catalogos?.paises ?? []} cambiar={(paisId) => actualizar({ paisId })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
-                            <CampoSelect nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(categoriaId) => actualizar({ categoriaId })} deshabilitado={deshabilitado || !datos.especieId} />
+                            <CampoSelect nombre="Categoría" valor={datos.categoriaId} opciones={categorias} cambiar={(categoriaId) => actualizar({ categoriaId })} deshabilitado={deshabilitado} />
                         </div>
                         <div className={drawerStyles.campo}>
                             <CampoSelect nombre="Calibre" valor={datos.calibreId} opciones={catalogos?.calibres ?? []} cambiar={(calibreId) => actualizar({ calibreId })} deshabilitado={deshabilitado} />
@@ -311,19 +309,16 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
                         <label className={drawerStyles.etiqueta} htmlFor="nueva-publicacion-fechaVigencia">
                             Fecha de vigencia
                         </label>
-                        <OutlinedInput
-                            color="secondary"
+                        <SelectorFecha
                             className={drawerStyles.entrada}
-                            size="small"
                             id="nueva-publicacion-fechaVigencia"
-                            type="date"
+                            labelAccesible="Fecha de vigencia"
                             value={datos.fechaVigencia}
-                            onChange={(evento) => actualizar({ fechaVigencia: evento.target.value })}
+                            onChange={(fechaVigencia) => actualizar({ fechaVigencia })}
                             disabled={deshabilitado}
                         />
                     </div>
 
-                    {errores.length > 0 && <div role="alert" className={drawerStyles.error}>{errores.map((error, indice) => <p key={indice}>{error}</p>)}</div>}
 
                     <label className={drawerStyles.disponibilidad} htmlFor="nueva-publicacion-disponibilidad" data-disponible={datos.disponibilidad} data-guardando={guardando}>
                         <span className={drawerStyles.textoDisponibilidad}>
@@ -335,16 +330,16 @@ export default function NuevaPublicacion({ operadorId, incrementoPrecio = 10, di
 
                     <div className={drawerStyles.seccionFoto}>
                         <div className={drawerStyles.marcoFoto}>
-                            {datos.fotografia ? <Image className={drawerStyles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill sizes="(min-width: 768px) 480px, 100vw" unoptimized /> : <div className={drawerStyles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>}
+                            {datos.fotografia ? <Image className={drawerStyles.imagenFoto} src={datos.fotografia} alt="Vista previa de la fotografía" fill sizes="(min-width: 768px) 480px, 100vw" unoptimized /> : <div className={drawerStyles.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>}
                             {datos.fotografia && <button className={`${drawerStyles.botonFoto} ${drawerStyles.borrarFoto}`} type="button" onClick={borrarFotografia} disabled={deshabilitado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
                             <button className={drawerStyles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={deshabilitado}><PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}</button>
-                            {!esWeb && <button className={`${drawerStyles.botonFoto} ${drawerStyles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={deshabilitado}>Galería</button>}
+                            {!esWeb && <button className={`${drawerStyles.botonFoto} ${drawerStyles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={deshabilitado}><PhotoLibraryOutlinedIcon fontSize="small" aria-hidden="true" /> Galería</button>}
                             <input ref={inputFotoRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFotografia} disabled={deshabilitado} aria-label="Fotografía" />
                             {!esWeb && <input ref={inputGaleriaRef} className={drawerStyles.inputFoto} type="file" accept="image/png,image/jpeg,image/webp" onChange={seleccionarFotografia} disabled={deshabilitado} aria-label="Fotografía desde galería" />}
                         </div>
                     </div>
                 </div>
-                <div className={drawerStyles.pie}>
+                <div className={drawerStyles.pie} data-acciones-modal>
                     <button className={drawerStyles.cancelar} type="button" onClick={alCerrar} disabled={guardando}>Cancelar</button>
                     <button className={drawerStyles.guardar} type="submit" disabled={deshabilitado || leyendoFoto}>{guardando ? "Guardando..." : "Confirmar"}</button>
                 </div>

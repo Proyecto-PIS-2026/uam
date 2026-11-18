@@ -2,15 +2,15 @@ import Link from "next/link";
 import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { notFound } from "next/navigation";
 import { requerirProductor } from "@/modulos/identidad-acceso/autorizacion/controles";
-import { obtenerMiPerfilProductor } from "@/modulos/usuarios/productores/perfil-propio/consultas-mi-perfil-productor";
+import { obtenerMiPerfilProductor } from "@/modulos/usuarios/productores/consultas/consultas-mi-perfil-productor";
 import ImagenPerfil from "@/modulos/usuarios/componentes/ImagenPerfil";
-import BotonVolver from "@/compartido/BotonVolver";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
 import { obtenerIniciales } from "@/modulos/usuarios/obtener-iniciales";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import styles from "./PerfilPropioProductor.module.css";
-import estilosFormulario from "@/modulos/usuarios/administradores/componentes/modificar-administrador/FormularioModificarAdministrador.module.css";
+import estilosFormulario from "@/modulos/usuarios/componentes/formulario-usuario.module.css";
 
 export const metadata = { title: "Mi perfil de Productor | UAM" };
 

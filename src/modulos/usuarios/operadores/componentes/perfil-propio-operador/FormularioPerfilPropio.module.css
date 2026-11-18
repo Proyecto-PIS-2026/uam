@@ -64,20 +64,6 @@
     background: var(--color-surface);
 }
 
-.subtitulo {
-    margin: 0;
-    color: var(--color-secondary);
-    font-size: var(--tamano-titulo-seccion);
-    font-weight: 600;
-    line-height: var(--interlineado-titulo-pagina);
-}
-
-.dato {
-    margin: 0;
-    font-size: var(--tamano-texto-secundario);
-    line-height: var(--interlineado-texto);
-}
-
 .telefono {
     display: grid;
     grid-template-columns: 13rem minmax(0, 1fr);
@@ -145,36 +131,6 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--espacio-controles);
-}
-
-.licenciaActiva,
-.licenciaInactiva {
-    margin: 0;
-    font-weight: 600;
-}
-
-.licenciaActiva {
-    color: var(--color-secondary);
-}
-
-.licenciaInactiva {
-    color: var(--color-muted);
-}
-
-.error {
-    padding: var(--padding-panel);
-    border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-surface));
-    border-radius: var(--radio-panel);
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
-}
-
-.error p {
-    margin: 0;
-}
-
-.error p + p {
-    margin-top: var(--espacio-textos);
 }
 
 .acciones {

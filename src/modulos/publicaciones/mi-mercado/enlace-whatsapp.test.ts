@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { crearEnlaceWhatsApp } from "./enlace-whatsapp";
-import type { Publicacion } from "./tipos";
+import type { Publicacion } from "../tipos";
 
 function crearPublicacion(): Publicacion {
     return {

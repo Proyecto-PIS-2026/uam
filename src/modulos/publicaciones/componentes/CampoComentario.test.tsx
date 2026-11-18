@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 import CampoComentario from "./CampoComentario";
-import { LARGO_MAXIMO_COMENTARIO } from "../validarComentario";
+import { LARGO_MAXIMO_COMENTARIO } from "../validar-comentario";
 
 afterEach(() => {
     cleanup();
@@ -15,6 +15,7 @@ describe("CampoComentario", () => {
 
         const campo = screen.getByLabelText("Comentario");
         expect(campo).toHaveValue("Cosecha de esta semana");
+        expect(campo).toBeEnabled();
 
         fireEvent.change(campo, { target: { value: "Cosecha nueva" } });
         expect(alCambiar).toHaveBeenCalledWith("Cosecha nueva");
@@ -33,7 +34,28 @@ describe("CampoComentario", () => {
         const campo = screen.getByLabelText("Comentario");
         expect(campo).toHaveValue("Cosecha de esta semana");
         expect(campo).toHaveAttribute("readonly");
+        expect(campo).toBeDisabled();
+        campo.focus();
+        expect(campo).not.toHaveFocus();
         expect(screen.queryByText(/caracteres/)).not.toBeInTheDocument();
+    });
+
+    it("se habilita al editar y vuelve a bloquearse al guardar o cancelar", () => {
+        const propiedades = { id: "comentario", valor: "Cosecha de esta semana", clases: {} };
+        const vista = render(<CampoComentario {...propiedades} editando={false} />);
+        const campo = screen.getByLabelText("Comentario");
+        expect(campo).toBeDisabled();
+
+        vista.rerender(<CampoComentario {...propiedades} editando />);
+        expect(campo).toBeEnabled();
+        expect(campo).not.toHaveAttribute("readonly");
+
+        vista.rerender(<CampoComentario {...propiedades} editando deshabilitado />);
+        expect(campo).toBeDisabled();
+
+        vista.rerender(<CampoComentario {...propiedades} editando={false} />);
+        expect(campo).toBeDisabled();
+        expect(campo).toHaveValue(propiedades.valor);
     });
 
     it("en modo consulta sin comentario muestra un guion", () => {

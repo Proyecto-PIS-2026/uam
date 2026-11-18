@@ -3,7 +3,7 @@ import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones
 import { RUTA_SESION_FINALIZADA } from "@/modulos/identidad-acceso/autenticacion/rutas-sesion";
 import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import FormularioCambioContrasena from "@/modulos/identidad-acceso/cambio-contrasena/FormularioCambioContrasena";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 import styles from "@/modulos/identidad-acceso/cambio-contrasena/FormularioCambioContrasena.module.css";
 
 export const metadata = { title: "Cambiar contraseña | UAM" };

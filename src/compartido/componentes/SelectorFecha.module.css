@@ -1,0 +1,63 @@
+.campo.campo {
+    min-width: 0;
+}
+
+.campo :global(.MuiPickersInputBase-root) {
+    height: var(--alto-control);
+    border-radius: var(--radio-control);
+    background: var(--color-surface);
+    font-size: var(--tamano-texto);
+}
+
+.campo :global(.MuiPickersInputBase-sectionsContainer) {
+    padding-block: 0;
+}
+
+.campo :global(.MuiPickersOutlinedInput-notchedOutline) {
+    border-color: var(--color-border);
+}
+
+.campo :global(.MuiPickersInputBase-root.Mui-focused:not(.Mui-error)) :global(.MuiPickersOutlinedInput-notchedOutline),
+.campo :global(.MuiPickersInputBase-root:not(.Mui-disabled):not(.Mui-error):hover) :global(.MuiPickersOutlinedInput-notchedOutline) {
+    border-color: var(--color-secondary);
+}
+
+.campo :global(.MuiPickersInputBase-sectionContent)::selection,
+.campo :global(.MuiPickersSectionList-root)::selection {
+    background: var(--color-secondary);
+    color: var(--color-surface);
+}
+
+.campo :global(.MuiPickersInputBase-root.Mui-disabled.Mui-readOnly) {
+    color: var(--color-foreground);
+    -webkit-text-fill-color: var(--color-foreground);
+}
+
+.campo:has([data-error-validacion="true"]) :global(.MuiPickersOutlinedInput-notchedOutline) {
+    border-color: var(--color-danger);
+}
+
+.calendario :global(.MuiDateCalendar-root:has(.MuiDayCalendar-root)) {
+    height: auto;
+}
+
+.calendario :global(.MuiDayCalendar-slideTransition) {
+    display: grid;
+    min-height: 0;
+}
+
+/* Los meses se superponen durante la transición sin reservar semanas vacías. */
+.calendario :global(.MuiDayCalendar-slideTransition > .MuiDayCalendar-monthContainer) {
+    position: relative;
+    grid-area: 1 / 1;
+}
+
+.calendario :global(.Mui-selected) {
+    background-color: var(--color-secondary);
+    color: var(--color-surface);
+}
+
+.calendario :global(.Mui-selected:hover),
+.calendario :global(.Mui-selected:focus) {
+    background-color: var(--color-secondary-hover);
+}

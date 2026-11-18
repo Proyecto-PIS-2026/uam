@@ -1,18 +1,18 @@
 "use client";
 
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
 
 import { useRef, useState, type FormEvent } from "react";
 import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 
-import { modificarAdministrador } from "./modificarAdministrador";
-import { modificarMiPerfilAdministrador } from "../../perfil-propio/modificarMiPerfilAdministrador";
-import type { AdministradorParaModificar } from "./obtenerAdministradorParaModificar";
+import { modificarAdministrador } from "../../acciones/modificar-administrador";
+import { modificarMiPerfilAdministrador } from "../../acciones/modificar-perfil-propio-administrador";
+import type { AdministradorParaModificar } from "../../consultas/obtener-administrador-para-modificar";
 
-import styles from "./FormularioModificarAdministrador.module.css";
+import styles from "../../../componentes/formulario-usuario.module.css";
 
 const RUTA_MI_PERFIL = "/mi-perfil";
 
@@ -30,7 +30,6 @@ export default function FormularioModificarAdministrador({ administrador, perfil
     const [contraseña, setContraseña] = useState("");
     const [confirmacionContraseña, setConfirmacionContraseña] = useState("");
 
-    const [errores, setErrores] = useState<string[]>([]);
     const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
@@ -45,7 +44,6 @@ export default function FormularioModificarAdministrador({ administrador, perfil
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        setErrores([]);
         setGuardando(true);
 
         try {
@@ -59,10 +57,11 @@ export default function FormularioModificarAdministrador({ administrador, perfil
                 });
 
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
 
+            notificar(resultado.mensaje, "success");
             router.push(rutaPerfil);
         } catch (error) {
             console.error("Error al modificar administrador:", error);
@@ -101,6 +100,7 @@ export default function FormularioModificarAdministrador({ administrador, perfil
                             size="small"
                             className={styles.control}
                             label="Nombre de usuario"
+                            required
                             value={nombreUsuario}
                             onChange={(evento) => setNombreUsuario(evento.target.value)}
                             disabled={guardando}
@@ -121,6 +121,7 @@ export default function FormularioModificarAdministrador({ administrador, perfil
                                     size="small"
                                     className={styles.control}
                                     label="Nueva contraseña"
+                                    required={Boolean(contraseña || confirmacionContraseña)}
                                     type="password"
                                     value={contraseña}
                                     onChange={(evento) => setContraseña(evento.target.value)}
@@ -133,6 +134,7 @@ export default function FormularioModificarAdministrador({ administrador, perfil
                                     size="small"
                                     className={styles.control}
                                     label="Confirmar contraseña"
+                                    required={Boolean(contraseña || confirmacionContraseña)}
                                     type="password"
                                     value={confirmacionContraseña}
                                     onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
@@ -141,14 +143,6 @@ export default function FormularioModificarAdministrador({ administrador, perfil
                                 />
                             </div>
                         </section>
-                    )}
-
-                    {errores.length > 0 && (
-                        <div className={styles.error} role="alert">
-                            {errores.map((error) => (
-                                <p key={error}>{error}</p>
-                            ))}
-                        </div>
                     )}
 
                     <div className={styles.acciones}>

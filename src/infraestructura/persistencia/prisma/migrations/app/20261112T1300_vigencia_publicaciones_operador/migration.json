@@ -1,0 +1,9 @@
+{
+  "from": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "to": "847c7d232dcc4e51e10e6ed6a355e1a5e8989fbb7b57052b4599ebe54cfd35c5",
+  "providedInvariants": [
+    "uam:vigencia-publicaciones-operador"
+  ],
+  "createdAt": "2026-11-12T13:00:00.000Z",
+  "migrationHash": "e53784862760a7a52438ead95f947945d5386ddc8442a46ba85914113796d3c2"
+}

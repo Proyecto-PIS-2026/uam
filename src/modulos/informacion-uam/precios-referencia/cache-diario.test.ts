@@ -171,8 +171,8 @@ function dato(fecha: string): ConsultaPreciosReferencia {
     };
 }
 
-function estado(fecha: string, consulta: ConsultaPreciosReferencia | null): EstadoCacheDiaria {
-    return { version: 1, ultimoIntento: fecha, ultimoExito: consulta ? fecha : null, consulta };
+function estado(fecha: string, consulta: ConsultaPreciosReferencia | null, intentosDelDia = 1): EstadoCacheDiaria {
+    return { version: 1, ultimoIntento: fecha, intentosDelDia, ultimoIntentoExitoso: consulta !== null, ultimoExito: consulta ? fecha : null, consulta };
 }
 
 beforeEach(() => {
@@ -250,8 +250,8 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(consultar).not.toHaveBeenCalled();
     });
 
-    it("reutiliza un fallo ya registrado hoy sin abrir transacción ni repetir la consulta", async () => {
-        sembrar(claveCacheActual, JSON.stringify(estado("2026-10-02", null)));
+    it("respeta cinco fallos registrados hoy sin abrir transacción ni repetir la consulta", async () => {
+        sembrar(claveCacheActual, JSON.stringify(estado("2026-10-02", null, 5)));
 
         await expect(obtenerConsultaDiariaWebservice()).rejects.toThrow("Todavía no hay un relevamiento");
 
@@ -332,19 +332,21 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(actualizaciones).not.toHaveBeenCalled();
     });
 
-    it("registra un fallo inicial y evita nuevos intentos durante el mismo día", async () => {
+    it("registra cada fallo inicial y permite volver a consultar durante el mismo día", async () => {
         consultar.mockRejectedValue(new Error("Servicio no disponible"));
 
         await expect(obtenerConsultaDiariaWebservice()).rejects.toThrow("Todavía no hay un relevamiento");
         expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", null));
         await expect(obtenerConsultaDiariaWebservice()).rejects.toThrow("Todavía no hay un relevamiento");
 
-        expect(transacciones).toHaveBeenCalledOnce();
-        expect(consultar).toHaveBeenCalledOnce();
+        expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", null, 2));
+        expect(transacciones).toHaveBeenCalledTimes(2);
+        expect(consultar).toHaveBeenCalledTimes(2);
         expect(creaciones).toHaveBeenCalledOnce();
+        expect(actualizaciones).toHaveBeenCalledOnce();
     });
 
-    it("conserva el último dato válido si falla la renovación y usa ese dato el resto del día", async () => {
+    it("conserva el último dato válido entre reintentos de una renovación fallida", async () => {
         const anterior = dato("2026-10-01");
         sembrar(claveCacheActual, JSON.stringify(estado("2026-10-01", anterior)));
         consultar.mockRejectedValue(new Error("Servicio no disponible"));
@@ -355,11 +357,13 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(JSON.parse(leer(claveCacheActual)!)).toEqual({
             version: 1,
             ultimoIntento: "2026-10-02",
+            intentosDelDia: 2,
+            ultimoIntentoExitoso: false,
             ultimoExito: "2026-10-01",
             consulta: anterior,
         });
-        expect(transacciones).toHaveBeenCalledOnce();
-        expect(consultar).toHaveBeenCalledOnce();
+        expect(transacciones).toHaveBeenCalledTimes(2);
+        expect(consultar).toHaveBeenCalledTimes(2);
     });
 
     it("rescata el relevamiento más reciente de otra fila si falla la primera consulta de la fuente actual", async () => {
@@ -377,11 +381,13 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(JSON.parse(leer(claveCacheActual)!)).toEqual({
             version: 1,
             ultimoIntento: "2026-10-02",
+            intentosDelDia: 2,
+            ultimoIntentoExitoso: false,
             ultimoExito: "2026-10-01",
             consulta: ultimo,
         });
-        expect(consultar).toHaveBeenCalledOnce();
-        expect(listados).toHaveBeenCalledOnce();
+        expect(consultar).toHaveBeenCalledTimes(2);
+        expect(listados).toHaveBeenCalledTimes(2);
         expect(listados).toHaveBeenCalledWith("precios-referencia:latest:%");
     });
 
@@ -398,15 +404,17 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(JSON.parse(leer(claveCacheActual)!)).toEqual({
             version: 1,
             ultimoIntento: "2026-10-02",
+            intentosDelDia: 1,
+            ultimoIntentoExitoso: false,
             ultimoExito: "2026-10-01",
             consulta: ultimo,
         });
         expect(consultar).toHaveBeenCalledOnce();
     });
 
-    it("rescata otra fila si la fuente actual ya registró un fallo hoy sin datos", async () => {
+    it("rescata otra fila sin reiniciar la cuota agotada de la fuente actual", async () => {
         const ultimo = dato("2026-10-01");
-        sembrar(claveCacheActual, JSON.stringify(estado("2026-10-02", null)));
+        sembrar(claveCacheActual, JSON.stringify(estado("2026-10-02", null, 5)));
         sembrar("precios-referencia:latest:otra-fuente", JSON.stringify(estado("2026-10-01", ultimo)));
 
         await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(ultimo);
@@ -415,6 +423,8 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(JSON.parse(leer(claveCacheActual)!)).toEqual({
             version: 1,
             ultimoIntento: "2026-10-02",
+            intentosDelDia: 5,
+            ultimoIntentoExitoso: false,
             ultimoExito: "2026-10-01",
             consulta: ultimo,
         });
@@ -435,6 +445,66 @@ describe("obtenerConsultaDiariaWebservice", () => {
         expect(consultar).toHaveBeenCalledOnce();
         expect(actualizaciones).toHaveBeenCalledOnce();
         expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", guardado));
+    });
+
+    it("persiste el límite de cinco intentos y lo renueva a las 00 de Uruguay", async () => {
+        consultar.mockRejectedValue(new Error("Servicio no disponible"));
+        for (let intento = 1; intento <= 5; intento++) {
+            await expect(obtenerConsultaDiariaWebservice()).rejects.toThrow("Todavía no hay un relevamiento");
+            expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", null, intento));
+        }
+
+        vi.setSystemTime(new Date("2026-10-03T02:59:59.999Z"));
+        await expect(obtenerConsultaDiariaWebservice()).rejects.toThrow("Todavía no hay un relevamiento");
+        expect(consultar).toHaveBeenCalledTimes(5);
+
+        vi.setSystemTime(new Date("2026-10-03T03:00:00.000Z"));
+        const nuevo = dato("2026-10-03");
+        consultar.mockResolvedValue(nuevo);
+        await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(nuevo);
+        expect(consultar).toHaveBeenCalledTimes(6);
+        expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-03", nuevo));
+    });
+
+    it("no supera la cuota cuando varias consultas compiten por el quinto intento", async () => {
+        sembrar(claveCacheActual, JSON.stringify(estado("2026-10-02", null, 4)));
+        consultar.mockRejectedValue(new Error("Servicio no disponible"));
+
+        const resultados = await Promise.allSettled(Array.from({ length: 8 }, () => obtenerConsultaDiariaWebservice()));
+
+        expect(resultados.every((resultado) => resultado.status === "rejected")).toBe(true);
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", null, 5));
+        expect(actualizaciones).toHaveBeenCalledOnce();
+    });
+
+    it("reintenta un fallo anterior al contador y deja de consultar después del éxito", async () => {
+        sembrar(claveCacheActual, JSON.stringify({ version: 1, ultimoIntento: "2026-10-02", ultimoExito: null, consulta: null }));
+        const nuevo = dato("2026-10-02");
+        consultar.mockResolvedValue(nuevo);
+
+        await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(nuevo);
+        await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(nuevo);
+
+        expect(consultar).toHaveBeenCalledOnce();
+        expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", nuevo, 2));
+    });
+
+    it("un respaldo obtenido hoy desde otra fuente no detiene los reintentos de la fuente actual", async () => {
+        sembrar(claveCacheActual, JSON.stringify(estado("2026-10-02", null, 1)));
+        const respaldo = dato("2026-10-02");
+        sembrar("precios-referencia:latest:otra-fuente", JSON.stringify(estado("2026-10-02", respaldo)));
+        const nuevo = dato("2026-10-02");
+        nuevo.types[0].products[0].species = "Dato de la fuente actual";
+        consultar.mockRejectedValueOnce(new Error("Servicio no disponible")).mockResolvedValueOnce(nuevo);
+
+        await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(respaldo);
+        expect(JSON.parse(leer(claveCacheActual)!)).toEqual({ ...estado("2026-10-02", respaldo, 2), ultimoIntentoExitoso: false });
+        await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(nuevo);
+        await expect(obtenerConsultaDiariaWebservice()).resolves.toEqual(nuevo);
+
+        expect(consultar).toHaveBeenCalledTimes(2);
+        expect(JSON.parse(leer(claveCacheActual)!)).toEqual(estado("2026-10-02", nuevo, 3));
     });
 
     it("recalcula el día al terminar la espera de otra consulta", async () => {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import FormularioEditarMiPerfil from "./FormularioEditarMiPerfil";
 
 const mocks = vi.hoisted(() => ({ guardar: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ guardar: vi.fn(), push: vi.fn(), refresh: vi.f
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }),
 }));
-vi.mock("@/modulos/usuarios/administradores/modificar-mi-perfil", () => ({
+vi.mock("@/modulos/usuarios/administradores/acciones/modificar-mi-perfil", () => ({
     modificarMiPerfilAdministrador: mocks.guardar,
 }));
 
@@ -37,5 +37,9 @@ describe("FormularioEditarMiPerfil", () => {
         await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/mi-perfil"));
         expect(mocks.guardar).toHaveBeenCalledExactlyOnceWith({ nombre: "admin.nuevo" });
         expect(mocks.refresh).toHaveBeenCalledOnce();
+        const aviso = await screen.findByRole("status");
+        expect(aviso).toHaveTextContent("Perfil actualizado correctamente.");
+        expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
+        expect(within(screen.getByRole("form", { name: "Editar mi perfil" })).queryByRole("status")).not.toBeInTheDocument();
     });
 });

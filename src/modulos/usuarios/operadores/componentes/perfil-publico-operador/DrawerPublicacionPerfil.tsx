@@ -8,11 +8,12 @@ import ImagenPublicacion from "@/modulos/publicaciones/componentes/ImagenPublica
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
-import type { PublicacionListado } from "@/modulos/consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/acciones/PublicacionesProductor";
-import TextoAjustable from "./TextoAjustable";
+import type { PublicacionListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "@/modulos/consulta-mercado/consultas/consultas-publicaciones-productor";
+import TextoAjustable from "../../../../../compartido/componentes/TextoAjustable";
 import styles from "./DrawerPublicacionPerfil.module.css";
 import ComentarioPublicacion from "@/modulos/publicaciones/componentes/drawer-publicacion/ComentarioPublicacion";
+import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-publicacion";
 
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useEffect, useRef, useState } from "react";
@@ -112,6 +113,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                                             <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} fill sizes="(min-width: 768px) 400px, 160px" className={styles.imagen} onError={() => setFotoPreparada(claveFoto)} reemplazo={
                                                 <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
                                                     <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                                    <span>Sin foto disponible</span>
                                                 </div>
                                             } />
                                             {publicacion.foto && (
@@ -135,11 +137,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Empaquetado</span>
-                                    <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
-                                </div>
-                                <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Kilos</span>
-                                    <span className={styles.valorInformacion}>{publicacion.kilos?.trim() && publicacion.kilos !== "-" ? `${publicacion.kilos} kg` : "-"}</span>
+                                    <span className={styles.valorInformacion}>{formatearEmpaquetado(publicacion.envase, publicacion.kilos) || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>
@@ -164,7 +162,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             </div>
                             <ComentarioPublicacion comentario={publicacion.comentario} />
                         </div>
-                        <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
+                        <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`} data-acciones-modal>
                             <div className={styles.bloqueBotones}>
                                 <EnlaceWhatsApp numero={numeroWhatsApp} mensaje={mensajeWhatsApp} onClick={() => registrarContactoWhatsApp(publicacion.tipoPublicacion, usuario.id)} className={`boton-primario ${styles.botonWhatsApp}`} aria-label={`Contactar a ${usuario.nombreFantasia} por WhatsApp`}>
                                     <WhatsAppIcon className={styles.iconoWhatsApp} aria-hidden="true" />
@@ -187,6 +185,7 @@ export function DrawerPublicacionPerfil({ publicacion, open, onOpenChange }: Dra
                             <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
                                     <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                    <span>Sin foto disponible</span>
                                 </div>
                             } />
                         </div>

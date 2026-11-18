@@ -1,9 +1,9 @@
-import EncabezadoPagina from "@/compartido/EncabezadoPagina";
+import EncabezadoPagina from "@/compartido/componentes/EncabezadoPagina";
 import { redirigirAMercadoPropio } from "@/modulos/identidad-acceso/autorizacion/controles";
-import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/ConsultarPublicacionOperador.action";
-import ContenedorPublicaciones from "@/modulos/publicaciones/componentes/contenedor-publicacion/ContenedorPublicaciones";
-import { obtenerConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/acciones/configuracion-ordenamiento";
-import { convertirOrdenMercados } from "@/modulos/consulta-mercado/acciones/ordenamiento-publicaciones";
+import obtenerPublicaciones from "@/modulos/consulta-mercado/acciones/consultar-publicaciones-operador";
+import ContenedorPublicaciones from "@/modulos/consulta-mercado/componentes/ContenedorPublicaciones";
+import { obtenerConfiguracionOrdenamiento } from "@/modulos/consulta-mercado/consultas/configuracion-ordenamiento";
+import { convertirOrdenMercados } from "@/modulos/consulta-mercado/filtros/ordenamiento-publicaciones";
 
 export const dynamic = "force-dynamic";
 

@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
+import type { PublicacionListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-productor";
 import { DrawerPublicacion } from "./DrawerPublicacion";
 
 const usarMediaQueryMock = vi.hoisted(() => vi.fn(() => true));
@@ -158,7 +158,7 @@ vi.mock("@mui/icons-material/Close", async () => {
     return { default: () => React.createElement("span", { "data-testid": "CloseIcon" }) };
 });
 
-vi.mock("./TextoAjustable", () => ({
+vi.mock("../../../../compartido/componentes/TextoAjustable", () => ({
     default: ({ children, className }: { children: ReactNode; className?: string }) => <span className={className}>{children}</span>,
 }));
 
@@ -282,11 +282,12 @@ describe("DrawerPublicacion con operadores", () => {
     });
 
     it("muestra los datos de la publicación y los enlaces de contacto y perfil", () => {
-        render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
+        render(<DrawerPublicacion publicacion={{ ...crearPublicacion(), kilos: "250" }} open onOpenChange={vi.fn()} />);
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
-        for (const texto of ["Tomate", "Perita", "$150", "Cajón", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur", "Naves A, B y E"]) {
+        for (const texto of ["Tomate", "Perita", "$150", "Cajón (250 kg)", "Mediano", "Primera", "País", "Uruguay", "Huerta Sur", "Naves A, B y E"]) {
             expect(screen.getByText(texto)).toBeInTheDocument();
         }
+        expect(screen.queryByText("Kilos")).not.toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Ver Perfil" })).toHaveAttribute("href", "/operadores/Huerta%20Sur?origen=publicaciones");
         expect(screen.getByRole("link", { name: "Contactar a Huerta Sur por WhatsApp" })).toBeInTheDocument();
     });
@@ -325,7 +326,7 @@ describe("DrawerPublicacion con operadores", () => {
     it("muestra un reemplazo cuando no hay foto", () => {
         render(<DrawerPublicacion publicacion={crearPublicacion()} open onOpenChange={vi.fn()} />);
         expect(screen.getByTestId("HideImageOutlinedIcon")).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
         expect(screen.queryByRole("img", { name: "Foto de Tomate" })).not.toBeInTheDocument();
     });
 
@@ -657,7 +658,7 @@ describe("DrawerPublicacion con productores", () => {
         render(<DrawerPublicacion publicacion={{ ...crearPublicacionProductor(), foto: "/foto-inexistente.jpg" }} open onOpenChange={vi.fn()} />);
         fireEvent.error(screen.getByAltText("Foto de Manzana"));
         expect(screen.getByRole("dialog", { name: "Detalle de publicación" })).toBeInTheDocument();
-        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toBeInTheDocument();
+        expect(screen.getByRole("img", { name: "Sin foto disponible" })).toHaveTextContent("Sin foto disponible");
     });
 
     it("amplía la foto y permite cerrarla sin cerrar el detalle", async () => {

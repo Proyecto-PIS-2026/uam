@@ -9,9 +9,10 @@ import Link from "next/link";
 import Dialog from "@mui/material/Dialog";
 import CloseIcon from "@mui/icons-material/Close";
 
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
-import type { PublicacionProductorListado } from "../../../consulta-mercado/acciones/PublicacionesProductor";
-import TextoAjustable from "./TextoAjustable";
+import type { PublicacionListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-operador";
+import type { PublicacionProductorListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-productor";
+import { formatearEmpaquetado } from "../../empaquetado-publicacion";
+import TextoAjustable from "../../../../compartido/componentes/TextoAjustable";
 import UbicacionesRetiro from "./UbicacionesRetiro";
 import ComentarioPublicacion from "./ComentarioPublicacion";
 import styles from "./DrawerPublicacion.module.css";
@@ -123,6 +124,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                                             <ImagenPublicacion key={claveFoto} src={publicacion.foto} alt={`Foto de ${publicacion.especie}`} loading="eager" onLoad={() => setFotoPreparada(claveFoto)} fill sizes="(min-width: 768px) 400px, 160px" className={styles.imagen} onError={() => setFotoPreparada(claveFoto)} reemplazo={
                                                 <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
                                                     <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                                    <span>Sin foto disponible</span>
                                                 </div>
                                             } />
                                             {publicacion.foto && (
@@ -146,11 +148,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             <div className={styles.bloqueMedio}>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Empaquetado</span>
-                                    <span className={styles.valorInformacion}>{publicacion.envase?.trim() || "-"}</span>
-                                </div>
-                                <div className={styles.informacionDetallada}>
-                                    <span className={styles.nombreInformacion}>Kilos</span>
-                                    <span className={styles.valorInformacion}>{publicacion.kilos?.trim() && publicacion.kilos !== "-" ? `${publicacion.kilos} kg` : "-"}</span>
+                                    <span className={styles.valorInformacion}>{formatearEmpaquetado(publicacion.envase, publicacion.kilos) || "-"}</span>
                                 </div>
                                 <div className={styles.informacionDetallada}>
                                     <span className={styles.nombreInformacion}>Calibre</span>
@@ -178,7 +176,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                                 <UbicacionesRetiro ubicaciones={publicacion.ubicaciones} />
                             )}
                         </div>
-                        <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`}>
+                        <div className={`${styles.pie} ${necesitaScroll ? styles.pieConScroll : ""}`} data-acciones-modal>
                             <div className={styles.operador}>
                                 <span className={styles.publicado}>Publicado por</span>{" "}
                                 <Link href={enlacePerfil} className={styles.nombreOperador} onClick={() => onOpenChange(false)}>{usuario.nombreFantasia}</Link>
@@ -207,6 +205,7 @@ export function DrawerPublicacion({ publicacion, open, onOpenChange, esAdmin = f
                             <ImagenPublicacion loading="eager" key={`${publicacion.id}-${publicacion.foto}`} src={publicacion?.foto ?? null} alt={`Foto ampliada de ${publicacion?.especie ?? ""}`} fill sizes="(min-width: 832px) 50rem, (min-width: 768px) calc(100vw - 2rem), (min-width: 536px) 32rem, calc(100vw - 1.5rem)" className={styles.imagenAmpliada}  reemplazo={
                                 <div className={styles.sinFoto} role="img" aria-label="Sin foto disponible">
                                     <HideImageOutlinedIcon className={styles.iconoFoto} aria-hidden="true" />
+                                    <span>Sin foto disponible</span>
                                 </div>
                             } />
                         </div>

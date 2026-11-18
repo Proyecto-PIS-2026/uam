@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(),
 }));
 
-vi.mock("../../../usuarios/operadores/operador-actual", () => ({
+vi.mock("../../../usuarios/operadores/consultas/operador-actual", () => ({
     obtenerOperadorActual: mocks.obtenerOperadorActual,
     obtenerOperadorPorNombre: mocks.obtenerOperadorPorNombre,
 }));
@@ -25,13 +25,13 @@ vi.mock("../consultas-mi-mercado", () => ({
     obtenerPublicacionesDeOperador: mocks.obtenerPublicaciones,
 }));
 
-vi.mock("../../operadores/consultas-edicion-publicacion", () => ({
+vi.mock("../../catalogos/consultas-edicion-publicacion", () => ({
     obtenerOpcionesEdicionPublicacion: mocks.obtenerOpcionesEdicion,
 }));
 
 vi.mock("./MiMercado", () => ({ default: mocks.miMercado }));
 
-vi.mock("@/modulos/administracion/acciones/consultas-configuracion", () => ({
+vi.mock("@/modulos/administracion/configuracion/repositorio-configuracion", () => ({
     obtenerConfiguracion: mocks.obtenerConfiguracion,
 }));
 

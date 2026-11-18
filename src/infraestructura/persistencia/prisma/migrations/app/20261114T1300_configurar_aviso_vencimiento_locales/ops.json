@@ -1,0 +1,24 @@
+[
+  {
+    "id": "data_migration.anticipacion_aviso_vencimiento_locales",
+    "label": "Configurar la anticipación de avisos de vencimiento de locales",
+    "operationClass": "data",
+    "invariantId": "uam:anticipacion-aviso-vencimiento-locales",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Conservar los tres días de anticipación actuales sin sobrescribir una configuración existente",
+        "sql": "INSERT INTO \"public\".\"configuracion\" (\"nombreConfiguracion\", \"valorConfiguracion\") VALUES ('anticipacion_aviso_vencimiento_locales', '3') ON CONFLICT (\"nombreConfiguracion\") DO NOTHING;"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verificar que existe la anticipación configurable de los avisos de locales",
+        "sql": "SELECT EXISTS (SELECT 1 FROM \"public\".\"configuracion\" WHERE \"nombreConfiguracion\" = 'anticipacion_aviso_vencimiento_locales') AS result;"
+      }
+    ]
+  }
+]

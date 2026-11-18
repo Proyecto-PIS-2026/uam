@@ -1,11 +1,12 @@
 "use client"; // https://nextjs.org/docs/app/api-reference/directives/use-client
 
-import EncabezadoPagina from "../../../../../compartido/EncabezadoPagina";
+import EncabezadoPagina from "../../../../../compartido/componentes/EncabezadoPagina";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
+import Paginacion from "@/compartido/componentes/Paginacion";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import { useState } from "react";
-import type { OperadorListado } from "../../consultas-listado-publico";
+import type { OperadorListado } from "../../consultas/consultas-listado-publico";
 import ControlesListadoOperadores from "./ControlesListadoOperadores";
 import TarjetaOperador from "./TarjetaOperador";
 import styles from "./ListadoOperadores.module.css";
@@ -15,14 +16,17 @@ type ListadoOperadoresProps = {
     puedeGestionar?: boolean;
 };
 
+const operadoresPorPagina = 20;
+
 function normalizarTexto(texto: string) {
-    return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, ""); // Busque en internet como ignorar los tildes
+    return texto.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u0302\u0304-\u036f]/g, "");
 }
 
 export default function ListadoOperadores({ operadores, puedeGestionar = false }: ListadoOperadoresProps) {
     const [busqueda, setBusqueda] = useState("");
     const [orden, setOrden] = useState("a-z");
     const [naveSeleccionada, setNaveSeleccionada] = useState("Todas");
+    const [paginaActual, setPaginaActual] = useState(1);
 
     const conjuntoNaves = new Set<string>();
     for (const operador of operadores) {
@@ -65,17 +69,25 @@ export default function ListadoOperadores({ operadores, puedeGestionar = false }
         return orden === "z-a" ? -comparacion : comparacion;
     });
 
+    const totalPaginas = Math.ceil(operadoresFiltrados.length / operadoresPorPagina);
+    const paginaVisible = Math.min(paginaActual, Math.max(1, totalPaginas));
+    if (paginaActual !== paginaVisible) {
+        setPaginaActual(paginaVisible);
+    }
+    const indiceInicial = (paginaVisible - 1) * operadoresPorPagina;
+    const operadoresPagina = operadoresFiltrados.slice(indiceInicial, indiceInicial + operadoresPorPagina);
+
     const contenido = (
         <section className="contenedor-pagina secciones-pagina">
             <EncabezadoPagina titulo="Operadores" subtitulo={`${operadores.length} ${operadores.length === 1 ? "operador" : "operadores"}`} />
 
             <ControlesListadoOperadores
                 busqueda={busqueda}
-                alCambiarBusqueda={setBusqueda}
+                alCambiarBusqueda={(valor) => { setBusqueda(valor); setPaginaActual(1); }}
                 orden={orden}
-                alCambiarOrden={setOrden}
+                alCambiarOrden={(valor) => { setOrden(valor); setPaginaActual(1); }}
                 naveSeleccionada={naveSeleccionada}
-                alCambiarNave={setNaveSeleccionada}
+                alCambiarNave={(valor) => { setNaveSeleccionada(valor); setPaginaActual(1); }}
                 navesDisponibles={navesDisponibles}
             />
 
@@ -87,11 +99,18 @@ export default function ListadoOperadores({ operadores, puedeGestionar = false }
                 />
             ) : (
                 <div className={styles.lista}>
-                    {operadoresFiltrados.map((operador) => (
+                    {operadoresPagina.map((operador) => (
                         <TarjetaOperador key={operador.id} operador={operador} puedeGestionar={puedeGestionar}/>
                     ))}
                 </div>
             )}
+            <Paginacion
+                pagina={paginaVisible}
+                totalPaginas={totalPaginas}
+                alCambiar={setPaginaActual}
+                etiqueta="Paginación de operadores"
+                resumen={`${indiceInicial + 1}–${indiceInicial + operadoresPagina.length} de ${operadoresFiltrados.length} operadores`}
+            />
         </section>
     );
 

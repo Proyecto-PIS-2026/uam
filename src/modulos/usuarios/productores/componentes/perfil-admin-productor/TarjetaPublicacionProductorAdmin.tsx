@@ -2,7 +2,7 @@ import { formatearEmpaquetado } from "@/modulos/publicaciones/empaquetado-public
 import { formatearPrecio } from "@/compartido/formatear-precio";
 import ImagenPublicacion from "../../../../publicaciones/componentes/ImagenPublicacion";
 import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
-import type { PublicacionPerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
+import type { PublicacionPerfilAdminProductor } from "../../consultas/consultas-perfil-productor-admin";
 import styles from "./TarjetaPublicacionProductorAdmin.module.css";
 
 type TarjetaPublicacionProductorAdminProps = {
@@ -14,7 +14,6 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsul
     const variedad = publicacion.variedad?.trim();
     const empaquetado = formatearEmpaquetado(publicacion.envase, publicacion.kilos);
     const nombreProducto = variedad && variedad !== "-" ? `${publicacion.especie} - ${variedad}` : publicacion.especie;
-    // const ubicacion = publicacion.ubicaciones.map((lugar) => lugar.nombre).join(" · ");
 
     return (
         <article className={styles.tarjeta} aria-label={`Ver detalles de ${nombreProducto}`}>
@@ -52,7 +51,7 @@ export default function TarjetaPublicacionProductorAdmin({ publicacion, alConsul
                     <div className={styles.informacionMobile}>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Calibre</span>
-                            <span className={styles.chip}>{publicacion.calibre?.trim() || "-"}</span>
+                            <span className={styles.chip}>{publicacion.codigoCalibre?.trim() || "-"}</span>
                         </div>
                         <div className={styles.dato}>
                             <span className={styles.etiqueta}>Cat.</span>

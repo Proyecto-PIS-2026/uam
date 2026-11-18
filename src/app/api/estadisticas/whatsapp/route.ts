@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { obtenerSesion } from "@/modulos/identidad-acceso/autenticacion/sesiones";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { registrarContacto } from "@/modulos/administracion/estadisticas/registrar-estadisticas";
+import { obtenerFechaEstadistica } from "@/modulos/administracion/estadisticas/fechas-estadisticas";
+import { Temporal } from "temporal-polyfill";
 
 export const runtime = "nodejs";
 
@@ -50,6 +52,7 @@ export async function POST(request: Request) {
             .first();
 
         if (usuarioVinculado?.username) {
+            const fechaStr = obtenerFechaEstadistica();
             if (publicacionId !== undefined) {
                 let pertenece = false;
 
@@ -75,11 +78,6 @@ export async function POST(request: Request) {
                     );
                 }
 
-                const ahora = new Date();
-                const anio = ahora.getFullYear();
-                const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-                const dia = String(ahora.getDate()).padStart(2, "0");
-                const fechaStr = `${anio}-${mes}-${dia}`;
                 const fechaInstant = Temporal.Instant.from(`${fechaStr}T00:00:00Z`);
 
                 const publicacion = await db.orm.public.Publicacion
@@ -118,7 +116,7 @@ export async function POST(request: Request) {
                 }
             }
 
-            await registrarContacto(usuarioVinculado.username);
+            await registrarContacto(usuarioVinculado.username, fechaStr);
         }
 
         return NextResponse.json({ ok: true });

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test-utils";
 import Pagina from "./page";
 
 const mocks = vi.hoisted(() => ({ requerir: vi.fn(), consultar: vi.fn(), formulario: vi.fn(() => null) }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ requerirAdministrador: mocks.requerir }));
-vi.mock("@/modulos/usuarios/administradores/consultar-mi-perfil", () => ({ consultarMiPerfilAdministrador: mocks.consultar }));
+vi.mock("@/modulos/usuarios/administradores/consultas/consultar-mi-perfil", () => ({ consultarMiPerfilAdministrador: mocks.consultar }));
 vi.mock("./FormularioEditarMiPerfil", () => ({ default: mocks.formulario }));
 
 describe("edición de mi perfil del administrador", () => {

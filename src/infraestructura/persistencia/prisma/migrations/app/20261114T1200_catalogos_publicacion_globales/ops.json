@@ -1,0 +1,36 @@
+[
+  {
+    "id": "data_migration.catalogos_publicacion_globales",
+    "label": "Hacer globales las categorías conservando sus publicaciones",
+    "operationClass": "data",
+    "invariantId": "uam:catalogos-publicacion-globales",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Evitar cambios de referencias durante la unificación",
+        "sql": "LOCK TABLE \"public\".\"categoria\", \"public\".\"publicacion\" IN SHARE ROW EXCLUSIVE MODE;"
+      },
+      {
+        "description": "Vincular las publicaciones a una única categoría por nombre",
+        "sql": "WITH equivalencias AS (\n    SELECT id, min(id) OVER (PARTITION BY lower(btrim(regexp_replace(\"nombreCategoria\", '[[:space:]]+', ' ', 'g')))) AS destino\n    FROM \"public\".\"categoria\"\n)\nUPDATE \"public\".\"publicacion\" AS publicacion\nSET \"categoriaId\" = equivalencias.destino\nFROM equivalencias\nWHERE publicacion.\"categoriaId\" = equivalencias.id AND equivalencias.id <> equivalencias.destino;"
+      },
+      {
+        "description": "Eliminar únicamente las categorías duplicadas ya desvinculadas",
+        "sql": "WITH equivalencias AS (\n    SELECT id, min(id) OVER (PARTITION BY lower(btrim(regexp_replace(\"nombreCategoria\", '[[:space:]]+', ' ', 'g')))) AS destino\n    FROM \"public\".\"categoria\"\n)\nDELETE FROM \"public\".\"categoria\" AS categoria\nUSING equivalencias\nWHERE categoria.id = equivalencias.id AND equivalencias.id <> equivalencias.destino;"
+      },
+      {
+        "description": "Permitir todas las categorías para cualquier especie",
+        "sql": "UPDATE \"public\".\"categoria\" SET \"especieId\" = NULL WHERE \"especieId\" IS NOT NULL;"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verificar categorías globales sin nombres repetidos ni publicaciones huérfanas",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"public\".\"categoria\" WHERE \"especieId\" IS NOT NULL)\nAND NOT EXISTS (\n    SELECT 1 FROM \"public\".\"categoria\"\n    GROUP BY lower(btrim(regexp_replace(\"nombreCategoria\", '[[:space:]]+', ' ', 'g'))) HAVING count(*) > 1\n)\nAND NOT EXISTS (\n    SELECT 1 FROM \"public\".\"publicacion\" AS publicacion\n    LEFT JOIN \"public\".\"categoria\" AS categoria ON categoria.id = publicacion.\"categoriaId\"\n    WHERE publicacion.\"categoriaId\" IS NOT NULL AND categoria.id IS NULL\n) AS result;"
+      }
+    ]
+  }
+]

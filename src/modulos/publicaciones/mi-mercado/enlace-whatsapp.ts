@@ -1,4 +1,4 @@
-import type { Publicacion } from "./tipos";
+import type { Publicacion } from "../tipos";
 import { crearEnlaceWhatsApp as crearEnlace } from "@/compartido/whatsapp";
 
 export function crearMensajeWhatsApp(publicacion: Publicacion, nombreOperador: string, origen: string): string {

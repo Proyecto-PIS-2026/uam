@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@/test-utils";
 import Page from "./page";
 import PaginaPerfil from "./[nombre]/page";
 import ListadoProductores from "@/modulos/usuarios/productores/componentes/listado-productores/ListadoProductores";
-import type { ProductorListado } from "@/modulos/usuarios/productores/acciones/consultas-productores";
-import type { PerfilProductorPorOperador } from "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador";
+import type { ProductorListado } from "@/modulos/usuarios/productores/consultas/consultas-productores";
+import type { PerfilProductorPorOperador } from "@/modulos/usuarios/productores/consultas/consultas-perfil-por-operador";
 
 const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(), listado: vi.fn(), perfil: vi.fn(),
@@ -14,14 +14,14 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect, notFound: mocks.notFound }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
 vi.mock(
-    "@/modulos/usuarios/productores/acciones/consultas-productores",
+    "@/modulos/usuarios/productores/consultas/consultas-productores",
     () => ({
         obtenerProductoresDisponibles: mocks.listado,
     })
 );
 
 vi.mock(
-    "@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador",
+    "@/modulos/usuarios/productores/consultas/consultas-perfil-por-operador",
     () => ({
         obtenerPerfilProductorPorOperador: mocks.perfil,
     })
@@ -49,7 +49,8 @@ const perfil: PerfilProductorPorOperador = {
             variedad: "Valencia",
             envase: "KG", kilos: "",
             categoria: "I",
-            calibre: "M",
+            calibre: "Mediano",
+            codigoCalibre: "M",
             pais: "Uruguay",
             ubicaciones: [
                 {

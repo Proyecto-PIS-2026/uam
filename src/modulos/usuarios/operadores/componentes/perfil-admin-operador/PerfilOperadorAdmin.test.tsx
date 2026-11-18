@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilOperadorAdmin from "./PerfilOperadorAdmin";
-import type { PerfilAdminOperador } from "../../consultas-perfil-admin";
-import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/operadores/tipos";
+import type { PerfilAdminOperador } from "../../consultas/consultas-perfil-admin";
+import type { OpcionesEdicionPublicacion } from "../../../../publicaciones/catalogos/tipos";
 
 const mocks = vi.hoisted(() => ({
     propsCatalogo: vi.fn(),
@@ -111,16 +111,16 @@ describe("PerfilOperadorAdmin", () => {
     it("ofrece agregar un producto para el operador", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
-        expect(screen.getByRole("button", { name: "Agregar Producto" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeInTheDocument();
     });
 
     // El drawer de alta solo aparece al tocar el botón, y para este operador
-    it("abre el alta de publicación del operador al tocar Agregar Producto", () => {
+    it("abre el alta de publicación del operador al tocar Nueva publicación", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
         expect(screen.queryByTestId("nueva-publicacion")).not.toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
 
         expect(screen.getByTestId("nueva-publicacion")).toBeInTheDocument();
         expect(mocks.propsNuevaPublicacion).toHaveBeenLastCalledWith(
@@ -132,7 +132,7 @@ describe("PerfilOperadorAdmin", () => {
     it("cierra el alta, muestra el aviso y refresca la página al crear una publicación", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
         fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
 
         expect(screen.queryByTestId("nueva-publicacion")).not.toBeInTheDocument();
@@ -144,7 +144,7 @@ describe("PerfilOperadorAdmin", () => {
     it("cierra el alta sin aviso ni refresco cuando se cancela", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
         fireEvent.click(screen.getByRole("button", { name: "Simular cierre" }));
 
         expect(screen.queryByTestId("nueva-publicacion")).not.toBeInTheDocument();
@@ -155,11 +155,11 @@ describe("PerfilOperadorAdmin", () => {
     it("conserva y apila los avisos al abrir otra alta y permite cerrarlos por separado", () => {
         render(<PerfilOperadorAdmin operador={operadorBase} opciones={opciones} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
         fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
         expect(screen.getByRole("status")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
 
         expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         expect(screen.getByTestId("nueva-publicacion")).toBeInTheDocument();

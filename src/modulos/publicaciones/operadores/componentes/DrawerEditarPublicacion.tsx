@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import { useState, type ReactNode } from "react";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import DrawerDeslizable from "@/compartido/componentes/DrawerDeslizable";
+import SelectorFecha from "@/compartido/componentes/SelectorFecha";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -13,14 +14,20 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { compararEspeciesPorPrioridad } from "@/compartido/prioridad-especies";
 import ImagenPublicacion from "../../componentes/ImagenPublicacion";
+import FotoPublicacionAmpliada from "../../componentes/FotoPublicacionAmpliada";
+import estilosFoto from "../../componentes/FotoPublicacionAmpliada.module.css";
 import { AvisoVigenciaFoto } from "../../componentes/AvisoVigenciaFoto";
-import type { CambiosPublicacionOperador, OpcionCategoria, OpcionEdicion, OpcionVariedad, PublicacionParaEditar } from "../tipos";
-import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO, MAXIMO_PRECIO_PUBLICACION, PRECIO_PUBLICACION_INVALIDO, esEntradaPrecioPublicacion, normalizarPrecioPublicacion, precioPublicacionValido } from "../../precio-publicacion";
-import styles from "./DrawerEditarPublicacion.module.css";
+import { AvisoVigenciaPublicacion } from "../../componentes/AvisoVigenciaPublicacion";
+import type { CambiosPublicacionOperador, PublicacionParaEditar } from "../tipos";
+import type { OpcionCategoria, OpcionEdicion, OpcionVariedad } from "../../catalogos/tipos";
+import { AYUDA_PRECIO_PUBLICACION, MAXIMO_DIGITOS_PRECIO } from "../../precio-publicacion";
+import { useEdicionPublicacion } from "../hooks/useEdicionPublicacion";
+import styles from "../../componentes/formulario-publicacion/formulario-publicacion.module.css";
 import CampoComentario from "../../componentes/CampoComentario";
 
 type DrawerEditarPublicacionProps = {
@@ -49,286 +56,29 @@ type DrawerEditarPublicacionProps = {
     paises: OpcionEdicion[];
 };
 
-const formatoCantidad = /^(0|[1-9]\d{0,9})$/;
 const propiedadesMenuSelect = { select: { MenuProps: { slotProps: { paper: { sx: { maxHeight: "min(20rem, 50dvh)", overflowY: "auto" } } } } } } as const;
 
-function precioParaEdicion(precio: string | null) {
-    if (precio === null) return "";
-    const valor = Number(precio);
-    return Number.isInteger(valor) ? String(valor) : precio;
-}
-
-function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta = "", mostrarAvisoFoto = false, esWeb, guardando, setGuardando, alErrorGuardar }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void; alErrorGuardar: (mensaje: string) => void }) {
-    const [editando, setEditando] = useState(modoInicial === "edicion" && puedeModificar);
-    const [baseEdicion, setBaseEdicion] = useState(recibida);
-    const [guardada, setGuardada] = useState<{ origen: PublicacionParaEditar; datos: PublicacionParaEditar } | null>(null);
-    const vigente = guardada?.origen === recibida ? guardada.datos : recibida;
-    const publicacion = editando ? baseEdicion : vigente;
-    const [precioEditado, setPrecio] = useState(() => precioParaEdicion(publicacion.precio));
-    const [cantidadUnidadesEditado, setCantidadUnidades] = useState(() => publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
-    const [comentarioEditado, setComentario] = useState(() => publicacion.comentario ?? "");
-    const [fotoEditado, setFoto] = useState(publicacion.foto);
-    const [fotoNueva, setFotoNueva] = useState<File | null>(null);
-    const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
-    const [especieIdEditado, setEspecieId] = useState(publicacion.especieId);
-    const [variedadIdEditado, setVariedadId] = useState(publicacion.variedadId ?? 0);
-    const [categoriaIdEditado, setCategoriaId] = useState(publicacion.categoriaId ?? 0);
-    const [calibreIdEditado, setCalibreId] = useState(publicacion.calibreId ?? 0);
-    const [envaseIdEditado, setEnvaseId] = useState(publicacion.envaseId ?? 0);
-    const [kilosIdEditado, setKilosId] = useState(publicacion.kilosId ?? 0);
-    const [paisIdEditado, setPaisId] = useState(publicacion.paisId ?? 0);
-    const [disponibleEditado, setDisponible] = useState(publicacion.disponible);
-    const precio = editando ? precioEditado : (precioParaEdicion(publicacion.precio));
-    const cantidadUnidades = editando ? cantidadUnidadesEditado : (publicacion.cantidadUnidades == null ? "" : String(publicacion.cantidadUnidades));
-    const comentario = editando ? comentarioEditado : (publicacion.comentario ?? "");
-    const foto = editando ? fotoEditado : (publicacion.foto);
-    const especieId = editando ? especieIdEditado : (publicacion.especieId);
-    const variedadId = editando ? variedadIdEditado : (publicacion.variedadId ?? 0);
-    const categoriaId = editando ? categoriaIdEditado : (publicacion.categoriaId ?? 0);
-    const calibreId = editando ? calibreIdEditado : (publicacion.calibreId ?? 0);
-    const envaseId = editando ? envaseIdEditado : (publicacion.envaseId ?? 0);
-    const kilosId = editando ? kilosIdEditado : (publicacion.kilosId ?? 0);
-    const paisId = editando ? paisIdEditado : (publicacion.paisId ?? 0);
-    const disponible = editando ? disponibleEditado : (publicacion.disponible);
-    const [error, setError] = useState("");
-    const inputFotoRef = useRef<HTMLInputElement>(null);
-    const inputGaleriaRef = useRef<HTMLInputElement>(null);
-    const urlVistaPreviaRef = useRef<string | null>(null);
-    const idBase = `editar-publicacion-${publicacion.publicacionOperadorId}`;
-    const ocupado = guardando || eliminando || actualizando;
-    const bloqueado = ocupado || !editando;
-    const fotoVisible = editando || guardada?.origen === recibida ? vistaPrevia ?? foto : publicacion.foto;
-    const especieSeleccionada = especies.find((opcion) => opcion.id === especieId);
-    const variedadSeleccionada = variedades.find((opcion) => opcion.id === variedadId);
-    const variedadesDisponibles = variedades.filter((opcion) => opcion.especieId === especieId);
-    const envasesDisponibles = envases;
-    const categoriasDisponibles = categorias.filter((opcion) => opcion.especieId === null || opcion.especieId === especieId);
-    const paisesOrdenados = [...paises].sort((primero, segundo) => compararPaisesPorPrioridad(primero.nombre, segundo.nombre));
-    const fechaFormateada = publicacion ? new Intl.DateTimeFormat("es-UY", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Montevideo" }).format(new Date(publicacion.fecha)) : "";
-    const [fechaVigenciaEditada, setFechaVigencia] = useState(publicacion.fechaVigencia ?? "");
-    useEffect(() => {
-        return () => {
-            if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        };
-    }, []);
-    useEffect(() => {
-        if (!editando && guardada?.origen !== recibida && urlVistaPreviaRef.current) {
-            URL.revokeObjectURL(urlVistaPreviaRef.current);
-            urlVistaPreviaRef.current = null;
-        }
-    }, [editando, guardada, recibida]);
-
-    function seleccionarFoto(evento: ChangeEvent<HTMLInputElement>) {
-        if (bloqueado) return;
-        const archivo = evento.target.files?.[0];
-        if (!archivo) return;
-
-        if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
-            setError("Seleccioná una imagen JPEG, PNG o WebP de hasta 10 MB.");
-            evento.target.value = "";
-            return;
-        }
-
-        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        const url = URL.createObjectURL(archivo);
-        urlVistaPreviaRef.current = url;
-        setVistaPrevia(url);
-        setFotoNueva(archivo);
-        setError("");
-        evento.target.value = "";
-    }
-
-    function borrarFoto() {
-        if (bloqueado) return;
-        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        urlVistaPreviaRef.current = null;
-        setVistaPrevia(null);
-        setFotoNueva(null);
-        setFoto(null);
-    }
-
-    function escribirPrecio(nuevoPrecio: string) {
-        if (bloqueado) return;
-        if (esEntradaPrecioPublicacion(nuevoPrecio)) setPrecio(nuevoPrecio);
-    }
-
-    function escribirCantidadUnidades(nuevaCantidad: string) {
-        if (bloqueado) return;
-        if (nuevaCantidad === "") {
-            setCantidadUnidades("");
-            return;
-        }
-        if (!/^\d+$/.test(nuevaCantidad)) return;
-        const valorLimpio = String(Number(nuevaCantidad));
-        if (Number(valorLimpio) > 2147483647) return;
-        setCantidadUnidades(valorLimpio);
-    }
-
-    function cambiarPrecio(cantidad: number) {
-        if (bloqueado) return;
-        const precioActual = Number(precio || "0");
-        if (!Number.isInteger(precioActual)) return;
-        const nuevoPrecio = Math.min(MAXIMO_PRECIO_PUBLICACION, precioActual + cantidad);
-        setPrecio(nuevoPrecio <= 0 ? "" : String(nuevoPrecio));
-    }
-
-    function cambiarEspecie(nuevaEspecieId: number) {
-        if (bloqueado) return;
-        const categoriaActual = categorias.find((opcion) => opcion.id === categoriaId);
-        const categoriaCompatible = categoriaActual?.especieId === null || categoriaActual?.especieId === nuevaEspecieId;
-        setEspecieId(nuevaEspecieId);
-        setVariedadId(0);
-        if (!categoriaCompatible) setCategoriaId(0);
-    }
-
-    function cambiarVariedad(nuevaVariedadId: number) {
-        if (bloqueado) return;
-        setVariedadId(nuevaVariedadId);
-    }
-
-    function prepararEdicion() {
-        if (urlVistaPreviaRef.current) URL.revokeObjectURL(urlVistaPreviaRef.current);
-        urlVistaPreviaRef.current = null;
-        if (inputFotoRef.current) inputFotoRef.current.value = "";
-        if (inputGaleriaRef.current) inputGaleriaRef.current.value = "";
-        setBaseEdicion(vigente);
-        setVistaPrevia(null);
-        setFotoNueva(null);
-        setFoto(vigente.foto);
-        setPrecio(precioParaEdicion(vigente.precio));
-        setCantidadUnidades(vigente.cantidadUnidades == null ? "" : String(vigente.cantidadUnidades));
-        setComentario(vigente.comentario ?? "");
-        setEspecieId(vigente.especieId);
-        setVariedadId(vigente.variedadId ?? 0);
-        setEnvaseId(vigente.envaseId ?? 0);
-        setKilosId(vigente.kilosId ?? 0);
-        setCategoriaId(vigente.categoriaId ?? 0);
-        setCalibreId(vigente.calibreId ?? 0);
-        setPaisId(vigente.paisId ?? 0);
-        setDisponible(vigente.disponible);
-        setError("");
-        setFechaVigencia(vigente.fechaVigencia ?? "");
-    }
-
-    function cancelarEdicion() {
-        if (modoInicial === "edicion") { alCerrar(); return; }
-        prepararEdicion();
-        setEditando(false);
-    }
-
-    function solicitarGuardado(evento: FormEvent<HTMLFormElement>) {
-        evento.preventDefault();
-        if (bloqueado) return;
-        setError("");
-        if (!precioPublicacionValido(precio)) {
-            setError(PRECIO_PUBLICACION_INVALIDO);
-            return;
-        }
-
-        const cantidadNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
-        if (cantidadNormalizada !== "" && !formatoCantidad.test(cantidadNormalizada)) {
-            setError("La cantidad de unidades debe ser un número entero de hasta 10 dígitos.");
-            return;
-        }
-
-        const variedadValida = variedadId === 0 || variedadesDisponibles.some((opcion) => opcion.id === variedadId);
-        const envaseValido = envaseId === 0 || envasesDisponibles.some((opcion) => opcion.id === envaseId);
-        const kilosValidos = kilosId === 0 || kilos.some((opcion) => opcion.id === kilosId);
-        const categoriaValida = categoriaId === 0 || categoriasDisponibles.some((opcion) => opcion.id === categoriaId);
-        const calibreValido = calibreId === 0 || calibres.some((opcion) => opcion.id === calibreId);
-        const paisValido = paisId === 0 || paises.some((opcion) => opcion.id === paisId);
-        if (!especieSeleccionada || !variedadValida || !envaseValido || !kilosValidos || !categoriaValida || !calibreValido || !paisValido) {
-            setError("Elegí una especie, variedad, empaquetado, kilos, categoría, calibre y país válidos.");
-            return;
-        }
-
-        void guardar();
-    }
-
-    async function guardar() {
-        if (bloqueado || !alGuardar) return;
-        const precioNuevo = normalizarPrecioPublicacion(precio);
-        const precioOriginal = precioParaEdicion(publicacion.precio).trim() || null;
-        const cantidadUnidadesNormalizada = typeof cantidadUnidades === "string" ? cantidadUnidades.trim() : String(cantidadUnidades ?? "").trim();
-        const cantidadFinal = (cantidadUnidadesNormalizada === "" ? null : Number(cantidadUnidadesNormalizada)) as number | null;
-        const cantidadOriginal = publicacion.cantidadUnidades ?? null;
-        const comentarioFinal = comentario.trim() || null;
-        const comentarioOriginal = publicacion.comentario ?? null;
-
-        const sinCambios =
-            precioNuevo === precioOriginal &&
-            cantidadFinal === cantidadOriginal &&
-            comentarioFinal === comentarioOriginal &&
-            foto === publicacion.foto &&
-            fotoNueva === null &&
-            especieId === publicacion.especieId &&
-            variedadId === (publicacion.variedadId ?? 0) &&
-            categoriaId === (publicacion.categoriaId ?? 0) &&
-            calibreId === (publicacion.calibreId ?? 0) &&
-            envaseId === (publicacion.envaseId ?? 0) &&
-            kilosId === (publicacion.kilosId ?? 0) &&
-            paisId === (publicacion.paisId ?? 0) &&
-            disponible === publicacion.disponible &&
-            fechaVigenciaEditada === (publicacion.fechaVigencia ?? "");
-
-        if(sinCambios) {
-            if(modoInicial === "consulta") {
-                setFotoNueva(null);
-                setEditando(false);
-            } else {
-                alCerrar();
-            }
-            return;
-        }
-
-        const cambios: CambiosPublicacionOperador = {
-            version: publicacion.version ?? 0,
-            precio: precioNuevo,
-            cantidadUnidades: cantidadFinal,
-            comentario: comentarioFinal,
-            foto: foto === publicacion.foto ? undefined : foto,
-            especieId,
-            variedadId: variedadId || null,
-            categoriaId: categoriaId || null,
-            calibreId: calibreId || null,
-            envaseId: envaseId || null,
-            kilosId: kilosId || null,
-            paisId: paisId || null,
-            disponible,
-            fechaVigencia: fechaVigenciaEditada || null,
-        };
-        setGuardando(true);
-        try {
-            await alGuardar(publicacion.publicacionOperadorId, cambios, fotoNueva);
-            setGuardada({ origen: recibida, datos: {
-                ...publicacion, ...cambios, version: cambios.version + 1, foto,
-                estadoFoto: fotoNueva || (foto === null && publicacion.foto !== null) ? null : publicacion.estadoFoto,
-                especie: especieSeleccionada?.nombre ?? publicacion.especie,
-                variedad: variedadSeleccionada?.nombre ?? "",
-                envase: envases.find((opcion) => opcion.id === envaseId)?.nombre ?? "",
-                kilos: kilos.find((opcion) => opcion.id === kilosId)?.nombre ?? "",
-                categoria: categorias.find((opcion) => opcion.id === categoriaId)?.nombre ?? "",
-                calibre: calibres.find((opcion) => opcion.id === calibreId)?.nombre ?? "",
-            } });
-            if (modoInicial === "consulta") {
-                setFotoNueva(null);
-                setEditando(false);
-            } else {
-                alCerrar();
-            }
-        } catch (error) {
-            alErrorGuardar(error instanceof Error ? error.message : "No se pudieron guardar los cambios. Intentá de nuevo.");
-        } finally {
-            setGuardando(false);
-        }
-    }
+function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, mostrarAvisoFoto = false, esWeb, guardando, setGuardando }: Omit<DrawerEditarPublicacionProps, "abierto"> & { publicacion: PublicacionParaEditar; esWeb: boolean; guardando: boolean; setGuardando: (valor: boolean) => void }) {
+    const {
+        publicacion, editando, setEditando, fotoAmpliada, setFotoAmpliada,
+        precio, cantidadUnidades, comentario, fotoVisible, nombreFoto,
+        variedadSeleccionada, especieId, variedadId, categoriaId, calibreId,
+        envaseId, kilosId, paisId, disponible, inputFotoRef,
+        inputGaleriaRef, idBase, ocupado, bloqueado, variedadesDisponibles,
+        envasesDisponibles, categoriasDisponibles, paisesOrdenados, fechaFormateada, fechaVigenciaEditada,
+        setFechaVigencia, seleccionarFoto, borrarFoto, escribirPrecio, escribirCantidadUnidades,
+        cambiarPrecio, cambiarEspecie, cambiarVariedad, prepararEdicion, cancelarEdicion,
+        solicitarGuardado, setCategoriaId, setCalibreId, setEnvaseId, setKilosId,
+        setPaisId, setDisponible, setComentario,
+    } = useEdicionPublicacion({ alCerrar, alGuardar, publicacion: recibida, especies, variedades, categorias, calibres, envases, kilos, paises, modoInicial, puedeModificar, eliminando, actualizando, guardando, setGuardando });
+    const reemplazoFoto = <div className={styles.sinFoto}><HideImageOutlinedIcon aria-hidden="true" /><span>Sin foto disponible</span></div>;
     const envaseActual = envaseId ? envases.find(p => p.id === envaseId)?.nombre || publicacion.envase : null;
     const campoPrecio = (
         <div key="precio" className={styles.campo}>
             <label className={styles.etiqueta} htmlFor={`${idBase}-precio`}>Precio en pesos</label>
             <div className={styles.controlesPrecio} data-editando={editando}>
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(-incrementoPrecio)} disabled={bloqueado} aria-label={`Disminuir precio en ${incrementoPrecio}`}><RemoveIcon aria-hidden="true" fontSize="inherit" /></button>}
-                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-precio`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder={editando ? "Ingresar precio aquí" : "Sin precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-precio`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: MAXIMO_DIGITOS_PRECIO } }} placeholder={editando ? "Ingresar precio aquí" : "Sin precio"} value={precio} onChange={(evento) => escribirPrecio(evento.target.value)} readOnly={!editando} disabled={bloqueado} />
                 {editando && <button className={styles.ajustarPrecio} type="button" onClick={() => cambiarPrecio(incrementoPrecio)} disabled={bloqueado} aria-label={`Aumentar precio en ${incrementoPrecio}`}><AddIcon aria-hidden="true" fontSize="inherit" /></button>}
             </div>
             {editando && <small className={styles.ayuda}>{AYUDA_PRECIO_PUBLICACION}</small>}
@@ -338,14 +88,15 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
         <div key="foto" className={styles.seccionFoto}>
             {mostrarAvisoFoto && <AvisoVigenciaFoto estado={publicacion.estadoFoto} />}
             <div className={styles.marcoFoto}>
-                <ImagenPublicacion className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${especieSeleccionada?.nombre ?? publicacion.especie} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized reemplazo={<div className={styles.sinFoto}><PhotoCameraOutlinedIcon aria-hidden="true" /><span>Sin foto</span></div>} />
+                <ImagenPublicacion className={styles.imagenFoto} src={fotoVisible} alt={`Foto de ${nombreFoto} ${variedadSeleccionada?.nombre ?? publicacion.variedad}`} fill sizes="(min-width: 768px) 480px, 100vw" unoptimized reemplazo={reemplazoFoto} />
+                {!editando && fotoVisible?.trim() && <button type="button" className={estilosFoto.ampliarFoto} aria-label={`Ampliar foto de ${nombreFoto}`} onClick={() => setFotoAmpliada(true)} />}
                 {editando && (
                     <>
                         {fotoVisible && <button className={`${styles.botonFoto} ${styles.borrarFoto}`} type="button" onClick={borrarFoto} disabled={bloqueado}><DeleteOutlinedIcon fontSize="small" /> Borrar foto</button>}
                         <button className={styles.botonFoto} type="button" onClick={() => inputFotoRef.current?.click()} disabled={bloqueado}>
                             <PhotoCameraOutlinedIcon fontSize="small" /> {esWeb ? "Editar foto" : "Cámara"}
                         </button>
-                        {!esWeb && <button className={`${styles.botonFoto} ${styles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={bloqueado}>Galería</button>}
+                        {!esWeb && <button className={`${styles.botonFoto} ${styles.botonGaleria}`} type="button" onClick={() => inputGaleriaRef.current?.click()} disabled={bloqueado}><PhotoLibraryOutlinedIcon fontSize="small" aria-hidden="true" /> Galería</button>}
                         <input ref={inputFotoRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" capture={esWeb ? undefined : "environment"} onChange={seleccionarFoto} disabled={bloqueado} aria-label="Seleccionar foto del producto" />
                         {!esWeb && <input ref={inputGaleriaRef} className={styles.inputFoto} type="file" accept="image/jpeg,image/png,image/webp" onChange={seleccionarFoto} disabled={bloqueado} aria-label="Seleccionar foto desde galería" />}
                     </>
@@ -428,7 +179,7 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                 Unidades{envaseActual ? ` (${envaseActual})` : ""}
             </label>
             <div className={styles.controlesPrecio} data-editando={false}>
-                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-cantidadUnidades`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={ocupado} />
+                <OutlinedInput color="secondary" className={styles.entrada} size="small" id={`${idBase}-cantidadUnidades`} type="text" slotProps={{ input: { inputMode: "numeric", maxLength: 10 } }} placeholder={editando ? "Ingresar cantidad aquí" : "-"} value={cantidadUnidades} onChange={(evento) => escribirCantidadUnidades(evento.target.value)} readOnly={!editando} disabled={bloqueado} />
             </div>
         </div>
     );
@@ -437,16 +188,16 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             <label className={styles.etiqueta} htmlFor={`${idBase}-fechaVigencia`}>
                 Fecha de vigencia
             </label>
-            <OutlinedInput
+            <SelectorFecha
                 className={styles.entrada}
-                size="small"
                 id={`${idBase}-fechaVigencia`}
-                type="date"
+                labelAccesible="Fecha de vigencia"
                 value={editando ? fechaVigenciaEditada : (publicacion.fechaVigencia ?? "")}
-                onChange={(evento) => setFechaVigencia(evento.target.value)}
+                onChange={setFechaVigencia}
                 readOnly={!editando}
-                disabled={ocupado}
+                disabled={bloqueado}
             />
+            <AvisoVigenciaPublicacion estado={publicacion.estadoVigencia} fechaVigencia={publicacion.fechaVigencia} />
         </div>
     );
     const campoComentario = (
@@ -460,7 +211,6 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             clases={{ campo: styles.campo, etiqueta: styles.etiqueta, entrada: styles.entrada, ayuda: styles.ayuda }}
         />
     );
-    const errorFormulario = (error || errorConsulta) ? <p key="error" className={styles.error} role="alert">{error || errorConsulta}</p> : null;
     return (
         <>
             <div className={styles.encabezado}>
@@ -477,9 +227,9 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
             </div>
             <form className={styles.formulario} onSubmit={solicitarGuardado} aria-busy={ocupado}>
                 <div className={styles.cuerpo}>
-                    {[campoPrecio, campoUnidades, campoFechaVigencia, campoComentario, seccionFoto, accionesPublicacion, datosProducto, errorFormulario]}
+                    {[campoPrecio, campoUnidades, campoFechaVigencia, campoComentario, seccionFoto, accionesPublicacion, datosProducto]}
                 </div>
-                <div className={styles.pie}>
+                <div className={styles.pie} data-acciones-modal>
                     {editando ? (
                         <>
                             <button className={styles.cancelar} type="button" onClick={cancelarEdicion} disabled={ocupado}>Cancelar</button>
@@ -493,12 +243,12 @@ function FormularioEdicion({ alCerrar, alGuardar, publicacion: recibida, especie
                     )}
                 </div>
             </form>
+            <FotoPublicacionAmpliada abierta={!editando && fotoAmpliada && Boolean(fotoVisible?.trim())} alCerrar={() => setFotoAmpliada(false)} src={fotoVisible} nombre={nombreFoto} reemplazo={reemplazoFoto} />
         </>
     );
 }
 
 export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion, alGuardar, especies, variedades, categorias, calibres, envases, kilos, paises, incrementoPrecio = 10, modoInicial = "edicion", puedeModificar = true, puedeEliminar = true, alEliminar, alCompartir, compartiendo = false, eliminando = false, actualizando = false, errorConsulta, mostrarAvisoFoto = false, children }: DrawerEditarPublicacionProps) {
-    const { notificar } = useNotificacionToast();
     const esWeb = useMediaQuery("(min-width: 768px)");
     const [guardando, setGuardando] = useState(false);
     function cerrar() {
@@ -506,9 +256,10 @@ export default function DrawerEditarPublicacion({ abierto, alCerrar, publicacion
     }
     return (
         <>
+        <AvisoErrorToast mensaje={abierto && publicacion ? errorConsulta : null} />
         <DrawerDeslizable anchor={esWeb ? "right" : "bottom"} open={abierto && publicacion !== null} onClose={cerrar} arrastreDeshabilitado={guardando || eliminando || actualizando} slotProps={{ paper: { className: styles.panel, role: "dialog", "aria-modal": true, "aria-labelledby": publicacion ? `editar-publicacion-${publicacion.publicacionOperadorId}-titulo` : undefined } }}>
             {publicacion && (
-                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} envases={envases} kilos={kilos} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} errorConsulta={errorConsulta} mostrarAvisoFoto={mostrarAvisoFoto} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} alErrorGuardar={(mensaje) => notificar(mensaje, "error")} />
+                <FormularioEdicion key={`${publicacion.publicacionOperadorId}-${abierto}-${modoInicial}`} publicacion={publicacion} alCerrar={alCerrar} alGuardar={alGuardar} especies={especies} variedades={variedades} categorias={categorias} calibres={calibres} envases={envases} kilos={kilos} paises={paises} incrementoPrecio={incrementoPrecio} modoInicial={modoInicial} puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={alEliminar} alCompartir={alCompartir} compartiendo={compartiendo} eliminando={eliminando} actualizando={actualizando} mostrarAvisoFoto={mostrarAvisoFoto} esWeb={esWeb} guardando={guardando} setGuardando={setGuardando} />
             )}
             {publicacion && children}
         </DrawerDeslizable>

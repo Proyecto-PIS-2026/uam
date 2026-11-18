@@ -1,17 +1,17 @@
 "use client";
 
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
-import HojasDecorativas from "@/compartido/HojasDecorativas";
+import HojasDecorativas from "@/compartido/componentes/HojasDecorativas";
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import { useRouter } from "next/navigation";
-import BotonVolver from "@/compartido/BotonVolver";
+import BotonVolver from "@/compartido/componentes/BotonVolver";
 
-import { modificarMiPerfilProductor } from "../../perfil-propio/modificarMiPerfilProductor";
-import { modificarProductor } from "./modificarProductor";
-import type { ProductorParaModificar } from "./obtenerProductorParaModificar";
+import { modificarMiPerfilProductor } from "../../acciones/modificar-mi-perfil-productor";
+import { modificarProductor } from "../../acciones/modificar-productor";
+import type { ProductorParaModificar } from "../../consultas/obtener-productor-para-modificar";
 import SelectorFotoPerfil, { argumentosFotoPerfil, type CambioFotoPerfil } from "@/modulos/usuarios/componentes/SelectorFotoPerfil";
 
 import styles from "./FormularioModificarProductor.module.css";
@@ -43,7 +43,6 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
     const [confirmacionContraseña, setConfirmacionContraseña] =
         useState("");
 
-    const [errores, setErrores] = useState<string[]>([]);
     const { notificar } = useNotificacionToast();
     const [guardando, setGuardando] = useState(false);
     const guardadoEnCurso = useRef(false);
@@ -61,7 +60,6 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
         if (guardadoEnCurso.current) return;
         guardadoEnCurso.current = true;
 
-        setErrores([]);
         setGuardando(true);
 
         try {
@@ -75,11 +73,11 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                 : await modificarProductor({ ...datos, productorId: productor.id, contraseña, confirmacionContraseña }, ...argumentosFotoPerfil(foto));
 
             if (!resultado.esValido) {
-                setErrores(resultado.errores);
+                notificar(resultado.errores.join("\n"), "error");
                 return;
             }
 
-            if (perfilPropio) notificar(resultado.mensaje, "success");
+            notificar(resultado.mensaje, "success");
             router.push(perfilPropio ? "/mi-perfil/productor" : `/gestion-productores/${resultado.id}`);
             if (perfilPropio) router.refresh();
         } catch (error) {
@@ -153,6 +151,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 className={styles.control}
                                 id={`${idFormulario}-codigo`}
                                 label="Código de país"
+                                required
                                 value={codigoPais}
                                 onChange={(evento) => setCodigoPais(evento.target.value)}
                                 disabled={guardando}
@@ -200,6 +199,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 size="small"
                                 className={styles.control}
                                 label="Nueva contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={contraseña}
                                 onChange={(evento) => setContraseña(evento.target.value)}
@@ -212,6 +212,7 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                                 size="small"
                                 className={styles.control}
                                 label="Confirmar contraseña"
+                                required={Boolean(contraseña || confirmacionContraseña)}
                                 type="password"
                                 value={confirmacionContraseña}
                                 onChange={(evento) => setConfirmacionContraseña(evento.target.value)}
@@ -220,17 +221,6 @@ export default function FormularioModificarProductor({ productor, perfilPropio =
                             />
                         </div>
                     </section>}
-
-                    {errores.length > 0 && (
-                        <div
-                            className={styles.error}
-                            role="alert"
-                        >
-                            {errores.map((error) => (
-                                <p key={error}>{error}</p>
-                            ))}
-                        </div>
-                    )}
 
                     <div className={styles.acciones}>
                         <button

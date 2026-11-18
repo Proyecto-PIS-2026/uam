@@ -3,7 +3,6 @@ import type { DatosSesion, RolUsuario } from "@/modulos/identidad-acceso/autenti
 import type { NotificacionesUsuario } from "./tipos";
 import { urlInternaNotificacion } from "./validacion-url";
 import { textoVisibleNotificacion } from "./texto-visible";
-import { procesarVencimientosUsuario } from "@/modulos/publicaciones/procesar-vencimientos";
 
 export type DestinatariosNotificacion = {
     texto: string;
@@ -85,7 +84,6 @@ export async function enviarNotificacion(entrada: DestinatariosNotificacion, cli
 
 export async function consultarNotificaciones(sesion: DatosSesion | null): Promise<NotificacionesUsuario> {
     const usuarioId = exigirUsuario(sesion);
-    await procesarVencimientosUsuario(usuarioId);
     const filas = await db.orm.public.Notificacion.where({ usuarioId })
         .orderBy([(notificacion) => notificacion.fecha.desc(), (notificacion) => notificacion.id.desc()]).all();
     const notificaciones = filas.map((fila) => ({
@@ -100,7 +98,6 @@ export async function consultarNotificaciones(sesion: DatosSesion | null): Promi
 
 export async function contarNotificacionesNoLeidas(sesion: DatosSesion | null): Promise<number> {
     const usuarioId = exigirUsuario(sesion);
-    await procesarVencimientosUsuario(usuarioId);
     return contarNoLeidas(usuarioId, db);
 }
 

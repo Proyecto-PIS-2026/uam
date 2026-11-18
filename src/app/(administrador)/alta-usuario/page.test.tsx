@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "./page";
-import FormularioAltaUsuario from "@/modulos/usuarios/administradores/componentes/alta-usuario/FormularioAltaUsuario";
+import FormularioAltaUsuario from "@/modulos/usuarios/alta-usuario/FormularioAltaUsuario";
 
 const mockObtenerNaves = vi.hoisted(() => vi.fn());
 const mockRequerirAdministrador = vi.hoisted(() => vi.fn());
@@ -10,14 +10,14 @@ vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({
 }));
 
 vi.mock(
-	"@/modulos/usuarios/operadores/consultas-naves",
+	"@/modulos/usuarios/operadores/consultas/consultas-naves",
 	() => ({
 		obtenerNaves: mockObtenerNaves,
 	}),
 );
 
 vi.mock(
-	"@/modulos/usuarios/administradores/componentes/alta-usuario/FormularioAltaUsuario",
+	"@/modulos/usuarios/alta-usuario/FormularioAltaUsuario",
 	() => ({
 		default: vi.fn(() => null),
 	}),

@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReadableStream } from "node:stream/web";
 import { GET } from "./route";
+import { ErrorAutorizacion } from "@/modulos/identidad-acceso/autorizacion/controles";
 
-const mocks = vi.hoisted(() => ({ suscribir: vi.fn(), desuscribir: vi.fn(), obtenerVersion: vi.fn(), sesion: vi.fn(), operador: vi.fn(), autorizado: vi.fn() }));
-vi.mock("@/infraestructura/tiempo-real/escuchar-publicaciones", () => ({ escuchaPublicaciones: { suscribir: mocks.suscribir, obtenerVersion: mocks.obtenerVersion } }));
+const mocks = vi.hoisted(() => ({ suscribir: vi.fn(), desuscribir: vi.fn(), obtenerVersion: vi.fn(), obtenerVersionProductores: vi.fn(), sesion: vi.fn(), consultaProductores: vi.fn(), operador: vi.fn(), autorizado: vi.fn() }));
+vi.mock("@/infraestructura/tiempo-real/escuchar-publicaciones", () => ({ escuchaPublicaciones: { suscribir: mocks.suscribir, obtenerVersion: mocks.obtenerVersion, obtenerVersionProductores: mocks.obtenerVersionProductores } }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.sesion }));
-vi.mock("@/modulos/usuarios/operadores/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.operador }));
+vi.mock("@/modulos/usuarios/operadores/consultas/operador-actual", () => ({ obtenerOperadorAutorizado: mocks.operador }));
 vi.mock("@/modulos/identidad-acceso/autorizacion/permisos", () => ({ autorizado: mocks.autorizado }));
-vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ ErrorAutorizacion: class extends Error { constructor(public status: number, mensaje: string) { super(mensaje) } } }));
+vi.mock("@/modulos/identidad-acceso/autorizacion/controles", () => ({ exigirConsultaProductores: mocks.consultaProductores, ErrorAutorizacion: class extends Error { constructor(public status: number, mensaje: string) { super(mensaje) } } }));
 
 describe("eventos de publicaciones", () => {
     beforeEach(() => {
@@ -20,7 +21,9 @@ describe("eventos de publicaciones", () => {
             return mocks.desuscribir;
         });
         mocks.obtenerVersion.mockImplementation((operadorId?: number) => operadorId === undefined ? "epoca-global" : `epoca-operador-${operadorId}`);
+        mocks.obtenerVersionProductores.mockReturnValue("epoca-productores");
         mocks.sesion.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: Math.floor(Date.now() / 1000) + 1000 });
+        mocks.consultaProductores.mockImplementation(() => mocks.sesion());
         mocks.operador.mockResolvedValue({ id: 7, usuarioId: 10 });
         mocks.autorizado.mockReturnValue(true);
     });
@@ -36,6 +39,73 @@ describe("eventos de publicaciones", () => {
         expect(mocks.obtenerVersion).toHaveBeenLastCalledWith(undefined);
         await expect(lector.cancel()).resolves.toBeUndefined();
         expect(mocks.desuscribir).toHaveBeenCalledOnce();
+    });
+
+    it("autoriza el mercado de productores y publica sólo sus invalidaciones sin identificadores", async () => {
+        const respuesta = await GET(new Request("http://localhost/api/publicaciones/eventos?tipo=PRODUCTOR"));
+        expect(respuesta.status).toBe(200);
+        expect(respuesta.headers.get("Cache-Control")).toContain("private");
+        expect(mocks.consultaProductores).toHaveBeenCalledOnce();
+        const lector = respuesta.body!.getReader();
+        expect(new TextDecoder().decode((await lector.read()).value)).toBe("retry: 3000\nid: epoca-productores:2026-10-23\nevent: conectado\ndata: {}\n\n");
+        const emitir = mocks.suscribir.mock.calls[0][0];
+        emitir({ operadorId: 8, publicacionId: 42 });
+        expect(mocks.obtenerVersionProductores).toHaveBeenCalledOnce();
+        mocks.obtenerVersionProductores.mockReturnValue("nuevo-productor");
+        emitir({ productorId: 7, publicacionId: 43 });
+        expect(new TextDecoder().decode((await lector.read()).value)).toBe("id: nuevo-productor:2026-10-23\nevent: cambio\ndata: {}\n\n");
+        expect(mocks.obtenerVersion).not.toHaveBeenCalled();
+        await lector.cancel();
+        expect(mocks.desuscribir).toHaveBeenCalledOnce();
+    });
+
+    it.each(["", "?operadorPublicoId=7", "?operadorId=7"])("no transmite cambios de productores al canal de operadores %s", async (filtro) => {
+        const respuesta = await GET(new Request(`http://localhost/api/publicaciones/eventos${filtro}`));
+        const lector = respuesta.body!.getReader();
+        await lector.read();
+        mocks.suscribir.mock.calls[0][0]({ productorId: 7, publicacionId: 43 });
+        expect(mocks.obtenerVersion).toHaveBeenCalledOnce();
+        expect(mocks.obtenerVersionProductores).not.toHaveBeenCalled();
+        const siguiente = vi.fn();
+        const pendiente = lector.read().then(siguiente);
+        await Promise.resolve();
+        expect(siguiente).not.toHaveBeenCalled();
+        await lector.cancel();
+        await pendiente;
+        expect(siguiente).toHaveBeenCalledWith(expect.objectContaining({ done: true }));
+    });
+
+    it.each([401, 403] as const)("rechaza el canal de productores cuando el control de acceso responde %s", async (status) => {
+        mocks.consultaProductores.mockRejectedValueOnce(new ErrorAutorizacion(status, "Acceso rechazado"));
+        const respuesta = await GET(new Request("http://localhost/api/publicaciones/eventos?tipo=PRODUCTOR"));
+        expect(respuesta.status).toBe(status);
+        expect(mocks.suscribir).not.toHaveBeenCalled();
+    });
+
+    it("cierra el canal de productores al expirar la sesión y no permite reabrirlo vencido", async () => {
+        mocks.consultaProductores.mockResolvedValue({ usuarioId: 10, rol: "OPERADOR", expiraEn: (Date.now() + 2000) / 1000 });
+        const respuesta = await GET(new Request("http://localhost/api/publicaciones/eventos?tipo=PRODUCTOR"));
+        const lector = respuesta.body!.getReader();
+        await lector.read();
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(await lector.read()).toMatchObject({ done: true });
+        expect(mocks.desuscribir).toHaveBeenCalledOnce();
+        expect(vi.getTimerCount()).toBe(0);
+        const vencida = await GET(new Request("http://localhost/api/publicaciones/eventos?tipo=PRODUCTOR"));
+        expect(vencida.status).toBe(401);
+        expect(mocks.suscribir).toHaveBeenCalledOnce();
+    });
+
+    it("no abre la conexión de productores si falla la verificación de acceso", async () => {
+        mocks.consultaProductores.mockRejectedValueOnce(new Error("Base no disponible"));
+        expect((await GET(new Request("http://localhost/api/publicaciones/eventos?tipo=PRODUCTOR"))).status).toBe(503);
+        expect(mocks.suscribir).not.toHaveBeenCalled();
+    });
+
+    it.each(["tipo=", "tipo=OPERADOR", "tipo=productor", "tipo=PRODUCTOR&tipo=PRODUCTOR", "tipo=PRODUCTOR&operadorId=7", "tipo=PRODUCTOR&operadorPublicoId=7"])("rechaza un canal de productores inválido o mezclado %s", async (filtro) => {
+        expect((await GET(new Request(`http://localhost/api/publicaciones/eventos?${filtro}`))).status).toBe(400);
+        expect(mocks.suscribir).not.toHaveBeenCalled();
+        expect(mocks.consultaProductores).not.toHaveBeenCalled();
     });
 
     it("filtra eventos del canal privado por el operador autenticado", async () => {

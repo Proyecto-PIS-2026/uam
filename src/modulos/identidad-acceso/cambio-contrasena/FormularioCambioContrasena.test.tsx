@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@/test-utils";
+import { fireEvent, render, screen, waitFor, within } from "@/test-utils";
 import Formulario from "./FormularioCambioContrasena";
-import { cambiarMiContrasena } from "./cambiarMiContrasena";
+import { cambiarMiContrasena } from "./cambiar-mi-contrasena";
 const m = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: m.push }) }));
-vi.mock("./cambiarMiContrasena", () => ({ cambiarMiContrasena: vi.fn() }));
+vi.mock("./cambiar-mi-contrasena", () => ({ cambiarMiContrasena: vi.fn() }));
 const accion = vi.mocked(cambiarMiContrasena);
 function completar() {
     fireEvent.change(screen.getByLabelText("Contraseña actual", { exact: true }), { target: { value: "Anterior123" } });
@@ -29,25 +29,38 @@ describe("formulario independiente en mi perfil", () => {
             expect(campo).toHaveAttribute("autocomplete", "new-password");
         }
     });
-    it("valida antes de enviar", () => {
+    it("marca los campos obligatorios antes de enviar", async () => {
         render(<Formulario volver="/mi-perfil/productor" />);
         guardar();
-        expect(screen.getByRole("alert")).toHaveTextContent("Ingresá tu contraseña actual.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("Faltan completar campos obligatorios.");
+        expect(screen.getByLabelText("Contraseña actual", { exact: true })).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Nueva contraseña/)).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByLabelText(/^Confirmar nueva contraseña/)).toHaveAttribute("aria-invalid", "true");
         expect(accion).not.toHaveBeenCalled();
     });
-    it("informa confirmación distinta sin guardar", () => {
+    it("acumula hasta tres avisos al repetir una confirmación distinta sin guardar", () => {
         render(<Formulario volver="/mi-perfil/productor" />);
         completar();
         fireEvent.change(screen.getByLabelText(/^Confirmar nueva contraseña/), { target: { value: "Distinta123" } });
-        guardar();
-        expect(screen.getByRole("alert")).toHaveTextContent("no coincide");
+        let anteriores: HTMLElement[] = [];
+        for (let intento = 1; intento <= 4; intento += 1) {
+            guardar();
+            const avisos = screen.getAllByRole("alert");
+            expect(avisos).toHaveLength(Math.min(intento, 3));
+            anteriores.slice(-2).forEach((aviso, indice) => expect(avisos[indice]).toBe(aviso));
+            expect(anteriores).not.toContain(avisos.at(-1));
+            avisos.forEach((aviso) => expect(aviso).toHaveTextContent("no coincide"));
+            anteriores = avisos;
+        }
         expect(accion).not.toHaveBeenCalled();
     });
-    it("envía únicamente contraseñas y borra los campos al confirmar el éxito", async () => {
-        render(<Formulario volver="/mi-perfil/productor" />);
+    it.each(["/mi-perfil", "/mi-perfil/productor"])("confirma mediante toast y borra los campos al guardar desde %s", async (volver) => {
+        render(<Formulario volver={volver} />);
         completar(); guardar();
         expect(accion).toHaveBeenCalledExactlyOnceWith({ actual: "Anterior123", nueva: "Nueva1234", confirmacion: "Nueva1234" });
         expect(await screen.findByRole("status")).toHaveTextContent("se actualizó correctamente");
+        expect(within(screen.getByRole("region", { name: "Notificaciones" })).getByRole("status")).toHaveTextContent("se actualizó correctamente");
+        expect(within(screen.getByRole("form", { name: "Cambio de contraseña" })).queryByRole("status")).not.toBeInTheDocument();
         expect(screen.getByLabelText("Contraseña actual", { exact: true })).toHaveValue("");
         expect(screen.getByLabelText(/^Nueva contraseña/)).toHaveValue("");
         expect(screen.getByLabelText(/^Confirmar nueva contraseña/)).toHaveValue("");

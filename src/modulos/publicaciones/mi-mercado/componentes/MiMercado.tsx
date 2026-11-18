@@ -8,21 +8,24 @@ import SearchOffOutlinedIcon from "@mui/icons-material/SearchOffOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import EstadoVacio from "@/compartido/componentes/EstadoVacio";
 import { useNotificacionToast } from "@/compartido/componentes/NotificacionToast";
+import AvisoErrorToast from "@/compartido/componentes/AvisoErrorToast";
 import { useRouter } from "next/navigation";
-import EncabezadoPagina from "../../../../compartido/EncabezadoPagina";
+import EncabezadoPagina from "../../../../compartido/componentes/EncabezadoPagina";
 import { ConfirmModal } from "../../../../compartido/componentes/ConfirmModal";
 import DrawerEditarPublicacion from "../../operadores/componentes/DrawerEditarPublicacion";
-import type { Publicacion } from "../tipos";
-import type { PublicacionParaEditar, OpcionesEdicionPublicacion, CambiosPublicacionOperador } from "../../operadores/tipos";
+import type { Publicacion } from "../../tipos";
+import type { PublicacionParaEditar, CambiosPublicacionOperador } from "../../operadores/tipos";
+import type { OpcionesEdicionPublicacion } from "../../catalogos/tipos";
 import NuevaPublicacion from "../../operadores/componentes/NuevaPublicacion";
-import FiltrosPublicaciones, { compararPublicacionesOperador } from "../../filtros/FiltrosPublicaciones";
-import type { PublicacionListado } from "../../../consulta-mercado/acciones/PublicacionesOperador";
+import FiltrosPublicaciones from "../../filtros/FiltrosPublicaciones";
+import { compararPublicacionesOperador } from "../../filtros/ordenar-publicaciones";
+import type { PublicacionListado } from "../../../consulta-mercado/consultas/consultas-publicaciones-operador";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { cargarPublicacionesMiMercado } from "../acciones";
-import { useActualizacionesPublicaciones } from "../../tiempo-real/use-actualizaciones-publicaciones";
+import { useActualizacionesPublicaciones } from "../../tiempo-real/useActualizacionesPublicaciones";
 import styles from "./MiMercado.module.css";
-import { useCompartirPublicacion } from "../use-compartir-publicacion";
-import { useSeleccionPublicacion } from "../use-seleccion-publicacion";
+import { useCompartirPublicacion } from "../hooks/useCompartirPublicacion";
+import { useSeleccionPublicacion } from "../hooks/useSeleccionPublicacion";
 
 const obtenerNombreOperador = (publicacion: PublicacionListado) => publicacion.operador.nombreFantasia;
 
@@ -99,6 +102,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
         precio: publicacionSeleccionada.precio,
         foto: publicacionSeleccionada.foto,
         estadoFoto: publicacionSeleccionada.estadoFoto,
+        estadoVigencia: publicacionSeleccionada.estadoVigencia,
         fecha: publicacionSeleccionada.fecha,
         fechaVigencia: publicacionSeleccionada.fechaVigencia,
         version: publicacionSeleccionada.version,
@@ -187,7 +191,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
                 }
             }
             if (respuesta.status === 409) await sincronizarPublicaciones();
-            throw new Error(resultado.errores?.[0] ?? "No se pudieron guardar los cambios.");
+            throw new Error(resultado.errores?.join("\n") || "No se pudieron guardar los cambios.");
         }
 
         const datos = await sincronizarPublicaciones();
@@ -213,7 +217,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
                         return;
                     }
                 }
-                throw new Error(resultado.errores?.[0] ?? "No se pudo eliminar la publicación.");
+                throw new Error(resultado.errores?.join("\n") || "No se pudo eliminar la publicación.");
             }
 
             setIdsEliminados((actuales) => [...actuales, publicacion.id]);
@@ -249,9 +253,8 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
                     subtitulo={`${publicacionesVigentes.length} ${publicacionesVigentes.length === 1 ? "publicación" : "publicaciones"}`}
                 />
 
-                {error && <p className={styles.mensajeError} role="alert">{error}</p>}
-                {avisoPublicacion && <p className={styles.mensajeError} role="status">{avisoPublicacion}</p>}
-
+                <AvisoErrorToast mensaje={error} cerrarAlCorregir={false} />
+                <AvisoErrorToast mensaje={avisoPublicacion} tipo="warning" />
                 {publicacionesVigentes.length > 0 && (
                     <div className={styles.filtros}>
                         <FiltrosPublicaciones obtenerNombreFantasia={obtenerNombreOperador} publicaciones={publicacionesParaFiltros} especieFiltro="" ordenInicial="prioridad" alFiltrar={setPublicacionesFiltradas} />
@@ -304,7 +307,7 @@ export default function MiMercado({ operadorId, nombreOperador = "", enLicencia 
             <DrawerEditarPublicacion mostrarAvisoFoto incrementoPrecio={incrementoPrecio} abierto={publicacionSeleccionada !== null} alCerrar={() => setSeleccionId(null)} alGuardar={guardarCambios} publicacion={publicacionParaEditar} modoInicial="consulta" puedeModificar={puedeModificar} puedeEliminar={puedeEliminar} alEliminar={() => { if (publicacionSeleccionada) solicitarBaja(publicacionSeleccionada); }}
             alCompartir={() => { void compartir(); }}
             compartiendo={compartiendo || preparandoFoto}
-            eliminando={eliminando} actualizando={sincronizando} errorConsulta={error} {...opcionesEdicion}>
+            eliminando={eliminando} actualizando={sincronizando} {...opcionesEdicion}>
 
                 <ConfirmModal abierto={publicacionPendiente !== null} titulo="Eliminar publicación" descripcion={publicacionPendiente ? `¿Querés eliminar la publicación de ${publicacionPendiente.especie.nombreEspecie}? Esta acción no se puede deshacer.` : ""} textoConfirmar="Sí, eliminar" procesando={eliminando} alCancelar={() => { if (!eliminando) setPublicacionPendiente(null); }} alConfirmar={() => void eliminarPublicacion()} />
 

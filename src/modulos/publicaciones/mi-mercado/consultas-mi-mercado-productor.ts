@@ -1,20 +1,9 @@
 import { db } from "../../../infraestructura/persistencia/prisma/db";
-import { obtenerProductorActual } from "../../usuarios/productores/acciones/productor-actual";
-import type { Publicacion } from "./tipos";
-import { convertirInstantAFechaVigencia, esPublicacionVencida } from "@/modulos/publicaciones/vigencia-publicacion";
-import { agregarEstadoFotosPropias } from "../estado-fotos-propias";
-
-export type PublicacionMiMercadoProductor = Omit<Publicacion, "publicacionOperadorId" | "version"> & {
-    publicacionProductorId: number;
-    pais: string;
-    fechaVigencia: string | null;
-    ubicaciones: {
-        id: number;
-        nombreUbicacion: string;
-        urlMaps: string;
-        departamento?: string | null;
-    }[];
-};
+import { obtenerProductorActual } from "../../usuarios/productores/consultas/productor-actual";
+import type { PublicacionMiMercadoProductor } from "../productores/tipos";
+import { convertirInstantAFechaVigencia, esPublicacionVencida } from "@/modulos/publicaciones/vigencia/vigencia-publicacion";
+import { agregarEstadoFotosPropias } from "../imagenes/vigencia/estado-fotos-propias";
+import { agregarEstadoVigenciaPropias } from "../vigencia/estado-vigencia-propias";
 
 async function consultarPublicacionesProductor(productorId: number) {
     return db.orm.public.PublicacionProductor
@@ -72,7 +61,11 @@ export function mapearPublicacionMiMercadoProductor(relacion: RelacionPublicacio
 export async function obtenerPublicacionesMiMercadoProductor() {
     const productor = await obtenerProductorActual();
     const relaciones = await consultarPublicacionesProductor(productor.id);
-    const publicaciones = await agregarEstadoFotosPropias(relaciones.map(mapearPublicacionMiMercadoProductor));
+    const vigencias = await agregarEstadoVigenciaPropias(relaciones.map((relacion) => relacion.publicacion), "PRODUCTOR");
+    const publicaciones = await agregarEstadoFotosPropias(relaciones.map((relacion, indice) => ({
+        ...mapearPublicacionMiMercadoProductor(relacion),
+        estadoVigencia: vigencias[indice].estadoVigencia,
+    })), "PRODUCTOR");
 
     return { productor, publicaciones };
 }

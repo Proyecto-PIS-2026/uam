@@ -2,17 +2,108 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import ListadoProductores from "./ListadoProductores";
 
 const listaProductores = [
-    {id: 1, nombreFantasia: "Juan", fotoPerfil: null, cantidadProductos: 6, departamentos: ["Canelones", "Salto"]},
-    {id: 2, nombreFantasia: "Jose", fotoPerfil: null, cantidadProductos: 3, departamentos: ["Salto"]},
-    {id: 3, nombreFantasia: "Alberto", fotoPerfil: null, cantidadProductos: 4, departamentos: ["Montevideo"]},
-    {id: 5, nombreFantasia: "Juan Mart", fotoPerfil: null, cantidadProductos: 4, departamentos: []},
+    {id: 1, nombreFantasia: "Juan", fotoPerfil: null, cantidadProductos: 6, ubicaciones: [], departamentos: ["Canelones", "Salto"]},
+    {id: 2, nombreFantasia: "Jose", fotoPerfil: null, cantidadProductos: 3, ubicaciones: [], departamentos: ["Salto"]},
+    {id: 3, nombreFantasia: "Alberto", fotoPerfil: null, cantidadProductos: 4, ubicaciones: [], departamentos: ["Montevideo"]},
+    {id: 5, nombreFantasia: "Juan Mart", fotoPerfil: null, cantidadProductos: 4, ubicaciones: [], departamentos: []},
 ];
 
 const listaProductoresConTilde = [
     {...listaProductores[0], nombreFantasia: "María",},];
 
+const productoresPaginados = Array.from({ length: 41 }, (_, indice) => ({
+    id: indice + 1,
+    nombreFantasia: `Productor ${String(indice + 1).padStart(2, "0")}`,
+    fotoPerfil: null,
+    cantidadProductos: 1,
+    ubicaciones: [],
+    departamentos: [indice < 30 ? "Canelones" : "Salto"],
+}));
+
 
 describe("ListadoProductores", () => {
+
+    it("pagina los productores sin omitir ni repetir tarjetas entre páginas", () => {
+        render(<ListadoProductores productores={productoresPaginados} />);
+        expect(screen.getAllByText(/^Productor \d{2}$/)).toHaveLength(20);
+        expect(screen.getByText("Productor 01")).toBeInTheDocument();
+        expect(screen.queryByText("Productor 21")).not.toBeInTheDocument();
+        expect(screen.getByText("1–20 de 41 productores")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        expect(screen.getAllByText(/^Productor \d{2}$/)).toHaveLength(20);
+        expect(screen.getByText("Productor 21")).toBeInTheDocument();
+        expect(screen.getByText("Productor 40")).toBeInTheDocument();
+        expect(screen.queryByText("Productor 20")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        expect(screen.getAllByText(/^Productor \d{2}$/)).toHaveLength(1);
+        expect(screen.getByText("Productor 41")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Siguiente" })).toBeDisabled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Anterior" }));
+        expect(screen.getByText("Página 2 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Productor 21")).toBeInTheDocument();
+    });
+
+    it("busca en todas las páginas y reinicia la paginación al cambiar la búsqueda", () => {
+        render(<ListadoProductores productores={productoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        const buscador = screen.getByRole("searchbox", { name: "Buscar productores" });
+        fireEvent.change(buscador, { target: { value: "Productor 41" } });
+        expect(screen.getByText("Productor 41")).toBeInTheDocument();
+        expect(screen.queryByRole("navigation", { name: "Paginación de productores" })).not.toBeInTheDocument();
+
+        fireEvent.change(buscador, { target: { value: "" } });
+        expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Productor 01")).toBeInTheDocument();
+    });
+
+    it("filtra por departamento antes de paginar y vuelve a la primera página", () => {
+        render(<ListadoProductores productores={productoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        fireEvent.mouseDown(screen.getByRole("combobox", { name: "Departamento" }));
+        fireEvent.click(screen.getByRole("option", { name: "Canelones" }));
+        expect(screen.getByText("Página 1 de 2")).toBeInTheDocument();
+        expect(screen.getByText("1–20 de 30 productores")).toBeInTheDocument();
+        expect(screen.getByText("Productor 01")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        expect(screen.getAllByText(/^Productor \d{2}$/)).toHaveLength(10);
+        expect(screen.getByText("Productor 30")).toBeInTheDocument();
+        expect(screen.queryByText("Productor 31")).not.toBeInTheDocument();
+    });
+
+    it("ordena el listado completo y reinicia la página al cambiar el orden", () => {
+        render(<ListadoProductores productores={productoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+        fireEvent.click(screen.getByRole("button", { name: "Ordenar por" }));
+        fireEvent.click(screen.getByText("Z-A"));
+        expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
+        const tarjetas = screen.getAllByText(/^Productor \d{2}$/);
+        expect(tarjetas[0]).toHaveTextContent("Productor 41");
+        expect(tarjetas[19]).toHaveTextContent("Productor 22");
+    });
+
+    it("conserva la página ajustada cuando el listado se reduce y vuelve a crecer", () => {
+        const vista = render(<ListadoProductores productores={productoresPaginados} />);
+        fireEvent.click(screen.getByRole("button", { name: "Página 3" }));
+        vista.rerender(<ListadoProductores productores={productoresPaginados.slice(0, 25)} />);
+        expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+        expect(screen.getByText("21–25 de 25 productores")).toBeInTheDocument();
+        expect(screen.getAllByText(/^Productor \d{2}$/)).toHaveLength(5);
+
+        vista.rerender(<ListadoProductores productores={productoresPaginados} />);
+        expect(screen.getByText("Página 2 de 3")).toBeInTheDocument();
+        expect(screen.getByText("21–40 de 41 productores")).toBeInTheDocument();
+
+        vista.rerender(<ListadoProductores productores={[]} />);
+        expect(screen.getByRole("status")).toHaveTextContent("No hay productores disponibles.");
+        expect(screen.queryByRole("navigation", { name: "Paginación de productores" })).not.toBeInTheDocument();
+
+        vista.rerender(<ListadoProductores productores={productoresPaginados} />);
+        expect(screen.getByText("Página 1 de 3")).toBeInTheDocument();
+        expect(screen.getByText("Productor 01")).toBeInTheDocument();
+    });
 
     it("informa cuando no hay productores disponibles", () => {
         render(<ListadoProductores productores={[]}/>);

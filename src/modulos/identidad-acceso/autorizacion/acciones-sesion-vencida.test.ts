@@ -1,12 +1,11 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { altaAdministrador } from "@/modulos/usuarios/administradores/altaAdministrador";
-import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/modificar-mi-perfil";
-import { restablecerSegundoFactorAdministrador } from "@/modulos/usuarios/administradores/restablecerSegundoFactorAdministrador";
-import { modificarPerfilPropio } from "@/modulos/usuarios/operadores/acciones/modificarPerfilPropio";
-import { cambiarContrasena } from "@/modulos/usuarios/operadores/acciones/cambiarContrasena";
-import { guardarConfiguraciones } from "@/modulos/administracion/acciones/guardar-configuracion";
-import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/acciones/foto-especie";
+import { altaAdministrador } from "@/modulos/usuarios/administradores/acciones/alta-administrador";
+import { modificarMiPerfilAdministrador } from "@/modulos/usuarios/administradores/acciones/modificar-mi-perfil";
+import { restablecerSegundoFactorAdministrador } from "@/modulos/usuarios/administradores/acciones/restablecer-segundo-factor-administrador";
+import { modificarPerfilPropio } from "@/modulos/usuarios/operadores/acciones/modificar-perfil-propio";
+import { guardarConfiguraciones } from "@/modulos/administracion/configuracion/acciones/guardar-configuracion";
+import { guardarFotoEspecie, eliminarFotoEspecie } from "@/modulos/administracion/configuracion/fotos-especies/acciones";
 
 const mocks = vi.hoisted(() => ({ sesion: vi.fn(), cerrar: vi.fn(), redirigir: vi.fn(), transaction: vi.fn() }));
 vi.mock("../autenticacion/sesiones", () => ({ obtenerSesion: mocks.sesion, cerrarSesion: mocks.cerrar }));
@@ -19,7 +18,6 @@ const acciones = [
     { nombre: "perfil propio de administrador", rol: "ADMINISTRADOR", ejecutar: () => modificarMiPerfilAdministrador({}) },
     { nombre: "restablecimiento de segundo factor", rol: "ADMINISTRADOR", ejecutar: () => restablecerSegundoFactorAdministrador(2) },
     { nombre: "perfil propio de operador", rol: "OPERADOR", ejecutar: () => modificarPerfilPropio({}) },
-    { nombre: "cambio de contraseña de operador", rol: "OPERADOR", ejecutar: () => cambiarContrasena({}, new FormData()) },
     { nombre: "configuración administrativa", rol: "ADMINISTRADOR", ejecutar: () => guardarConfiguraciones({ incremento_precio: "1" }) },
     { nombre: "guardar foto de especie", rol: "ADMINISTRADOR", ejecutar: () => guardarFotoEspecie(1, new File(["foto"], "foto.png")) },
     { nombre: "quitar foto de especie", rol: "ADMINISTRADOR", ejecutar: () => eliminarFotoEspecie(1) },

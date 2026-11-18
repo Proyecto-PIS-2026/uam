@@ -57,8 +57,14 @@
 }
 
 .entrada:focus-within {
+    border-color: var(--color-secondary);
     outline: 2px solid var(--color-secondary);
-    outline-offset: 1px;
+    outline-offset: -2px;
+}
+
+.entrada:has([data-error-validacion="true"]) {
+    border-color: var(--color-danger);
+    outline-color: var(--color-danger);
 }
 
 .entrada input {
@@ -104,6 +110,7 @@
     font: inherit;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .cancelar {
@@ -116,6 +123,21 @@
     border: 1px solid var(--color-secondary);
     background: var(--color-secondary);
     color: var(--color-surface);
+}
+
+.cancelar:hover:not(:disabled) {
+    background: var(--color-secondary-soft);
+}
+
+.guardar:hover:not(:disabled) {
+    border-color: var(--color-secondary-hover);
+    background: var(--color-secondary-hover);
+}
+
+.cancelar:focus-visible,
+.guardar:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
 }
 
 .cancelar:disabled,

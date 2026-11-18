@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, within } from "@/test-utils";
 
 import PerfilProductorAdmin from "./PerfilProductorAdmin";
-import type { PerfilAdminProductor } from "../../acciones/consultas-perfil-productor-admin";
+import type { PerfilAdminProductor } from "../../consultas/consultas-perfil-productor-admin";
 
 const mocks = vi.hoisted(() => ({
     propsCatalogo: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
-vi.mock("@/modulos/publicaciones/productores/AltaPublicacionProductor", () => ({
+vi.mock("@/modulos/publicaciones/productores/componentes/AltaPublicacionProductor", () => ({
     DrawerAltaPublicacionProductor: (props: { productorId: number; abierto: boolean; alCerrar: () => void; alCrear: (mensaje: string) => void }) => {
         mocks.propsDrawerAlta(props);
         return (
@@ -119,16 +119,16 @@ describe("PerfilProductorAdmin", () => {
     it("ofrece agregar un producto para el productor", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
-        expect(screen.getByRole("button", { name: "Agregar Producto" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Nueva publicación" })).toBeInTheDocument();
     });
 
     // El drawer de alta solo aparece al tocar el botón, y para este productor
-    it("abre el alta de publicación del productor al tocar Agregar Producto", () => {
+    it("abre el alta de publicación del productor al tocar Nueva publicación", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
         expect(screen.queryByTestId("alta-publicacion")).not.toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
 
         expect(screen.getByTestId("alta-publicacion")).toBeInTheDocument();
         expect(mocks.propsDrawerAlta).toHaveBeenLastCalledWith(
@@ -140,7 +140,7 @@ describe("PerfilProductorAdmin", () => {
     it("cierra el alta, muestra el aviso y refresca la página al crear una publicación", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
         fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
 
         expect(screen.queryByTestId("alta-publicacion")).not.toBeInTheDocument();
@@ -152,7 +152,7 @@ describe("PerfilProductorAdmin", () => {
     it("cierra el alta sin aviso ni refresco cuando se cancela", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
         fireEvent.click(screen.getByRole("button", { name: "Simular cierre" }));
 
         expect(screen.queryByTestId("alta-publicacion")).not.toBeInTheDocument();
@@ -163,11 +163,11 @@ describe("PerfilProductorAdmin", () => {
     it("conserva y apila los avisos al abrir otra alta y permite cerrarlos por separado", () => {
         render(<PerfilProductorAdmin productor={productorBase} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
         fireEvent.click(screen.getByRole("button", { name: "Simular alta" }));
         expect(screen.getByRole("status")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole("button", { name: "Agregar Producto" }));
+        fireEvent.click(screen.getByRole("button", { name: "Nueva publicación" }));
 
         expect(screen.getByRole("status")).toHaveTextContent("Publicación creada correctamente.");
         expect(screen.getByTestId("alta-publicacion")).toBeInTheDocument();

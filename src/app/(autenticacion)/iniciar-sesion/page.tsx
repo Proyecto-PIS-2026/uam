@@ -1,4 +1,4 @@
-import FormularioInicioSesion from "./formularioInicioSesion";
+import FormularioInicioSesion from "../../../modulos/identidad-acceso/autenticacion/componentes/FormularioInicioSesion";
 import { estaHabilitadoCambioContrasena } from "@/modulos/identidad-acceso/cambio-contrasena/configuracion";
 import { requerirSinSesion } from "@/modulos/identidad-acceso/autorizacion/controles";
 import styles from "./page.module.css";
@@ -22,8 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
         <main className={`contenedor-pagina ${styles.pagina}`}>
             <section className="w-full max-w-md secciones-pagina">
                 <h1 className="titulo-pagina-plano">Iniciar sesión</h1>
-                {mensaje && <p role="status" className="text-sm">{mensaje}</p>}
-                <FormularioInicioSesion recuperacionHabilitada={recuperacionHabilitada} />
+                <FormularioInicioSesion recuperacionHabilitada={recuperacionHabilitada} avisoInicial={mensaje} tipoAviso={segundoFactor === "cancelado" ? "info" : "warning"} />
             </section>
         </main>
     );

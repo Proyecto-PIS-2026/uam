@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
     obtenerSesion: vi.fn(),
 }));
 
-vi.mock("../../../modulos/usuarios/operadores/operador-actual", () => ({
+vi.mock("../../../modulos/usuarios/operadores/consultas/operador-actual", () => ({
     obtenerOperadorActual: mocks.obtenerOperadorActual,
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));

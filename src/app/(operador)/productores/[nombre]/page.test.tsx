@@ -9,9 +9,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound, redirect: mocks.redirect }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ obtenerSesion: mocks.obtenerSesion }));
-vi.mock("@/modulos/usuarios/productores/acciones/consultas-perfil-por-operador", () => ({ obtenerPerfilProductorPorOperador: mocks.obtenerPerfil }));
-vi.mock("@/modulos/usuarios/productores/componentes/perfil-operador-productor/perfil-productor/PerfilProductor", () => ({ default: () => null }));
-vi.mock("@/modulos/usuarios/productores/componentes/perfil-operador-productor/catalogo-productor/CatalogoProductor", () => ({ default: () => null }));
+vi.mock("@/modulos/usuarios/productores/consultas/consultas-perfil-por-operador", () => ({ obtenerPerfilProductorPorOperador: mocks.obtenerPerfil }));
+vi.mock("@/modulos/usuarios/productores/componentes/perfil-operador-productor/PerfilProductor", () => ({ default: () => null }));
+vi.mock("@/modulos/usuarios/productores/componentes/perfil-operador-productor/CatalogoProductor", () => ({ default: () => null }));
 
 import Page from "./page";
 
