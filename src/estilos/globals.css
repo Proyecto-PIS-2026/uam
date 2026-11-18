@@ -23,6 +23,7 @@
 
 :root {
   color-scheme: light;
+  --color-scrollbar: #a8b8ac;
   --ancho-maximo-pagina: 80rem;
   --alto-contenido-header: 4.5rem;
   --alto-visible-inicial-footer: 80px;
@@ -59,6 +60,31 @@
   --color-subtitulo-pagina: #a8d05d;
   --tamano-subtitulo-pagina: 0.875rem;
   --interlineado-subtitulo-pagina: 1.25rem;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar) transparent;
+}
+
+@supports not (scrollbar-color: auto) {
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 @media (max-width: 970px) {

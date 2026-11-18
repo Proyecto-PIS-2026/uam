@@ -70,8 +70,6 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
     padding: var(--padding-panel);
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-border) transparent;
 }
 
 .pie {
