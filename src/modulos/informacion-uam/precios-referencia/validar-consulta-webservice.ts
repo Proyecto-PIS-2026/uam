@@ -14,8 +14,8 @@ function objeto(valor: unknown, ruta: string): Registro {
 }
 
 function lista(valor: unknown, ruta: string): unknown[] {
-    if (!Array.isArray(valor) || valor.length === 0) {
-        datoInvalido(ruta, "se esperaba una lista no vacía");
+    if (!Array.isArray(valor)) {
+        datoInvalido(ruta, "se esperaba una lista");
     }
     return valor;
 }
@@ -27,17 +27,46 @@ function texto(valor: unknown, ruta: string): string {
     return valor;
 }
 
-function identificador(valor: unknown, ruta: string): void {
-    if (typeof valor !== "number" || !Number.isSafeInteger(valor) || valor <= 0) {
-        datoInvalido(ruta, "se esperaba un identificador entero positivo");
+function exigirCampos(registro: Registro, campos: readonly string[], ruta: string): void {
+    for (const campo of campos) {
+        if (!Object.hasOwn(registro, campo)) datoInvalido(`${ruta}.${campo}`, "falta el campo requerido");
     }
 }
 
-function precio(valor: unknown, ruta: string): number {
-    if (typeof valor !== "number" || !Number.isFinite(valor) || valor <= 0) {
-        datoInvalido(ruta, "se esperaba un precio positivo y finito");
+function procesarLista(
+    originales: unknown[],
+    ruta: string,
+    campos: readonly string[],
+    procesar?: (registro: Registro, ruta: string) => Registro,
+): unknown[] {
+    const resultado: Registro[] = [];
+    let huboDescartes = false;
+    for (const [indice, valor] of originales.entries()) {
+        const rutaRegistro = `${ruta}[${indice}]`;
+        try {
+            const registro = objeto(valor, rutaRegistro);
+            exigirCampos(registro, campos, rutaRegistro);
+            const procesado = procesar ? procesar(registro, rutaRegistro) : registro;
+            resultado.push(procesado);
+            huboDescartes ||= procesado !== registro;
+        } catch {
+            huboDescartes = true;
+        }
     }
-    return valor;
+    return huboDescartes ? resultado : originales;
+}
+
+function procesarHijos(
+    registro: Registro,
+    campo: string,
+    ruta: string,
+    campos: readonly string[],
+    procesar?: (registro: Registro, ruta: string) => Registro,
+): Registro {
+    const rutaHijos = `${ruta}.${campo}`;
+    const originales = lista(registro[campo], rutaHijos);
+    const hijos = procesarLista(originales, rutaHijos, campos, procesar);
+    return hijos === originales ? registro : { ...registro, [campo]: hijos };
 }
 
 function fechaRelevamiento(valor: unknown): void {
@@ -52,53 +81,22 @@ export function validarConsultaPreciosReferencia(valor: unknown): ConsultaPrecio
     const consulta = objeto(valor, "$");
     fechaRelevamiento(consulta.survey_date);
 
-    for (const [indiceTipo, tipoValor] of lista(consulta.types, "types").entries()) {
-        const rutaTipo = `types[${indiceTipo}]`;
-        const tipo = objeto(tipoValor, rutaTipo);
-        identificador(tipo.classification_id, `${rutaTipo}.classification_id`);
-        texto(tipo.classification, `${rutaTipo}.classification`);
-
-        for (const [indiceProducto, productoValor] of lista(tipo.products, `${rutaTipo}.products`).entries()) {
-            const rutaProducto = `${rutaTipo}.products[${indiceProducto}]`;
-            const producto = objeto(productoValor, rutaProducto);
-            identificador(producto.species_id, `${rutaProducto}.species_id`);
-            texto(producto.species, `${rutaProducto}.species`);
-
-            for (const [indiceVariedad, variedadValor] of lista(producto.varieties, `${rutaProducto}.varieties`).entries()) {
-                const rutaVariedad = `${rutaProducto}.varieties[${indiceVariedad}]`;
-                const variedad = objeto(variedadValor, rutaVariedad);
-                texto(variedad.variety, `${rutaVariedad}.variety`);
-
-                for (const [indicePresentacion, presentacionValor] of lista(
-                    variedad.presentations,
-                    `${rutaVariedad}.presentations`,
-                ).entries()) {
-                    const rutaPresentacion = `${rutaVariedad}.presentations[${indicePresentacion}]`;
-                    const presentacion = objeto(presentacionValor, rutaPresentacion);
-                    texto(presentacion.caliber, `${rutaPresentacion}.caliber`);
-                    texto(presentacion.country, `${rutaPresentacion}.country`);
-                    texto(presentacion.measure_unit, `${rutaPresentacion}.measure_unit`);
-
-                    for (const [indiceBanda, bandaValor] of lista(presentacion.prices, `${rutaPresentacion}.prices`).entries()) {
-                        const rutaBanda = `${rutaPresentacion}.prices[${indiceBanda}]`;
-                        const banda = objeto(bandaValor, rutaBanda);
-                        texto(banda.category, `${rutaBanda}.category`);
-                        const minimoKg = precio(banda.min_kg, `${rutaBanda}.min_kg`);
-                        const maximoKg = precio(banda.max_kg, `${rutaBanda}.max_kg`);
-                        const minimoUnidad = precio(banda.min_un, `${rutaBanda}.min_un`);
-                        const maximoUnidad = precio(banda.max_un, `${rutaBanda}.max_un`);
-
-                        if (minimoKg > maximoKg || minimoUnidad > maximoUnidad) {
-                            datoInvalido(rutaBanda, "el precio mínimo supera al máximo");
-                        }
-                        if (typeof banda.is_reference !== "boolean") {
-                            datoInvalido(`${rutaBanda}.is_reference`, "se esperaba un booleano");
-                        }
-                    }
-                }
+    const originales = lista(consulta.types, "types");
+    const tipos = procesarLista(originales, "types", ["classification_id", "classification", "products"], (tipo, rutaTipo) =>
+        procesarHijos(tipo, "products", rutaTipo, ["species_id", "species", "varieties"], (producto, rutaProducto) => {
+            if (typeof producto.species_id !== "number" || !Number.isFinite(producto.species_id)) {
+                datoInvalido(`${rutaProducto}.species_id`, "se esperaba un número finito");
             }
-        }
+            return procesarHijos(producto, "varieties", rutaProducto, ["variety", "presentations"], (variedad, rutaVariedad) =>
+                procesarHijos(variedad, "presentations", rutaVariedad, ["caliber", "country", "measure_unit", "prices"], (presentacion, rutaPresentacion) =>
+                    procesarHijos(presentacion, "prices", rutaPresentacion, ["category", "min_kg", "max_kg", "min_un", "max_un", "is_reference"]),
+                ),
+            );
+        }),
+    );
+    if (originales.length > 0 && tipos.length === 0) {
+        datoInvalido("types", "no contiene clasificaciones con una estructura procesable");
     }
 
-    return valor as ConsultaPreciosReferencia;
+    return (tipos === originales ? consulta : { ...consulta, types: tipos }) as ConsultaPreciosReferencia;
 }

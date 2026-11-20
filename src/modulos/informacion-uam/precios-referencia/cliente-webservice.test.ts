@@ -77,9 +77,20 @@ describe("cliente del webservice de precios", () => {
     it("rechaza una respuesta JSON que no tenga la estructura esperada", async () => {
         const fetcher = vi
             .fn<typeof fetch>()
-            .mockResolvedValue(new Response(JSON.stringify({ survey_date: "2026-08-27", types: [] }), { status: 200 }));
+            .mockResolvedValue(new Response(JSON.stringify({ survey_date: "2026-08-27", types: null }), { status: 200 }));
 
         await expect(consultarUltimoRelevamiento(opciones, fetcher)).rejects.toThrow("Respuesta de precios de referencia inválida");
+    });
+
+    it("acepta los rangos invertidos del servicio y conserva todas las bandas", async () => {
+        const recibido = structuredClone(consultaValida);
+        recibido.types[0].products[0].species = "Ajo";
+        const bandas = recibido.types[0].products[0].varieties[0].presentations[0].prices;
+        bandas.push({ category: "II", min_kg: 1600, max_kg: 200, min_un: 80, max_un: 10, is_reference: false });
+        const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(recibido), { status: 200 }));
+
+        await expect(consultarUltimoRelevamiento(opciones, fetcher)).resolves.toStrictEqual(recibido);
+        expect(fetcher).toHaveBeenCalledOnce();
     });
 
     it("aborta solicitudes que superan los 15 segundos", async () => {

@@ -1,5 +1,6 @@
 import type { PrecioHistorico, RegistroHistorico, ValorHistorico } from "./tipos";
 import { esFechaISO } from "./parametros-consulta";
+import { numeroValorWebservice as numeroGraficable } from "../valores-webservice";
 
 export type RegistroGrafica = {
     dia: Pick<RegistroHistorico, "date">;
@@ -18,17 +19,6 @@ type ExtremoHistorico = {
     fecha: string;
     valor: number;
 };
-
-function numeroGraficable(valor: ValorHistorico): number | null {
-    if (typeof valor === "number") return Number.isFinite(valor) ? valor : null;
-    if (typeof valor !== "string") return null;
-
-    const texto = valor.trim();
-    if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(texto)) return null;
-
-    const numero = Number(texto);
-    return Number.isFinite(numero) ? numero : null;
-}
 
 function fechaGraficable(valor: ValorHistorico): { fecha: string; marcaDeTiempo: number } | null {
     if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return null;

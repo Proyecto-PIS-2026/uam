@@ -17,6 +17,7 @@ import { compararPaisesPorPrioridad } from "@/compartido/prioridad-paises";
 import { esEntradaPrecioPublicacion, MAXIMO_DIGITOS_PRECIO } from "@/modulos/publicaciones/precio-publicacion";
 import type { PrecioReferencia } from "@/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 import FuentePrecios from "../FuentePrecios";
+import { numeroValorWebservice, textoValorWebservice, type ValorWebservice } from "../valores-webservice";
 import styles from "./PreciosReferencia.module.css";
 
 type Props = { fechaRelevamiento: string; filas: PrecioReferencia[] };
@@ -32,9 +33,9 @@ function normalizar(valor: string) {
     return valor.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-function rango(minimo: number, maximo: number) {
-    const inicio = formato.format(minimo);
-    const fin = formato.format(maximo);
+function rango(minimo: ValorWebservice, maximo: ValorWebservice) {
+    const inicio = typeof minimo === "number" ? formato.format(minimo) : textoValorWebservice(minimo);
+    const fin = typeof maximo === "number" ? formato.format(maximo) : textoValorWebservice(maximo);
     return inicio === fin ? `$${inicio}` : `$${inicio} - ${fin}`;
 }
 
@@ -123,7 +124,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
         categorias: opciones(filasCompatibles(filas, seleccion, ["categoria"]).map((fila) => fila.categoria)),
         calibres: opciones(filasCompatibles(filas, seleccion, ["calibre"]).map((fila) => fila.calibre)),
     }), [filas, seleccion, especie]);
-    const cantidadReferencias = useMemo(() => filas.filter((fila) => fila.esReferencia).length, [filas]);
+    const cantidadReferencias = useMemo(() => filas.filter((fila) => fila.esReferencia === true).length, [filas]);
     const minimo = leerPrecio(precioMinimo);
     const maximo = leerPrecio(precioMaximo);
     const rangoPrecioInvalido = minimo !== null && maximo !== null && maximo < minimo;
@@ -139,11 +140,11 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                 if (unidad && fila.unidad !== unidad) return false;
                 if (categoria && fila.categoria !== categoria) return false;
                 if (calibre && fila.calibre !== calibre) return false;
-                if (soloReferencias && !fila.esReferencia) return false;
-                const precioFilaMinimo = precioPor === "unidad" ? fila.precioMinimoUnidad : fila.precioMinimoKg;
-                const precioFilaMaximo = precioPor === "unidad" ? fila.precioMaximoUnidad : fila.precioMaximoKg;
-                if (minimo !== null && precioFilaMinimo < minimo) return false;
-                if (maximo !== null && precioFilaMaximo > maximo) return false;
+                if (soloReferencias && fila.esReferencia !== true) return false;
+                const precioFilaMinimo = numeroValorWebservice(precioPor === "unidad" ? fila.precioMinimoUnidad : fila.precioMinimoKg);
+                const precioFilaMaximo = numeroValorWebservice(precioPor === "unidad" ? fila.precioMaximoUnidad : fila.precioMaximoKg);
+                if (minimo !== null && (precioFilaMinimo === null || precioFilaMinimo < minimo)) return false;
+                if (maximo !== null && (precioFilaMaximo === null || precioFilaMaximo > maximo)) return false;
                 const texto = normalizar(`${fila.especie} ${fila.variedad} ${fila.pais}`);
                 return palabras.every((palabra) => texto.includes(palabra));
             })
@@ -403,14 +404,14 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                 </thead>
                                 <tbody>
                                     {visibles.map((fila) => (
-                                        <tr key={fila.id} className={fila.esReferencia ? styles.filaReferencia : undefined} onClick={() => abrirHistorico(fila)} style={{ cursor: "pointer" }}>
+                                        <tr key={fila.id} className={fila.esReferencia === true ? styles.filaReferencia : undefined} onClick={() => abrirHistorico(fila)} style={{ cursor: "pointer" }}>
                                             <td className={styles.producto}><Link className={styles.enlaceHistorico} href={rutaHistorico(fila)} prefetch={false} onClick={(evento) => evento.stopPropagation()} aria-label={`Ver histórico de ${fila.especie}, ${fila.variedad}`}><strong>{fila.especie}</strong></Link></td>
                                             <td className={styles.variedad}>{fila.variedad}</td>
                                             <td className={styles.referencia}>
-                                                {fila.esReferencia ? (
+                                                {fila.esReferencia === true ? (
                                                     <span className={styles.insignia}>Referencia</span>
                                                 ) : (
-                                                    <span className={styles.sinReferencia}>-</span>
+                                                    <span className={styles.sinReferencia}>{fila.esReferencia === false ? "-" : textoValorWebservice(fila.esReferencia)}</span>
                                                 )}
                                             </td>
                                             <td className={styles.precio}>
@@ -435,7 +436,7 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                             {visibles.map((fila) => (
                                 <article
                                     key={fila.id}
-                                    className={`${styles.filaMobile} ${fila.esReferencia ? styles.filaMobileReferencia : ""}`}
+                                    className={`${styles.filaMobile} ${fila.esReferencia === true ? styles.filaMobileReferencia : ""}`}
                                     role="listitem"
                                     onClick={() => abrirHistorico(fila)}
                                     style={{ cursor: "pointer" }}
@@ -445,7 +446,11 @@ export default function PreciosReferencia({ fechaRelevamiento, filas }: Props) {
                                             <Link className={styles.enlaceHistorico} href={rutaHistorico(fila)} prefetch={false} onClick={(evento) => evento.stopPropagation()} aria-label={`Ver histórico de ${fila.especie}, ${fila.variedad}`}><strong>{fila.especie}</strong></Link>
                                             {fila.variedad !== "-" && <span>{fila.variedad}</span>}
                                         </div>
-                                        {fila.esReferencia && <span className={styles.insignia}>Referencia</span>}
+                                        {fila.esReferencia === true ? (
+                                            <span className={styles.insignia}>Referencia</span>
+                                        ) : fila.esReferencia !== false ? (
+                                            <span className={styles.sinReferencia}>{textoValorWebservice(fila.esReferencia)}</span>
+                                        ) : null}
                                     </div>
                                     <div className={styles.filaMobilePrecios}>
                                         <div>

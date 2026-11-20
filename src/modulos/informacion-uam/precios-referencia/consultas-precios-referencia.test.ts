@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { relevamiento } from "../../../../tests/fixtures/precios-referencia.mjs";
-import { obtenerConsultaPreciosReferencia, obtenerPreciosReferencia } from "./consultas-precios-referencia";
+import { convertirConsultaEnPreciosReferencia, obtenerConsultaPreciosReferencia, obtenerPreciosReferencia, type ConsultaPreciosReferencia } from "./consultas-precios-referencia";
 
 const { obtenerRemoto } = vi.hoisted(() => ({ obtenerRemoto: vi.fn() }));
 
@@ -46,5 +46,26 @@ describe("consulta de precios de referencia", () => {
             precioMaximoKg: 20,
             esReferencia: true,
         });
+    });
+
+    it("conserva los precios crudos y transforma únicamente las etiquetas para poder mostrarlas", () => {
+        const recibido: ConsultaPreciosReferencia = structuredClone(relevamiento);
+        const producto = recibido.types[0].products[0];
+        const variedad = producto.varieties[0];
+        const presentacion = variedad.presentations[0];
+        Object.assign(producto, { species: { nombre: "Ajo" } });
+        Object.assign(variedad, { variety: null });
+        Object.assign(presentacion, { caliber: 0, country: false, measure_unit: ["CAB"] });
+        Object.assign(presentacion.prices[0], { category: "II", min_kg: "Ñ", max_kg: null, min_un: 80, max_un: 10, is_reference: "false" });
+        const original = structuredClone(recibido);
+
+        const resultado = convertirConsultaEnPreciosReferencia(recibido);
+
+        expect(resultado.filas).toHaveLength(89);
+        expect(resultado.filas[0]).toMatchObject({
+            especie: '{"nombre":"Ajo"}', variedad: "—", calibre: "0", pais: "false", unidad: '["CAB"]', categoria: "II",
+            precioMinimoKg: "Ñ", precioMaximoKg: null, precioMinimoUnidad: 80, precioMaximoUnidad: 10, esReferencia: "false",
+        });
+        expect(recibido).toStrictEqual(original);
     });
 });

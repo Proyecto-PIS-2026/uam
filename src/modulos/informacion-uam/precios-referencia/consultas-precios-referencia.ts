@@ -1,20 +1,21 @@
 import { autorizado } from "../../identidad-acceso/autorizacion/permisos";
+import { textoValorWebservice, type ValorWebservice } from "../valores-webservice";
 
 export type ConsultaPreciosReferencia = {
     survey_date: string;
     types: {
-        classification_id: number;
-        classification: string;
+        classification_id: ValorWebservice;
+        classification: ValorWebservice;
         products: {
             species_id: number;
-            species: string;
+            species: ValorWebservice;
             varieties: {
-                variety: string;
+                variety: ValorWebservice;
                 presentations: {
-                    caliber: string;
-                    country: string;
-                    measure_unit: string;
-                    prices: { category: string; min_kg: number; max_kg: number; min_un: number; max_un: number; is_reference: boolean }[];
+                    caliber: ValorWebservice;
+                    country: ValorWebservice;
+                    measure_unit: ValorWebservice;
+                    prices: { category: ValorWebservice; min_kg: ValorWebservice; max_kg: ValorWebservice; min_un: ValorWebservice; max_un: ValorWebservice; is_reference: ValorWebservice }[];
                 }[];
             }[];
         }[];
@@ -29,11 +30,11 @@ export type PrecioReferencia = {
     pais: string;
     unidad: string;
     categoria: string;
-    precioMinimoUnidad: number;
-    precioMaximoUnidad: number;
-    precioMinimoKg: number;
-    precioMaximoKg: number;
-    esReferencia: boolean;
+    precioMinimoUnidad: ValorWebservice;
+    precioMaximoUnidad: ValorWebservice;
+    precioMinimoKg: ValorWebservice;
+    precioMaximoKg: ValorWebservice;
+    esReferencia: ValorWebservice;
 };
 
 export type ResultadoPreciosReferencia = { fechaRelevamiento: string; filas: PrecioReferencia[] };
@@ -65,12 +66,12 @@ export function convertirConsultaEnPreciosReferencia(consulta: ConsultaPreciosRe
                                 presentacion.measure_unit,
                                 precio.category,
                             ]),
-                            especie: producto.species,
-                            variedad: variedad.variety,
-                            calibre: presentacion.caliber,
-                            pais: presentacion.country,
-                            unidad: presentacion.measure_unit,
-                            categoria: precio.category,
+                            especie: textoValorWebservice(producto.species),
+                            variedad: textoValorWebservice(variedad.variety),
+                            calibre: textoValorWebservice(presentacion.caliber),
+                            pais: textoValorWebservice(presentacion.country),
+                            unidad: textoValorWebservice(presentacion.measure_unit),
+                            categoria: textoValorWebservice(precio.category),
                             precioMinimoUnidad: precio.min_un,
                             precioMaximoUnidad: precio.max_un,
                             precioMinimoKg: precio.min_kg,
