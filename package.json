@@ -19,11 +19,11 @@
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:imagenes:migrar": "tsx scripts/migrar-imagenes.ts",
     "db:seed": "tsx src/infraestructura/persistencia/prisma/seed.ts",
-    "db:seed:demo": "tsx src/infraestructura/persistencia/prisma/seed-demo.ts",
+    "db:seed:demo": "npm run db:seed",
     "db:seed:test": "tsx scripts/db-seed-test.ts",
     "db:seed:carga-e03": "tsx scripts/db-seed-carga-e03-local.ts",
     "db:setup": "npm run db:contract && npm run db:migrate && npm run db:seed",
-    "db:setup:demo": "npm run db:contract && npm run db:migrate && npm run db:seed:demo",
+    "db:setup:demo": "npm run db:setup",
     "db:setup:test": "tsx scripts/db-setup-test.ts"
   },
   "dependencies": {
