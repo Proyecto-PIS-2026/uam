@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { relevamiento } from "../../../../tests/fixtures/precios-referencia.mjs";
 import type { ConsultaPreciosReferencia } from "./consultas-precios-referencia";
 import { leerEstadoCacheDiaria, resolverCacheDiaria, type EstadoCacheDiaria } from "./politica-cache-diaria";
+import { validarConsultaPreciosReferencia } from "./validar-consulta-webservice";
 
 function consulta(fecha: string): ConsultaPreciosReferencia {
     return {
@@ -46,6 +47,21 @@ describe("resolverCacheDiaria", () => {
 
         expect(consultar).toHaveBeenCalledOnce();
         expect(resultado).toEqual({ consulta: dato, nuevoEstado: estadoDe("2026-10-01", dato) });
+    });
+
+    it("guarda como exitoso un relevamiento con rangos invertidos y lo reutiliza sin consumir más intentos", async () => {
+        const recibido = consulta("2026-11-19");
+        Object.assign(recibido.types[0].products[0].varieties[0].presentations[0].prices[0], {
+            min_kg: 1600, max_kg: 200, min_un: 80, max_un: 10,
+        });
+        const consultar = vi.fn(async () => validarConsultaPreciosReferencia(recibido));
+
+        const resultado = await resolverCacheDiaria(null, "2026-11-20", consultar);
+        const guardado = leerEstadoCacheDiaria(JSON.stringify(resultado.nuevoEstado));
+
+        expect(guardado).toEqual(estadoDe("2026-11-20", recibido));
+        expect(await resolverCacheDiaria(guardado, "2026-11-20", consultar)).toEqual({ consulta: recibido, nuevoEstado: null });
+        expect(consultar).toHaveBeenCalledOnce();
     });
 
     it("reutiliza el estado en el mismo día sin consultar", async () => {
@@ -155,7 +171,7 @@ describe("leerEstadoCacheDiaria", () => {
                     version: 1,
                     ultimoIntento: "2026-10-01",
                     ultimoExito: "2026-10-01",
-                    consulta: { survey_date: "2026-10-01", types: [] },
+                    consulta: { survey_date: "2026-10-01", types: null },
                 }),
             ),
         ).toBeNull();

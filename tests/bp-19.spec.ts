@@ -3,7 +3,7 @@ import { relevamiento as datosPrueba } from "./fixtures/precios-referencia.mjs";
 import type { ConsultaPreciosReferencia } from "../src/modulos/informacion-uam/precios-referencia/consultas-precios-referencia";
 
 test.use({ baseURL: "http://127.0.0.1:3100" });
-const relevamiento: ConsultaPreciosReferencia = datosPrueba;
+const relevamiento = datosPrueba satisfies ConsultaPreciosReferencia;
 const registros = relevamiento.types.flatMap((tipo) => tipo.products.flatMap((producto) =>
   producto.varieties.flatMap((variedad) => variedad.presentations.flatMap((presentacion) =>
     presentacion.prices.map((precio) => ({

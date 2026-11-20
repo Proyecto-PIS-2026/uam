@@ -105,6 +105,101 @@ function esperarSelectVacio(nombre: string) {
 }
 
 describe("PreciosReferencia", () => {
+    it.each(["tabla", "móvil"] as const)("conserva en %s los mínimos mayores a los máximos recibidos para Ajo", (vista) => {
+        const fila: PrecioReferencia = {
+            ...filasConPreciosDistintos[0], especie: "Ajo", variedad: "-", calibre: "C", categoria: "II", unidad: "CAB",
+            precioMinimoUnidad: 80, precioMaximoUnidad: 10,
+            precioMinimoKg: 1600, precioMaximoKg: 200, esReferencia: false,
+        };
+        render(<PreciosReferencia fechaRelevamiento="2026-11-19" filas={[fila]} />);
+        fireEvent.click(screen.getByRole("checkbox", { name: "Solo registros de referencia" }));
+
+        const registro = vista === "tabla"
+            ? within(screen.getByRole("table")).getAllByRole("row")[1]
+            : within(screen.getByRole("list", { name: "Precios relevados" })).getByRole("listitem");
+        expect(within(registro).getByText("$80 - 10")).toBeInTheDocument();
+        expect(within(registro).getByText(/^\$1[.\s]?600 - 200$/)).toBeInTheDocument();
+    });
+
+    it.each(["tabla", "móvil"] as const)("muestra en %s textos, nulos y objetos sin convertirlos a NaN o cero", (vista) => {
+        const fila: PrecioReferencia = {
+            ...filasConPreciosDistintos[0],
+            precioMinimoUnidad: "Ñ", precioMaximoUnidad: null,
+            precioMinimoKg: { dato: "sin precio" }, precioMaximoKg: "0012.50",
+        };
+        render(<PreciosReferencia fechaRelevamiento="2026-11-19" filas={[fila]} />);
+
+        const registro = vista === "tabla"
+            ? within(screen.getByRole("table")).getAllByRole("row")[1]
+            : within(screen.getByRole("list", { name: "Precios relevados" })).getByRole("listitem");
+        expect(within(registro).getByText("$Ñ - —")).toBeInTheDocument();
+        expect(within(registro).getByText('${"dato":"sin precio"} - 0012.50')).toBeInTheDocument();
+        expect(within(registro).queryByText(/NaN/)).not.toBeInTheDocument();
+        expect(within(registro).queryByText("$0")).not.toBeInTheDocument();
+    });
+
+    it("conserva ceros y precios negativos del relevamiento", () => {
+        const fila: PrecioReferencia = {
+            ...filasConPreciosDistintos[0],
+            precioMinimoUnidad: 0, precioMaximoUnidad: -4,
+            precioMinimoKg: -10, precioMaximoKg: 0,
+        };
+        render(<PreciosReferencia fechaRelevamiento="2026-11-19" filas={[fila]} />);
+
+        const registro = within(screen.getByRole("table")).getAllByRole("row")[1];
+        expect(within(registro).getByText("$0 - -4")).toBeInTheDocument();
+        expect(within(registro).getByText("$-10 - 0")).toBeInTheDocument();
+    });
+
+    it("muestra la referencia textual sin tratar false como verdadero ni contarlo como referencia", () => {
+        const filas: PrecioReferencia[] = [
+            filasConPreciosDistintos[0],
+            { ...filasConPreciosDistintos[1], esReferencia: "false" },
+            { ...filasConPreciosDistintos[2], esReferencia: false },
+        ];
+        render(<PreciosReferencia fechaRelevamiento="2026-11-19" filas={filas} />);
+
+        esperarEspeciesEnTabla("Acelga");
+        expect(screen.getByText(/registros marcados como referencia/)).toHaveTextContent("1 registros marcados como referencia");
+        fireEvent.click(screen.getByRole("checkbox", { name: "Solo registros de referencia" }));
+        esperarEspeciesEnTabla("Acelga", "Banana", "Cebolla");
+
+        const fila = within(screen.getByRole("table")).getByRole("row", { name: /Banana/ });
+        expect(within(fila).getByText("false")).toBeInTheDocument();
+        expect(within(fila).queryByText("Referencia")).not.toBeInTheDocument();
+        const tarjeta = within(screen.getByRole("list", { name: "Precios relevados" }))
+            .getAllByRole("listitem").find((registro) => registro.textContent?.includes("Banana"))!;
+        expect(within(tarjeta).getByText("false")).toBeInTheDocument();
+        expect(within(tarjeta).queryByText("Referencia")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("checkbox", { name: "Solo registros de referencia" }));
+        esperarEspeciesEnTabla("Acelga");
+    });
+
+    it("filtra números y textos numéricos sin convertir nulos, booleanos u objetos a precios", () => {
+        const valores: Pick<PrecioReferencia, "especie" | "precioMinimoUnidad" | "precioMaximoUnidad">[] = [
+            { especie: "Acelga", precioMinimoUnidad: "50", precioMaximoUnidad: "70" },
+            { especie: "Banana", precioMinimoUnidad: null, precioMaximoUnidad: null },
+            { especie: "Cebolla", precioMinimoUnidad: true, precioMaximoUnidad: false },
+            { especie: "Manzana", precioMinimoUnidad: { dato: 50 }, precioMaximoUnidad: [70] },
+            { especie: "Pera", precioMinimoUnidad: "a consultar", precioMaximoUnidad: "a consultar" },
+            { especie: "Zanahoria", precioMinimoUnidad: 0, precioMaximoUnidad: 0 },
+        ];
+        const filas = valores.map((valor, indice) => ({ ...filasConPreciosDistintos[0], ...valor, id: JSON.stringify([0, indice + 1]) }));
+        render(<PreciosReferencia fechaRelevamiento="2026-11-19" filas={filas} />);
+
+        esperarEspeciesEnTabla("Acelga", "Banana", "Cebolla", "Manzana", "Pera", "Zanahoria");
+        fireEvent.change(screen.getByRole("textbox", { name: "Precio máximo" }), { target: { value: "70" } });
+        esperarEspeciesEnTabla("Acelga", "Zanahoria");
+
+        fireEvent.change(screen.getByRole("textbox", { name: "Precio máximo" }), { target: { value: "" } });
+        esperarEspeciesEnTabla("Acelga", "Banana", "Cebolla", "Manzana", "Pera", "Zanahoria");
+        fireEvent.change(screen.getByRole("textbox", { name: "Precio mínimo" }), { target: { value: "50" } });
+        esperarEspeciesEnTabla("Acelga");
+        fireEvent.change(screen.getByRole("textbox", { name: "Precio máximo" }), { target: { value: "70" } });
+        esperarEspeciesEnTabla("Acelga");
+    });
+
     it("prioriza las especies UAM disponibles sin alterar los nombres, la selección ni el orden de la tabla", () => {
         const nombres = ["Pera", "Lechuga", "Acelga", "MORRON", "papa", "Manzana", "Sandía", "Banana"];
         const filas = nombres.map((especie, indice) => ({ ...filasConPreciosDistintos[0], id: JSON.stringify([0, indice]), especie }));

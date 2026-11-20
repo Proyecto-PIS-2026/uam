@@ -1,6 +1,16 @@
+/**
+ * @param {string} category
+ * @param {number} min_un
+ * @param {number} max_un
+ * @param {boolean} [is_reference]
+ */
 const banda = (category, min_un, max_un, is_reference = false) => ({
     category, min_kg: min_un / 15, max_kg: max_un / 15, min_un, max_un, is_reference,
 });
+/**
+ * @param {string} caliber
+ * @param {ReturnType<typeof banda>[]} prices
+ */
 const presentacion = (caliber, prices) => ({
     caliber, country: "URUGUAY", measure_unit: "DOC", prices,
 });

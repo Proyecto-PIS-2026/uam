@@ -1,4 +1,6 @@
-export type ValorHistorico = string | number | boolean | null | ValorHistorico[] | { [clave: string]: ValorHistorico };
+import type { ValorWebservice } from "../valores-webservice";
+
+export type ValorHistorico = ValorWebservice;
 
 export type PrecioHistorico = {
     category: ValorHistorico;
