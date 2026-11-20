@@ -17,7 +17,7 @@ const databaseUrl = obtenerDatabaseUrlTest();
 
 for (const [archivo, argumentos] of [
     ["node_modules/prisma/dist/prisma.js", ["db", "migrate", "--yes"]],
-    ["node_modules/tsx/dist/cli.mjs", ["src/infraestructura/persistencia/prisma/seed.ts"]],
+    ["node_modules/tsx/dist/cli.mjs", ["src/infraestructura/persistencia/prisma/seed-demo.ts"]],
 ]) {
     const setup = spawnSync(process.execPath, [path.join(raiz, archivo), ...argumentos], {
         cwd: raiz,
