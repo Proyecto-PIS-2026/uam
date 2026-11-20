@@ -1239,7 +1239,7 @@ async function main() {
   });
   console.log("Seed completada con éxito.");
 }
-
+  
 main()
   .catch((error) => {
     console.error("Error ejecutando seed:", error);
