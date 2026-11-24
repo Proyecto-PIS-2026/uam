@@ -97,6 +97,7 @@ beforeEach(() => {
 
     vi.stubEnv("SESSION_SECRET", secretoPrueba);
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("AUTH_COOKIE_SECURE", undefined);
     vi.useFakeTimers();
     vi.setSystemTime(fechaPrueba);
 });
@@ -140,6 +141,32 @@ describe("crearSesion", () => {
         await crearSesion(4, "PRODUCTOR");
 
         expect(cookiesSimuladas.set.mock.calls[0][2].secure).toBe(true);
+    });
+
+    it.each(["ADMINISTRADOR", "OPERADOR", "PRODUCTOR"] as const)("permite HTTP explícito en producción para %s conservando la protección y duración de la sesión", async (rol) => {
+        vi.stubEnv("NODE_ENV", "production");
+        vi.stubEnv("AUTH_COOKIE_SECURE", "false");
+
+        await crearSesion(4, rol, rol === "ADMINISTRADOR" ? versionSegundoFactor : undefined);
+
+        expect(cookiesSimuladas.set).toHaveBeenCalledWith("uam_sesion", expect.any(String), {
+            httpOnly: true, sameSite: "lax", secure: false, path: "/", maxAge: 28800,
+        });
+    });
+
+    it("sigue exigiendo el segundo factor administrativo cuando se permite HTTP", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        vi.stubEnv("AUTH_COOKIE_SECURE", "false");
+
+        await expect(crearSesion(4, "ADMINISTRADOR")).rejects.toThrow("Completá la verificación en dos pasos");
+        expect(cookiesSimuladas.set).not.toHaveBeenCalled();
+    });
+
+    it("no emite la cookie con una configuración de transporte inválida", async () => {
+        vi.stubEnv("AUTH_COOKIE_SECURE", "flase");
+
+        await expect(crearSesion(4, "PRODUCTOR")).rejects.toThrow("AUTH_COOKIE_SECURE");
+        expect(cookiesSimuladas.set).not.toHaveBeenCalled();
     });
 
     it("no emite una cookie si falta el secreto de firma", async () => {

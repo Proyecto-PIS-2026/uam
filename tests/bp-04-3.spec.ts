@@ -258,9 +258,9 @@ test.describe("BP-04.3: Autenticación con 2FA para los Administradores", () => 
     await db.orm.public.Usuario.where({ id: admin.usuarioId }).update({ twoFactorExpiresAt: 1 });
 
     await enviarCodigo(page, codigo(admin.secreto!));
-    await expect(page).toHaveURL(/\/iniciar-sesion\?segundoFactor=vencido$/);
+    await expect(page).toHaveURL(/\/iniciar-sesion\?segundoFactor=interrumpido$/);
     await expect(notificaciones(page).getByRole("alert"))
-      .toHaveText("Se terminó el tiempo para completar la verificación en dos pasos. Iniciá sesión nuevamente para comenzar.");
+      .toHaveText("El intento de verificación venció o dejó de estar disponible. Iniciá sesión nuevamente.");
     await esperarSinAccesoAdministrativo(page);
   });
 

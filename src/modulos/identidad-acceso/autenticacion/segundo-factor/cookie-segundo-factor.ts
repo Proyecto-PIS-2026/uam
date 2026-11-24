@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { DURACION_SEGUNDO_FACTOR } from "./segundo-factor";
+import { usarCookiesSeguras } from "../configuracion-cookies";
 
 const nombreCookie = "uam_segundo_factor";
 
@@ -7,7 +8,7 @@ export async function guardarCookieSegundoFactor(token: string) {
     (await cookies()).set(nombreCookie, token, {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: usarCookiesSeguras(),
         path: "/",
         maxAge: DURACION_SEGUNDO_FACTOR,
     });

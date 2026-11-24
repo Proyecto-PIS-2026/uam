@@ -2,6 +2,7 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto
 import { cookies } from "next/headers";
 import { db } from "@/infraestructura/persistencia/prisma/db";
 import { obtenerVersionSegundoFactor } from "./segundo-factor/segundo-factor-criptografia";
+import { usarCookiesSeguras } from "./configuracion-cookies";
 
 const nombreCookieSesion = "uam_sesion";
 const duracionSesionEnSegundos = 60 * 60 * 8;
@@ -47,7 +48,7 @@ export async function crearSesion(usuarioId: number, rol: DatosSesion["rol"], ve
     cookiesSesion.set(nombreCookieSesion, valor, {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: usarCookiesSeguras(),
         path: "/",
         maxAge: duracionSesionEnSegundos,
     });

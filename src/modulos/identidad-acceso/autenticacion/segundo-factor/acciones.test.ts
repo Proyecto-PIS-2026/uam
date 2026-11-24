@@ -4,15 +4,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelarVerificacion, verificarSegundoFactor } from "./acciones";
 
 const mocks = vi.hoisted(() => ({
-    confirmar: vi.fn(), cancelar: vi.fn(), borrarCookie: vi.fn(), crearSesion: vi.fn(), cerrarSesion: vi.fn(), redirect: vi.fn(),
+    confirmar: vi.fn(), cancelar: vi.fn(), obtenerToken: vi.fn(), borrarCookie: vi.fn(), crearSesion: vi.fn(), cerrarSesion: vi.fn(), redirect: vi.fn(),
 }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/segundo-factor/segundo-factor", () => ({ confirmarSegundoFactor: mocks.confirmar, cancelarSegundoFactor: mocks.cancelar }));
-vi.mock("@/modulos/identidad-acceso/autenticacion/segundo-factor/cookie-segundo-factor", () => ({ obtenerTokenSegundoFactor: vi.fn(async () => "token-servidor"), borrarCookieSegundoFactor: mocks.borrarCookie }));
+vi.mock("@/modulos/identidad-acceso/autenticacion/segundo-factor/cookie-segundo-factor", () => ({ obtenerTokenSegundoFactor: mocks.obtenerToken, borrarCookieSegundoFactor: mocks.borrarCookie }));
 vi.mock("@/modulos/identidad-acceso/autenticacion/sesiones", () => ({ crearSesion: mocks.crearSesion, cerrarSesion: mocks.cerrarSesion }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 
 beforeEach(() => {
     vi.resetAllMocks();
+    mocks.obtenerToken.mockResolvedValue("token-servidor");
     mocks.redirect.mockImplementation((ruta: string) => { throw new Error(ruta); });
 });
 
@@ -24,6 +25,17 @@ function formulario(codigo = "123456") {
 }
 
 describe("acciones del segundo factor", () => {
+    it("avisa que faltan los datos si no recibe la cookie y no intenta confirmar ni crear sesión", async () => {
+        mocks.obtenerToken.mockResolvedValue("");
+
+        await expect(verificarSegundoFactor({}, formulario())).rejects.toThrow("/iniciar-sesion?segundoFactor=sin-datos");
+
+        expect(mocks.confirmar).not.toHaveBeenCalled();
+        expect(mocks.crearSesion).not.toHaveBeenCalled();
+        expect(mocks.borrarCookie).toHaveBeenCalledOnce();
+        expect(mocks.cerrarSesion).toHaveBeenCalledOnce();
+    });
+
     it("emite una sesión solamente para el usuario confirmado en el servidor", async () => {
         mocks.confirmar.mockResolvedValue({ usuarioId: 7, versionSegundoFactor: "version-confirmada" });
         await expect(verificarSegundoFactor({}, formulario())).rejects.toThrow("/inicio");
@@ -39,7 +51,7 @@ describe("acciones del segundo factor", () => {
         expect(mocks.borrarCookie).not.toHaveBeenCalled();
     });
 
-    it.each([[null, "vencido"], [{ bloqueado: true }, "bloqueado"]])("regresa al login y elimina las cookies cuando el resultado es %j", async (resultado, motivo) => {
+    it.each([[null, "interrumpido"], [{ bloqueado: true }, "bloqueado"]])("regresa al login y elimina las cookies cuando el resultado es %j", async (resultado, motivo) => {
         mocks.confirmar.mockResolvedValue(resultado);
         await expect(verificarSegundoFactor({}, formulario())).rejects.toThrow(`/iniciar-sesion?segundoFactor=${motivo}`);
         expect(mocks.crearSesion).not.toHaveBeenCalled();
@@ -52,6 +64,17 @@ describe("acciones del segundo factor", () => {
         expect(mocks.cancelar).toHaveBeenCalledWith("token-servidor");
         expect(mocks.borrarCookie).toHaveBeenCalled();
         expect(mocks.cerrarSesion).toHaveBeenCalled();
+        expect(mocks.crearSesion).not.toHaveBeenCalled();
+    });
+
+    it("permite cancelar aunque la cookie ya no esté disponible", async () => {
+        mocks.obtenerToken.mockResolvedValue("");
+
+        await expect(cancelarVerificacion()).rejects.toThrow("/iniciar-sesion?segundoFactor=cancelado");
+
+        expect(mocks.borrarCookie).toHaveBeenCalledOnce();
+        expect(mocks.cerrarSesion).toHaveBeenCalledOnce();
+        expect(mocks.confirmar).not.toHaveBeenCalled();
         expect(mocks.crearSesion).not.toHaveBeenCalled();
     });
 });
