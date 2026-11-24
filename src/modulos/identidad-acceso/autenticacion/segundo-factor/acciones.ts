@@ -9,12 +9,18 @@ import { obtenerRutaPrincipal } from "@/modulos/identidad-acceso/autorizacion/ru
 export type EstadoSegundoFactor = { error?: string };
 
 export async function verificarSegundoFactor(_anterior: EstadoSegundoFactor, datos: FormData): Promise<EstadoSegundoFactor> {
+    const token = await obtenerTokenSegundoFactor();
+    if (!token) {
+        await borrarCookieSegundoFactor();
+        await cerrarSesion();
+        redirect("/iniciar-sesion?segundoFactor=sin-datos");
+    }
     const codigo = datos.get("codigo");
-    const resultado = await confirmarSegundoFactor(await obtenerTokenSegundoFactor(), typeof codigo === "string" ? codigo.trim() : "");
+    const resultado = await confirmarSegundoFactor(token, typeof codigo === "string" ? codigo.trim() : "");
     if (!resultado || "bloqueado" in resultado) {
         await borrarCookieSegundoFactor();
         await cerrarSesion();
-        redirect(`/iniciar-sesion?segundoFactor=${resultado ? "bloqueado" : "vencido"}`);
+        redirect(`/iniciar-sesion?segundoFactor=${resultado ? "bloqueado" : "interrumpido"}`);
     }
     if ("error" in resultado) return { error: resultado.error };
     await crearSesion(resultado.usuarioId, "ADMINISTRADOR", resultado.versionSegundoFactor);

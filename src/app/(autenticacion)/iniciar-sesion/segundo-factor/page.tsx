@@ -8,8 +8,10 @@ import FormularioSegundoFactor from "../../../../modulos/identidad-acceso/autent
 export const metadata = { title: "Verificación en dos pasos | UAM", robots: { index: false, follow: false } };
 
 export default async function Page() {
-    const pendiente = await obtenerSegundoFactorPendiente(await obtenerTokenSegundoFactor());
-    if (!pendiente || (pendiente.vinculacion && !pendiente.secreto)) redirect("/iniciar-sesion?segundoFactor=vencido");
+    const token = await obtenerTokenSegundoFactor();
+    if (!token) redirect("/iniciar-sesion?segundoFactor=sin-datos");
+    const pendiente = await obtenerSegundoFactorPendiente(token);
+    if (!pendiente || (pendiente.vinculacion && !pendiente.secreto)) redirect("/iniciar-sesion?segundoFactor=interrumpido");
     const qr = pendiente.secreto ? await QRCode.toDataURL(obtenerUriVinculacion(pendiente.secreto, pendiente.correo), { width: 256, margin: 4 }) : null;
     return (
         <main className="contenedor-pagina flex flex-1 items-start justify-center">

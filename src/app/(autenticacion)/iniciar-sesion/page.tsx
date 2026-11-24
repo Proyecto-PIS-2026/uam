@@ -8,6 +8,8 @@ export const metadata = {
 };
 
 const mensajesSegundoFactor: Record<string, string> = {
+    "sin-datos": "No pudimos recuperar los datos de tu verificación en dos pasos. Iniciá sesión nuevamente. Si el problema continúa, comunicate con la administración.",
+    interrumpido: "El intento de verificación venció o dejó de estar disponible. Iniciá sesión nuevamente.",
     cancelado: "Cancelaste la verificación en dos pasos. No se inició sesión.",
     vencido: "Se terminó el tiempo para completar la verificación en dos pasos. Iniciá sesión nuevamente para comenzar.",
     bloqueado: "Alcanzaste el límite de intentos. Tu ingreso quedó bloqueado durante 5 minutos. Después podrás iniciar sesión nuevamente.",

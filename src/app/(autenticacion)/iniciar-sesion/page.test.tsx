@@ -63,10 +63,16 @@ describe("PaginaInicioSesion", () => {
         expect(screen.queryByLabelText("Contraseña")).not.toBeInTheDocument();
     });
 
-    it.each(["cancelado", "vencido", "bloqueado"])("muestra el motivo de retorno del segundo factor: %s", async (segundoFactor) => {
+    it.each([
+        ["sin-datos", "No pudimos recuperar los datos de tu verificación en dos pasos. Iniciá sesión nuevamente. Si el problema continúa, comunicate con la administración."],
+        ["interrumpido", "El intento de verificación venció o dejó de estar disponible. Iniciá sesión nuevamente."],
+        ["cancelado", "Cancelaste la verificación en dos pasos. No se inició sesión."],
+        ["vencido", "Se terminó el tiempo para completar la verificación en dos pasos. Iniciá sesión nuevamente para comenzar."],
+        ["bloqueado", "Alcanzaste el límite de intentos. Tu ingreso quedó bloqueado durante 5 minutos. Después podrás iniciar sesión nuevamente."],
+    ])("muestra el motivo de retorno del segundo factor: %s", async (segundoFactor, mensaje) => {
         render(await PaginaInicioSesion({ searchParams: Promise.resolve({ segundoFactor }) }));
         const aviso = await screen.findByRole(segundoFactor === "cancelado" ? "status" : "alert");
-        expect(aviso.textContent?.trim()).toBeTruthy();
+        expect(aviso).toHaveTextContent(mensaje);
         expect(screen.getByRole("region", { name: "Notificaciones" })).toContainElement(aviso);
     });
 
