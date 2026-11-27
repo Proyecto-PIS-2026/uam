@@ -36,11 +36,36 @@ export type ResultadoPublicaciones = {
     totalCatalogo: number;
 };
 
+async function separarNaveDeBusqueda(busqueda: string) {
+    const palabras = busqueda.split(/\s+/);
+    const inicio = palabras.findIndex((palabra, i) => palabra === "tinglado" || (palabra === "nave" && i + 1 < palabras.length));
+    if (inicio === -1) return { texto: busqueda, nave: "" };
+
+    const inicioNombre = palabras[inicio] === "nave" ? inicio + 1 : inicio;
+    const desdeNombre = palabras.slice(inicioNombre).join(" ");
+    const naves = await db.orm.public.Nave.select("nombreNave").all();
+    let nombreNave = "";
+    let coincidencia = "";
+    for (const { nombreNave: nombre } of naves) {
+        const completo = nombre.trim().toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").replace(/^nave /, "");
+        // «Nave C» y «Nave C - Polivalente» identifican la misma nave.
+        for (const etiqueta of [completo, completo.split(" - ")[0]]) {
+            if (etiqueta.length > coincidencia.length && (desdeNombre === etiqueta || desdeNombre.startsWith(etiqueta + " "))) {
+                coincidencia = etiqueta;
+                nombreNave = nombre;
+            }
+        }
+    }
+    const texto = [palabras.slice(0, inicio).join(" "), desdeNombre.slice(coincidencia.length).trim()].join(" ").trim();
+    return { texto, nave: nombreNave || desdeNombre };
+}
+
 export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Promise<ResultadoPublicaciones> {
     if (!autorizado("operador.publicacion.consultar")) {
         throw new Error("No tiene permisos para consultar publicaciones de Operadores.");
     }
     const consulta = normalizarFiltros(filtros);
+    const busqueda = await separarNaveDeBusqueda(consulta.busqueda);
     const hoy = Temporal.Now.plainDateISO("America/Montevideo").toString();
     const prioridades = especiesPrioritarias.map((nombre) => nombre.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "")).join("|");
     const plan = db.raw.sql`
@@ -95,10 +120,14 @@ export async function consultarPublicaciones(filtros: FiltrosConsulta = {}): Pro
                 SELECT 1 FROM locales_vigentes l
                 WHERE l."operadorId" = visibles."operadorId" AND l."nombreNave" = ${consulta.nave}
               ))
+              AND (${busqueda.nave} = '' OR EXISTS (
+                SELECT 1 FROM locales_vigentes l
+                WHERE l."operadorId" = visibles."operadorId" AND l."nombreNave" = ${busqueda.nave}
+              ))
               AND (nullif(${consulta.precioMinimo ?? ""}::text, '')::numeric IS NULL OR precio >= nullif(${consulta.precioMinimo ?? ""}::text, '')::numeric)
               AND (nullif(${consulta.precioMaximo ?? ""}::text, '')::numeric IS NULL OR precio <= nullif(${consulta.precioMaximo ?? ""}::text, '')::numeric)
               AND NOT EXISTS (
-                SELECT 1 FROM regexp_split_to_table(${consulta.busqueda}, '[[:space:]]+') AS palabra
+                SELECT 1 FROM regexp_split_to_table(${busqueda.texto}, '[[:space:]]+') AS palabra
                 WHERE palabra <> '' AND NOT EXISTS (
                     SELECT 1 FROM unnest(ARRAY[especie, variedad, envase, kilos, categoria, calibre, "codigoCalibre", "operadorNombreFantasia"]) AS campo
                     WHERE strpos(translate(lower(campo), 'áéíóúüñ', 'aeiouun'), palabra) > 0
