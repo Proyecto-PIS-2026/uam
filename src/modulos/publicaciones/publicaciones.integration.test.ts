@@ -222,6 +222,52 @@ describe("publicaciones: consultas SQL, versiones y notificaciones con PostgreSQ
         expect(resultadoB.publicaciones.find((publicacion) => publicacion.id === fixture!.publicacionSoloBId)?.operador.naves).toEqual([fixture!.naveB]);
     });
 
+    it("busca por el nombre de una nave entre los locales vigentes de cada operador", async () => {
+        const datos = fixture!;
+        const hoy = Temporal.Now.plainDateISO("America/Montevideo");
+        const inicioHoy = hoy.toZonedDateTime("America/Montevideo").toInstant();
+        const ayer = hoy.subtract({ days: 1 }).toZonedDateTime("America/Montevideo").toInstant();
+        const locales = await db.transaction(async (tx) => {
+            const naves = await tx.orm.public.Nave.select("id", "nombreNave").all();
+            const localesDePrueba = [
+                { operadorId: datos.operadorId, nave: "A", finContrato: null },
+                { operadorId: datos.operadorId, nave: "A", finContrato: null },
+                { operadorId: datos.operadorSoloBId, nave: "A", finContrato: ayer },
+                { operadorId: datos.operadorSoloBId, nave: "B", finContrato: inicioHoy },
+                { operadorId: datos.operadorSoloBId, nave: "C - Polivalente", finContrato: null },
+                { operadorId: datos.operadorSoloBId, nave: "Tinglado", finContrato: null },
+            ];
+            const ids: number[] = [];
+            for (const local of localesDePrueba) {
+                const nave = naves.find((candidata) => candidata.nombreNave === local.nave);
+                if (!nave) throw new Error(`Falta la nave ${local.nave} en el catálogo de prueba.`);
+                const creado = await tx.orm.public.Local.create({
+                    operadorId: local.operadorId, naveId: nave.id, numeroLocal: `${datos.prefijo}-${ids.length}`, finContrato: local.finContrato,
+                });
+                ids.push(creado.id);
+            }
+            return ids;
+        });
+        try {
+            async function buscar(busqueda: string) {
+                const resultado = await consultarPublicaciones({ busqueda, especie: datos.nombreEspecie });
+                expect(resultado.total).toBe(resultado.publicaciones.length);
+                return ordenarIds(resultado.publicaciones.map((publicacion) => publicacion.id));
+            }
+            expect(await buscar("Nave A")).toEqual(ordenarIds(datos.visibles));
+            for (const busqueda of ["Nave B", "limon nAvE b", "Nave C", "Nave C - Polivalente", "Tinglado"]) {
+                expect(await buscar(busqueda)).toEqual([datos.publicacionSoloBId]);
+            }
+            expect(await buscar("pera Nave B")).toEqual([]);
+            expect(await buscar(`Nave ${datos.naveHoy}`)).toEqual(ordenarIds(datos.visibles));
+            expect(await buscar(`Nave ${datos.naveVencida}`)).toEqual([]);
+        } finally {
+            await db.transaction(async (tx) => {
+                for (const id of locales) await tx.orm.public.Local.where({ id }).delete();
+            });
+        }
+    });
+
     it("combina nave, especie y rango de precios manteniendo las naves globales disponibles", async () => {
         const resultado = await consultarPublicaciones({ nave: fixture!.naveA, especie: fixture!.nombreEspecie, precioMinimo: "110", precioMaximo: "112", orden: "precioDesc" });
         expect(resultado.publicaciones.map((publicacion) => publicacion.id)).toEqual(fixture!.visibles.slice(10, 13).reverse());
